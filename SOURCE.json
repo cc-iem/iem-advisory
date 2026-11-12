@@ -1,0 +1,277 @@
+{
+  "source": "https://ccconnected-advisory-builder.pages.dev/",
+  "copiedOn": "2026-11-12",
+  "description": "Unmodified public HTML, CSS, JavaScript, images, data and linked PDF brochures served by the source site. Google Fonts remains the same external dependency as the original.",
+  "files": [
+    {
+      "path": "assets/app.js",
+      "bytes": 65705,
+      "sha256": "a5b047237bd1f6c1e432e1d28d41aedb5ea6645681094ea958283ac6ce1dad7f"
+    },
+    {
+      "path": "assets/cleveland-clinic-connected-logo.png",
+      "bytes": 71411,
+      "sha256": "9d13fe7ed1ac9c19591656bebd3d44bd5af58da36cd4b75577899d224f80c612"
+    },
+    {
+      "path": "assets/config.js",
+      "bytes": 765,
+      "sha256": "7290a70ce54d468c22c03b94b07136a658803f0aba00710b08d409ee42a2b082"
+    },
+    {
+      "path": "assets/engine.js",
+      "bytes": 4486,
+      "sha256": "41db58b58b8842016e9135dc51e9f7827784a3b9863de1548f77c37d5b90a031"
+    },
+    {
+      "path": "assets/favicon.png",
+      "bytes": 3121,
+      "sha256": "6c156caddc05a6d16949afe7fb4a79f799c15952dcd042b5b167bceb728b493e"
+    },
+    {
+      "path": "assets/styles.css",
+      "bytes": 50422,
+      "sha256": "89a9959fdfd83eb3c444d32736a8397f268c2958a74835441a620a7b2ef52c7b"
+    },
+    {
+      "path": "brochures/0_Packages/All-in-One_New_Hospital_Package_Profile.pdf",
+      "bytes": 92932,
+      "sha256": "37bbe9b27d83a9cfbf60f0142508b02b3692f6162d5a18946f26d8cdb9563d3c"
+    },
+    {
+      "path": "brochures/1_Finance/00_Finance_Advisory_Offerings_Packet.pdf",
+      "bytes": 466636,
+      "sha256": "6ce06c81c973770f38e5e8852b318a68f32099eeb545e62b16c4003dfeaec839"
+    },
+    {
+      "path": "brochures/1_Finance/FIN-01_Strategic_Finance_Growth_Advisory_Product_Profile.pdf",
+      "bytes": 89410,
+      "sha256": "6b9aaa6fdf1e07eadc57630ae96fb27bd887814362bb8bd24aef8f185835b84d"
+    },
+    {
+      "path": "brochures/1_Finance/FIN-02_Partnership_Affiliation_Transaction_Advisory_Product_Profile.pdf",
+      "bytes": 88480,
+      "sha256": "631a2b78253e229dbad8def37a791bbb1412f554566cf00cead443b86cd071f4"
+    },
+    {
+      "path": "brochures/1_Finance/FIN-03_Financial_Performance_Improvement_Profitability_Product_Profile.pdf",
+      "bytes": 90377,
+      "sha256": "bf158888048b0acb121be3cbff35a47d4e4ea8246c3b3e1172667839dbd0d25b"
+    },
+    {
+      "path": "brochures/1_Finance/FIN-04_Financial_Reporting_Performance_Management_Product_Profile.pdf",
+      "bytes": 89547,
+      "sha256": "cba63d7f278ab13c8600afbe0682435e4dd48d48bccc6bfbaaabd8276d2f7c5a"
+    },
+    {
+      "path": "brochures/1_Finance/FIN-05_Integrated_Financial_Planning_Forecasting_Modeling_Product_Profile.pdf",
+      "bytes": 90548,
+      "sha256": "6b33ed84160fa9aa3af571b91be42af9c0b15179188eff4e5df9cb2f1b80e542"
+    },
+    {
+      "path": "brochures/1_Finance/FIN-06_Finance_Transformation_Operating_Model_Product_Profile.pdf",
+      "bytes": 90418,
+      "sha256": "22d490688d0c4713723eb1cca6276278e7c6e9e3162b043f9c456cb198c02dba"
+    },
+    {
+      "path": "brochures/1_Finance/FIN-07_Large-Scale_Healthcare_Development_Financial_Advisory_Product_Profile.pdf",
+      "bytes": 88158,
+      "sha256": "5536de2c34576b046b1d591d8933f44c5cb4c8dbc3634fd04e2e053e999ac793"
+    },
+    {
+      "path": "brochures/2_IT_Digital/IT-01_Digital_Strategy_Roadmap_Product_Profile.pdf",
+      "bytes": 94143,
+      "sha256": "7d3c9f4dd8b7770308f8c40c44e360a0c6d86da63bd352bba3a97351326d9a60"
+    },
+    {
+      "path": "brochures/2_IT_Digital/IT-02_Technology_Infrastructure_Interoperability_Cybersecurity_Product_Profile.pdf",
+      "bytes": 87529,
+      "sha256": "0b22ce8dd2e8ca1bcf9ed212e65dc4acc2a4d018d4503c21966922c4a29ff109"
+    },
+    {
+      "path": "brochures/2_IT_Digital/IT-03_EHR_Clinical_Systems_Advisory_Product_Profile.pdf",
+      "bytes": 91884,
+      "sha256": "db916e0784c4ffe97114346345b1bea4ee720000c9364a708df47c1e4ad5ee3a"
+    },
+    {
+      "path": "brochures/2_IT_Digital/IT-04_Data_Analytics_Business_Intelligence_Advisory_Product_Profile.pdf",
+      "bytes": 86652,
+      "sha256": "56c630cbcbb3a0b1da09ac4a9dc746f52bb16f8d8b1ed6bde886809470522f03"
+    },
+    {
+      "path": "brochures/2_IT_Digital/IT-05_AI_Governance_Responsible_AI_Product_Profile.pdf",
+      "bytes": 92511,
+      "sha256": "efa2edb0c815491687e10ff0ae418bd29792e0d4d0d60afa4299b3451146495b"
+    },
+    {
+      "path": "brochures/2_IT_Digital/IT-06_Digital_Hospital_Activation_Readiness_Product_Profile.pdf",
+      "bytes": 89216,
+      "sha256": "4c921512d77209b01e0ebfc1f1817a94c1ab55898d579275ef17e61e6a9688b5"
+    },
+    {
+      "path": "brochures/2_IT_Digital/IT-07_Digital_Patient_Experience_Product_Profile.pdf",
+      "bytes": 93097,
+      "sha256": "b7fac1097ba51b0503d64f2bdef3d08a1bce4d593bb9f87087d05c58d8a53630"
+    },
+    {
+      "path": "brochures/3_Education/EDU-01_Clinical_Observerships_Visiting_Programs_Product_Profile.pdf",
+      "bytes": 59539,
+      "sha256": "8f905853e4b9108ae66a610ad6d4bdd2c41c29a21465a5ee08e9113b42753e0c"
+    },
+    {
+      "path": "brochures/3_Education/EDU-02_Clinical_Training_Fellowships_Research_Programs_Product_Profile.pdf",
+      "bytes": 86157,
+      "sha256": "42f789d36852a971fb2c350e4a4111fa93ac181b129f8bbcc251c5779343b11d"
+    },
+    {
+      "path": "brochures/3_Education/EDU-03_Executive_Physician_Leadership_Development_Product_Profile.pdf",
+      "bytes": 85786,
+      "sha256": "7013cc402ca8393c4a41e965a3c9e83881bdb78016d85e985b8b8f334d4c6947"
+    },
+    {
+      "path": "brochures/3_Education/EDU-04_Caregiver_Development_Culture_Patient_Experience_Product_Profile.pdf",
+      "bytes": 85257,
+      "sha256": "7541e729aaf00a2237f40792c9474acbf3bacd7fe2408181655c0b62f76569a9"
+    },
+    {
+      "path": "brochures/3_Education/EDU-05_Simulation_Advanced_Skills_Training_Product_Profile.pdf",
+      "bytes": 84519,
+      "sha256": "c786ac2da439fe5191a259c130be18d96158d75299ce29718d2c64c6c9b8b43b"
+    },
+    {
+      "path": "brochures/3_Education/EDU-06_Clinical_Knowledge_Exchange_Faculty_Development_Product_Profile.pdf",
+      "bytes": 85518,
+      "sha256": "e831b86ced6b95064f41b52271dd3658796d7dcc0c0bd3b7cf80390947838f00"
+    },
+    {
+      "path": "brochures/3_Education/EDU-07_eClinical_Review_Product_Profile.pdf",
+      "bytes": 86251,
+      "sha256": "a7122c427eed3f8ba3586dff0b40714510f925ce079c8c6dff10be7e2c412fe8"
+    },
+    {
+      "path": "brochures/4_SQPE/SQPE-01_CC_Connected_SQPE_Core_Program_Product_Profile.pdf",
+      "bytes": 91579,
+      "sha256": "47cc6fa60d7a6e6f7a4c3d985d098ad86752307fda362516d6e6273f4e021d32"
+    },
+    {
+      "path": "brochures/4_SQPE/SQPE-02_Organizational_Maturity_Assessment_Product_Profile.pdf",
+      "bytes": 89384,
+      "sha256": "36c1740128d5707c6705cfc58617d0e79f924b6a32bf02fde3b8595edabc4861"
+    },
+    {
+      "path": "brochures/4_SQPE/SQPE-03_Greenfield_Hospital_SQPE_Advisory_Guide_Product_Profile.pdf",
+      "bytes": 88401,
+      "sha256": "8faf1bde979ad43fe4b4040193ba37a4bdf221941006162bf156f2c5bd2be75b"
+    },
+    {
+      "path": "brochures/4_SQPE/SQPE-04_One-Pager_Maturity_Guide_Library_Product_Profile.pdf",
+      "bytes": 90307,
+      "sha256": "f19e77dad87033606d8948ceed98a18d453a8cb234a619ab6ddf07f12f2c65c2"
+    },
+    {
+      "path": "brochures/4_SQPE/SQPE-05_eLearning_Courses_Product_Profile.pdf",
+      "bytes": 89813,
+      "sha256": "6fdae5d6e6a8f9f4c0628975b1fb795681f16ea5538e23c3458499264b1a58fa"
+    },
+    {
+      "path": "brochures/4_SQPE/SQPE-06_Train-the-Trainer_Programs_Product_Profile.pdf",
+      "bytes": 89395,
+      "sha256": "3b65ca1fb03e84d6c8cf517ee724fa683c4af0ed97cfe344d28821a2d03f12e2"
+    },
+    {
+      "path": "brochures/4_SQPE/SQPE-07_Speaker_Series_and_Knowledge_Sharing_Sessions_Product_Profile.pdf",
+      "bytes": 91792,
+      "sha256": "214afd41de59d65407b8b2eb4af74878e41958942ad1f32ebd6af8ff96619b9a"
+    },
+    {
+      "path": "brochures/5_Service_Lines/SL-01_Service_Line_Maturity_Readiness_Assessment_Product_Profile.pdf",
+      "bytes": 91296,
+      "sha256": "3a3e7a86a31ee6abc1bb856ffd4dd7cf86807bda9cab6903c09a660bcda19d12"
+    },
+    {
+      "path": "brochures/5_Service_Lines/SL-02_Service_Line_Portfolio_Strategy_Target_Operating_Model_Product_Profile.pdf",
+      "bytes": 91083,
+      "sha256": "f81d5fcd68af3c16a759e59a8a8cbf17e6111927d46581bfad142df9cba0ec62"
+    },
+    {
+      "path": "brochures/5_Service_Lines/SL-03_Center_of_Excellence_Design_Program_Charter_Product_Profile.pdf",
+      "bytes": 90956,
+      "sha256": "caef837fb6c4f579dc8693aa082119a807b323a4c792afcc4ab16262b8743042"
+    },
+    {
+      "path": "brochures/5_Service_Lines/SL-04_Clinical_Care_Pathway_Protocol_Development_Product_Profile.pdf",
+      "bytes": 92056,
+      "sha256": "f8bd61a6c2a0ab565ed06bec701fdc0467e78c1b9d0595b60fea708378ec1322"
+    },
+    {
+      "path": "brochures/5_Service_Lines/SL-05_Workforce_Model_Clinical_Capability_Build_Product_Profile.pdf",
+      "bytes": 92120,
+      "sha256": "fd4e869110c1e687f0eb4d989c1dfd908335b4c515609423c52a03af2b648718"
+    },
+    {
+      "path": "brochures/5_Service_Lines/SL-06_Service_Line_Activation_Go-Live_Readiness_Product_Profile.pdf",
+      "bytes": 90199,
+      "sha256": "b27ce253a07c9c20a85cb275238509e4c08a8d97467461c88bdc32107d75bd4b"
+    },
+    {
+      "path": "brochures/5_Service_Lines/SL-07_Performance_Measurement_Accreditation_Designation_Readiness_Product_Profile.pdf",
+      "bytes": 90538,
+      "sha256": "6325ef0c4e6ddbc2efd713fdb5c7685083ed0c4a90866eb89686a17e0f2eee65"
+    },
+    {
+      "path": "brochures/6_Recruitment/REC-01_Organization_Design_Hiring_Sequence_Product_Profile.pdf",
+      "bytes": 91983,
+      "sha256": "3fad7321e182b9770d67ca9aa9a6191996e192c412f75dc228040f8a0fa248a0"
+    },
+    {
+      "path": "brochures/6_Recruitment/REC-02_Success_Profiles_Role_Definition_Product_Profile.pdf",
+      "bytes": 91339,
+      "sha256": "67dd1745bcb8b6ff66e7327bbb21687a629ff7e0db77df0adf5e862699d47469"
+    },
+    {
+      "path": "brochures/6_Recruitment/REC-03_Talent_Market_Assessment_Pipeline_Strategy_Product_Profile.pdf",
+      "bytes": 94223,
+      "sha256": "4a17c15af7d02c91606ce9588993c163313743dcfc9c33ed93be6cb5d665cbf5"
+    },
+    {
+      "path": "brochures/6_Recruitment/REC-04_Executive_Clinical_Leader_Selection_Product_Profile.pdf",
+      "bytes": 90226,
+      "sha256": "636281a11ce8a22d909fa249f22c28e3f408cc1fcc097e2d50194c0eb7f9e0d5"
+    },
+    {
+      "path": "brochures/6_Recruitment/REC-05_Credentialing_Licensure_Medical_Staff_Office_Product_Profile.pdf",
+      "bytes": 93817,
+      "sha256": "e383ab08c1191cedbeb25aa292c9b954829fa22d17caed1f0e9df5d97c06ce95"
+    },
+    {
+      "path": "brochures/6_Recruitment/REC-06_Onboarding_First_Year_Integration_Product_Profile.pdf",
+      "bytes": 92641,
+      "sha256": "7ee679ec309bbfd313473c14307a73584e199d7c44aa44e4a73c76a8c3d8a19c"
+    },
+    {
+      "path": "brochures/6_Recruitment/REC-07_Retention_Performance_Succession_Product_Profile.pdf",
+      "bytes": 91609,
+      "sha256": "dc170fa8e9bc990aae60d895d014a75234667715ac4b766ed47fe0d7dd262350"
+    },
+    {
+      "path": "data/finder.js",
+      "bytes": 24789,
+      "sha256": "1db4754030482d9adee1e8ed898cd44bf1a7945b1ee114bd219128b293e0599e"
+    },
+    {
+      "path": "data/packages.js",
+      "bytes": 1104,
+      "sha256": "6217eb152b25297aa9ca9fce597126a91c0847dc2abce0e372492c9c37a2ad92"
+    },
+    {
+      "path": "data/products.js",
+      "bytes": 211819,
+      "sha256": "47c50348daa9c7cd2ceabcbae3eb25ed4f460849d1d69a458785d9677fecf4d4"
+    },
+    {
+      "path": "index.html",
+      "bytes": 7493,
+      "sha256": "60a0af2fbc2f60750013a1fc6092663d9a59dc8b2e398e272836c8bc651bf3cc"
+    }
+  ]
+}

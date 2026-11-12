@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-12",
+  "source": "https://ccconnected-advisory-builder.pages.dev/",
+  "local": "http://127.0.0.1:4173/",
+  "checks": [
+    {
+      "check": "Initial rendered DOM",
+      "match": true
+    },
+    {
+      "check": "Advisory area step",
+      "match": true
+    },
+    {
+      "check": "Finance priorities step",
+      "match": true
+    },
+    {
+      "check": "Finance recommendation",
+      "match": true
+    },
+    {
+      "check": "Settled EHR search results",
+      "match": true
+    },
+    {
+      "check": "EHR full profile",
+      "match": true
+    },
+    {
+      "check": "Package selection and request form",
+      "match": true
+    },
+    {
+      "check": "Proposal request fields",
+      "match": true
+    }
+  ],
+  "initialScreenshotBytesIdentical": true,
+  "notes": "DOM comparisons captured after transitions settled, with URL origins normalized. Source files and linked PDFs independently compared byte for byte. No proposal submitted."
+}

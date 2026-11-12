@@ -1,0 +1,11 @@
+{
+  "name": "iem-advisory",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local copy of the Cleveland Clinic Connected Advisory Solution Builder",
+  "scripts": {
+    "start": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "dev": "npm start",
+    "verify:source": "python3 scripts/verify_source.py"
+  }
+}
