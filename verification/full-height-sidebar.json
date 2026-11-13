@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "Sidebar starts at the top and the page header begins at its right edge",
+      "passed": true
+    },
+    {
+      "check": "Brand uses a symbol-only logo",
+      "passed": true
+    },
+    {
+      "check": "Sidebar can be collapsed and reopened from the page header",
+      "passed": true
+    },
+    {
+      "check": "Header alignment follows sidebar resizing",
+      "passed": true
+    },
+    {
+      "check": "Phone sidebar reaches the top with the symbol logo and app title",
+      "passed": true
+    },
+    {
+      "check": "Breadcrumb parent navigation works with the collapsed phone sidebar",
+      "passed": true
+    },
+    {
+      "check": "Package CTA remains accessible in the relocated header",
+      "passed": true
+    }
+  ],
+  "desktopGeometry": [
+    {
+      "height": 1221,
+      "name": "workspaceNav",
+      "width": 258,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 1221,
+      "name": "navResizer",
+      "width": 5,
+      "x": 258,
+      "y": 0
+    },
+    {
+      "height": 69,
+      "name": "app-bar",
+      "width": 1272,
+      "x": 263,
+      "y": 0
+    },
+    {
+      "height": 42.140625,
+      "name": "pageBreadcrumb",
+      "width": 1062.125,
+      "x": 287,
+      "y": 12.921875
+    }
+  ],
+  "mobileViewport": "390 × 844"
+}

@@ -24,24 +24,42 @@ body {
   align-items: center;
   flex-wrap: nowrap;
 }
-.app-id {
-  flex: none;
-  min-width: 0;
-}
 .app-logo {
-  width: 196px;
-  height: auto;
+  width: 28px;
+  height: 28px;
+  flex: none;
   display: block;
 }
 .app-name {
-  font-size: 14px;
+  font-size: 13px;
+  white-space: normal;
+  line-height: 1.3;
+  min-width: 0;
+  flex: 1;
   text-decoration: none;
 }
 .app-name:hover {
   color: var(--blue);
 }
-.app-tag {
-  font-size: 11px;
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 68px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+  flex: none;
+}
+.sidebar-close {
+  padding: 4px;
+  width: 24px;
+  flex: none;
+}
+#navToggle {
+  display: none;
+}
+.nav-collapsed #navToggle {
+  display: block;
 }
 .shell-toggle {
   border: 0;
@@ -60,8 +78,17 @@ body {
   flex: 0 0 var(--nav-width);
   width: var(--nav-width);
   background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+#navContent {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
-  padding: 22px 12px 20px;
+  padding: 20px 12px;
 }
 .nav-resizer {
   flex: 0 0 5px;
@@ -83,8 +110,7 @@ body {
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: thin;
-  padding: 4px 0 4px 16px;
-  border-left: 1px solid var(--rule);
+  padding: 4px 0;
   font-size: 13px;
   color: var(--slate);
 }
@@ -1078,21 +1104,7 @@ main#top {
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 1280px) {
-  .app-logo,
-  .app-divider {
-    display: none;
-  }
-}
 @media (max-width: 760px) {
-  .mobile-nav-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 12px 12px;
-    font-size: 13px;
-    color: var(--navy);
-  }
   .workspace-nav {
     position: fixed;
     top: 0;
@@ -1100,7 +1112,6 @@ main#top {
     left: 0;
     z-index: 100;
     box-shadow: 12px 0 40px #102d4a40;
-    padding-top: 24px;
     width: min(300px, 85vw);
   }
   .nav-resizer {
@@ -1109,20 +1120,6 @@ main#top {
   .app-bar-row {
     padding: 8px 12px;
     min-height: 58px;
-  }
-  .app-logo {
-    width: 190px;
-    max-width: 100%;
-  }
-  .app-id {
-    display: flex;
-    flex: 1;
-    min-width: 0;
-  }
-  .app-name {
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .shell-toggle {
     min-width: 40px;
@@ -1135,9 +1132,6 @@ main#top {
   .form-field textarea,
   .form-field select {
     font-size: 16px;
-  }
-  .app-tag {
-    display: none;
   }
   .cart-label {
     display: none;

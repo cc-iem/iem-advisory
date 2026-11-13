@@ -190,7 +190,6 @@
   }
   function renderNav() {
     let nav =
-      '<div class="mobile-nav-head"><strong>Workspace</strong><button class="shell-toggle" type="button" data-plan-action="close-nav" aria-label="Close navigation">×</button></div>' +
       '<div class="nav-section">' +
       link("#finder", "Guided Finder", "finder", route.section === "finder") +
       link(
@@ -1637,6 +1636,10 @@
         break;
       case "close-nav":
         document.body.classList.add("nav-collapsed");
+        if (window.innerWidth > 760) {
+          ui.collapsed = true;
+          saveUI();
+        }
         $("#navToggle").setAttribute("aria-expanded", "false");
         break;
       case "task":
