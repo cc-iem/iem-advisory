@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "Example Hospital appears in My Projects on a separate browser origin",
+      "passed": true
+    },
+    {
+      "check": "Reload keeps exactly one default example",
+      "passed": true
+    },
+    {
+      "check": "Example retains the illustrated capacity and generated activity count",
+      "passed": true
+    },
+    {
+      "check": "Example includes all eighteen generalized MS Project workstreams",
+      "passed": true
+    },
+    {
+      "check": "Existing browser keeps one example and its original project ID",
+      "passed": true
+    }
+  ],
+  "automatedPlannerTests": 27,
+  "notes": "Separate localhost browser storage verified first-load initialization without clearing existing 127.0.0.1 projects."
+}

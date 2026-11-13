@@ -1,4 +1,4 @@
-/* Versioned portfolio migration. Product IDs and original brochure files stay stable. */
+/* Portfolio migration. Stable internal IDs preserve saved selections and brochure links. */
 (function (root) {
   "use strict";
   var domains = [
@@ -52,8 +52,20 @@
       "Support Services",
       "Supply chain, logistics, facilities operations and non-clinical support.",
     ],
-  ].map(function (d) {
-    return { id: d[0], name: d[1], short: d[1], blurb: d[2] };
+  ].map(function (d, i) {
+    var codes = [
+      "STR",
+      "GOV",
+      "FIN",
+      "REG",
+      "FAC",
+      "DIG",
+      "CLIN",
+      "WORK",
+      "SQPE",
+      "SUP",
+    ];
+    return { id: d[0], name: d[1], short: d[1], blurb: d[2], code: codes[i] };
   });
   var primary = {
     "FIN-01": "strategy",
@@ -96,6 +108,15 @@
     p.domain = primary[p.id] || old[p.domain];
     p.secondaryDomains = secondary[p.id] || [];
     p.scopeStatus = "Existing offering; engagement scope confirmed at proposal";
+  });
+  // Number the complete catalog once, before hospital-type filters are applied.
+  domains.forEach(function (d) {
+    root.CC_CATALOG.filter(function (p) {
+      return p.domain === d.id;
+    }).forEach(function (p, i) {
+      p.number = i + 1;
+      p.code = d.code + "-" + String(p.number).padStart(2, "0");
+    });
   });
   var finder = root.CC_FINDER;
   var packet = finder.domains.filter(function (d) {

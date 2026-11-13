@@ -62,6 +62,8 @@ Each activity can be inspected from the workstream list, Gantt or readiness view
 
 ## Projects, scenarios and exports
 
+`data/example-project.js` provides the default Example Hospital for a fresh browser. It references the generalized template and all 18 workstreams, using the illustrated 180 opening beds, 500 eventual beds, 12 departments and eight service families. Its settings produce 346 applicable activities (including capacity-review gates), with example baseline and current-plan snapshots. Initialization adopts an existing Example Hospital and preserves its ID and edits. A stable seed marker prevents duplicates after reload, rename or archive.
+
 Projects, selected advisory services, scenarios and navigation settings are stored locally in the browser. Saving failures are surfaced. Setup shows a live forecast preview before changes are saved. A saved scenario contains a separate snapshot; restoring it creates a new project and preserves the current one. A baseline is a comparison point, not a readiness approval. Projects can be archived and restored without deleting their data.
 
 Exports include a JSON project backup, spreadsheet-compatible CSV, MS Project-compatible XML, readiness CSV and a standalone HTML review report. Imports accept compatible JSON backups and create a separate copy. This is not a shared cloud workspace or full MPP round-trip editor.

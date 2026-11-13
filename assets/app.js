@@ -214,7 +214,7 @@
       '<div class="result-band"><p class="result-for">Your best match</p>' +
       "<p>For " + STATUS_PHRASE[state.answers.status] + ", based on your " + plural(nAnswers, "answer", "answers") + " about " + esc(d.phrase || d.name.toLowerCase()) + ".</p></div>" +
       '<div class="result-body">' +
-      '<p class="ref">' + esc(p.id) + "</p>" +
+      '<p class="ref">' + esc(p.code) + "</p>" +
       '<h2 class="result-title" id="resultTitle">' + esc(p.title) + "</h2>" +
       '<p class="result-sub">' + rich(p.subtitle) + "</p>" +
       '<div style="margin-top:14px">' + markersHTML(p) + "</div>" +
@@ -291,8 +291,8 @@
       b.setAttribute("data-action", "detail");
       b.setAttribute("data-id", p.id);
       b.style.backgroundColor = DOMAIN_COLOR[p.domain] || DOMAIN_COLOR.finance;
-      // number within its area, taken from the brochure code (FIN-03 is Finance 3)
-      var num = parseInt(String(p.id).split("-").pop(), 10) || "";
+      // Stable number within the complete primary-domain catalog.
+      var num = p.number;
       b.setAttribute("data-num", num);
       b.innerHTML = '<span class="tile-num" aria-hidden="true">' + num + "</span>" +
         '<span class="tile-text"><span class="tile-label"></span><span class="tile-title">' + esc(p.title) + "</span></span>";
@@ -487,7 +487,7 @@
     var t = tiles[id];
     if (!t || t.classList.contains("is-out")) return;
     var p = BY_ID[id];
-    tip.innerHTML = '<p class="tip-domain">' + esc(DOMAIN_BY_ID[p.domain].name) + " " + esc(tiles[id].getAttribute("data-num")) + "</p>" +
+    tip.innerHTML = '<p class="tip-domain">' + esc(p.code) + " · " + esc(DOMAIN_BY_ID[p.domain].name) + "</p>" +
       '<p class="tip-title">' + esc(p.title) + "</p>" +
       '<p class="tip-sub">' + rich(p.subtitle) + "</p>" +
       '<p class="tip-meta">Typical duration: ' + rich(p.durationShort) + "</p>";
@@ -577,7 +577,7 @@
   /* ---------------- Catalog ---------------- */
   function matchesQuery(p, q) {
     if (!q) return true;
-    var hay = [p.id, p.title, p.subtitle, p.category, p.need.join(" "), p.deliverables.join(" "), p.outcomes.join(" "), DOMAIN_BY_ID[p.domain].name]
+    var hay = [p.code, p.title, p.subtitle, p.category, p.need.join(" "), p.deliverables.join(" "), p.outcomes.join(" "), DOMAIN_BY_ID[p.domain].name]
       .join(" ").toLowerCase();
     return q.toLowerCase().split(/\s+/).filter(Boolean).every(function (t) { return hay.indexOf(t) !== -1; });
   }
@@ -613,7 +613,7 @@
       }
       list.forEach(function (p) {
         html += '<div class="row">' +
-          '<span class="ref">' + esc(p.id) + "</span>" +
+          '<span class="ref">' + esc(p.code) + "</span>" +
           '<div><button type="button" class="row-title" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
           '<p class="row-sub">' + rich(p.subtitle) + "</p></div>" +
           '<div class="row-meta">' + markersHTML(p) + "<span>Typical duration: " + rich(p.durationShort) + "</span></div>" +
@@ -747,7 +747,7 @@
     }
     panel.innerHTML =
       '<div class="panel-head on-navy">' +
-      '<div class="panel-top"><span class="ref">' + esc(p.id) + " &nbsp;&nbsp;" + esc(d.name) + "</span>" +
+      '<div class="panel-top"><span class="ref">' + esc(p.code) + " &nbsp;&nbsp;" + esc(d.name) + "</span>" +
       '<button type="button" class="close-btn" data-action="close-panel" aria-label="Close">' + ICON.close + "</button></div>" +
       '<h2 class="panel-title" id="detailTitle">' + esc(p.title) + "</h2>" +
       '<p class="panel-sub">' + rich(p.subtitle) + "</p>" + markersHTML(p) + "</div>" +
@@ -902,7 +902,7 @@
         '<button type="button" class="btn btn-primary" data-action="go-finder">Open the product navigator</button></div>';
     } else {
       html += '<ul class="cart-list">' + items.map(function (p) {
-        return '<li class="cart-item"><span class="ref">' + esc(p.id) + " &nbsp;&nbsp;" + esc(DOMAIN_BY_ID[p.domain].name) + "</span>" +
+        return '<li class="cart-item"><span class="ref">' + esc(p.code) + " &nbsp;&nbsp;" + esc(DOMAIN_BY_ID[p.domain].name) + "</span>" +
           '<button type="button" class="cart-item-title" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
           markersHTML(p) + '<span class="cart-dur">Typical duration: ' + rich(p.durationShort) + "</span>" +
           '<button type="button" class="remove" data-action="remove" data-id="' + p.id + '" aria-label="Remove ' + esc(p.title) + '">Remove</button></li>';
@@ -929,7 +929,7 @@
     var html = cartHead("Request a proposal", plural(items.length, "solution", "solutions") + " in your advisory service package");
     html += '<div class="panel-body"><form class="form" id="requestForm" novalidate>' +
       '<p class="form-intro">Tell us about your organization. The Cleveland Clinic Connected team will contact you to scope the solutions below.</p>' +
-      listHTML(items.map(function (p) { return p.id + "  " + p.title; })) +
+      listHTML(items.map(function (p) { return p.code + "  " + p.title; })) +
       '<div class="field-row">' + field("name", "Full name", "text", true, ' autocomplete="name"') + field("title", "Job title", "text", true, ' autocomplete="organization-title"') + "</div>" +
       '<div class="field-row">' + field("org", "Organization", "text", true, ' autocomplete="organization"') + field("country", "Country", "text", true, ' autocomplete="country-name"') + "</div>" +
       '<div class="field-row">' + field("email", "Work email", "email", true, ' autocomplete="email"') + field("phone", "Phone", "tel", false, ' autocomplete="tel"') + "</div>" +
@@ -1000,7 +1000,7 @@
       hospitalStatus: data.status || "not specified",
       timing: data.timing,
       notes: data.notes,
-      solutions: state.cart.map(function (id) { var p = BY_ID[id]; return { id: p.id, title: p.title, area: DOMAIN_BY_ID[p.domain].name }; }),
+      solutions: state.cart.map(function (id) { var p = BY_ID[id]; return { id: p.id, code: p.code, title: p.title, area: DOMAIN_BY_ID[p.domain].name }; }),
       finderAnswers: state.order.map(function (k) { return { question: questionShort(k), answer: answerLabel(k) }; })
     };
   }
@@ -1011,7 +1011,7 @@
       "",
       "Solutions of interest:"
     ];
-    req.solutions.forEach(function (s) { lines.push("- " + s.id + " " + s.title); });
+    req.solutions.forEach(function (s) { lines.push("- " + (s.code || s.id) + " " + s.title); });
     lines.push("", "Contact:",
       req.contact.name + ", " + req.contact.title,
       req.contact.organization + ", " + req.contact.country,
@@ -1068,7 +1068,7 @@
         : "<h3>Send it from your email app</h3><p>We opened a message to " + esc(CONFIG.inquiryEmail || "ccconnected@ccf.org") +
           " with your request filled in. Send it from there to reach the Cleveland Clinic Connected team. If nothing opened, use the button below.</p>") +
       '<p class="ref-code">Reference: <strong>' + esc(req.reference) + "</strong></p>" +
-      listHTML(req.solutions.map(function (s) { return s.id + "  " + s.title; })) +
+      listHTML(req.solutions.map(function (s) { return (s.code || s.id) + "  " + s.title; })) +
       '<div class="done-actions">' +
       (sent ? "" : '<a class="btn btn-primary" href="' + esc(mailtoLink(req)) + '">Open the email again</a>') +
       '<button type="button" class="btn btn-secondary" data-action="print">Print or save as PDF</button>' +
@@ -1093,7 +1093,7 @@
     if (req.notes) rows.push(["Notes", req.notes]);
     var sol = req.solutions.map(function (s) {
       var p = BY_ID[s.id];
-      return "<tr><th>" + esc(s.id) + "</th><td><strong>" + esc(p.title) + "</strong><br>" + esc(s.area) + "<br>Typical duration: " + esc(p.durationShort) + "<br>Delivery: " + esc(p.deliveryShort) + "</td></tr>";
+      return "<tr><th>" + esc(s.code || p.code) + "</th><td><strong>" + esc(p.title) + "</strong><br>" + esc(s.area) + "<br>Typical duration: " + esc(p.durationShort) + "<br>Delivery: " + esc(p.deliveryShort) + "</td></tr>";
     }).join("");
     $("#printArea").innerHTML =
       '<img src="assets/cleveland-clinic-connected-logo.png" alt="Cleveland Clinic Connected">' +

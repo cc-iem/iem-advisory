@@ -88,13 +88,17 @@
     '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="' +
     (paths[name] || paths.page) +
     '"/></svg></span>';
-  const link = (href, label, name, active = false) =>
+  const link = (href, label, name, active = false, code = "") =>
     '<a class="nav-item" href="' +
     href +
     '"' +
     (active ? ' aria-current="page"' : "") +
     ">" +
-    icon(name) +
+    (code
+      ? '<span class="nav-domain-code" aria-hidden="true">' +
+        esc(code) +
+        "</span>"
+      : icon(name)) +
     "<span>" +
     esc(label) +
     "</span></a>";
@@ -277,7 +281,7 @@
       ) +
         '<div class="nav-children">' +
         D.map((d) =>
-          link("#catalog/" + d.id, d.name, "", route.domain === d.id),
+          link("#catalog/" + d.id, d.name, "", route.domain === d.id, d.code),
         ).join("") +
         "</div>",
     );
@@ -639,9 +643,12 @@
           ["yes", "Include recruitment and local licensing"],
         ],
       ) +
-      '<label class="form-field form-wide">Non-working holiday dates<textarea name="holidays" placeholder="YYYY-MM-DD, one date per line">' +
-      esc(p.holidays.join("\n")) +
-      "</textarea><small>Weekends are already excluded. Add locally confirmed public holidays.</small></label></div></fieldset></div>" +
+      (isNew
+        ? ""
+        : '<label class="form-field form-wide">Non-working holiday dates<textarea name="holidays" placeholder="YYYY-MM-DD, one date per line">' +
+          esc(p.holidays.join("\n")) +
+          "</textarea><small>Weekends are already excluded. Add locally confirmed public holidays.</small></label>") +
+      "</div></fieldset></div>" +
       '<div class="planner-card"><h3>Planning basis</h3><p class="card-intro">Activity durations are reference estimates. Workload scaling uses a 100-bed reference, selected services and parallel teams. Review this basis with each workstream lead before baselining.</p><ul class="plan-list">' +
       T.assumptions.map((a) => "<li>" + esc(a) + "</li>").join("") +
       '</ul></div><div id="setupPreview" class="plan-notice" aria-live="polite">' +
@@ -667,9 +674,10 @@
     );
     p.departments = f.getAll("departments");
     p.internationalHires = f.get("internationalHires") === "yes";
-    p.holidays = String(f.get("holidays") || "")
-      .split(/[\s,]+/)
-      .filter(Boolean);
+    if (f.has("holidays"))
+      p.holidays = String(f.get("holidays") || "")
+        .split(/[\s,]+/)
+        .filter(Boolean);
     p.templateVersion = T.version;
     return p;
   }
@@ -1175,7 +1183,7 @@
         .map(
           (r) =>
             '<div class="offering-row"><span class="ref">' +
-            r.product.id +
+            esc(r.product.code) +
             '</span><div><button class="text-button" data-plan-action="product" data-product="' +
             r.product.id +
             '">' +
@@ -1560,7 +1568,11 @@
           .map(
             (id) =>
               "<li>" +
-              esc(id + " — " + (C.find((p) => p.id === id)?.title || id)) +
+              esc(
+                (C.find((p) => p.id === id)?.code || id) +
+                  " — " +
+                  (C.find((p) => p.id === id)?.title || id),
+              ) +
               "</li>",
           )
           .join("") +
@@ -1989,6 +2001,9 @@
       wasMobile = mobile;
     }
   });
+  const seeded = window.CCExampleProject.ensure(projects, T, E);
+  projects = seeded.projects;
+  if (seeded.changed) saveProjects();
   window.addEventListener("hashchange", render);
   render();
 })();

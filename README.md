@@ -2,11 +2,15 @@
 
 Advisory catalog and interactive Hospital Planner, based on the public site at <https://ccconnected-advisory-builder.pages.dev/>, captured on November 12, 2026.
 
-The original copy was verified byte for byte before enhancement. The workspace now has ten advisory domains, a persistent left navigation, and a generalized greenfield Hospital Planner. All 42 product IDs and their original brochures remain. No framework, dependency installation, or build step is required.
+The original copy was verified byte for byte before enhancement. The workspace now has ten advisory domains, a persistent left navigation, and a generalized greenfield Hospital Planner. All 42 products and their original brochures remain. No framework, dependency installation, or build step is required.
+
+Domain badges and advisory reference codes use STR (Strategy), GOV (Governance & Activation), FIN (Finance), REG (Regulatory), FAC (Facilities & Equipment), DIG (Digital), CLIN (Clinical Operations), WORK (Workforce & Education), SQPE, and SUP (Support Services). Product codes run sequentially within the primary domain using the complete **All hospitals** catalog, e.g. STR-01. Hospital filters do not renumber products. Saved selections, internal IDs and original brochure filenames remain compatible. Facilities and Support Services currently have workstreams but no standalone catalog offerings.
 
 ## Hospital Planner
 
 Open the Hospital Planner from the left navigation and create a project. Enter opening beds, eventual capacity, department count, opening services, dates, delivery teams and other assumptions. The plan includes 18 workstreams and a generalized library of 347 activities derived from the supplied MS Project reference.
+
+**Example Hospital is included under My Projects by default**, including in a fresh browser. It matches the illustrated 180-bed opening, 500-bed eventual capacity, 12 departments and eight service families. Its 18 MS Project-derived workstreams generate 346 applicable activities, with two saved example scenarios. Existing examples and user edits are preserved; reloads do not create duplicates. You can archive or customize the example.
 
 Explore the Gantt, change duration or earliest-start assumptions, inspect dependencies and critical activities, record readiness evidence, select advisory support, save scenarios and export backups or schedules. The requested opening date and dependency forecast remain distinct.
 
@@ -14,7 +18,7 @@ Projects are saved in the current browser. Export JSON backups for portability; 
 
 Run automated planner and migration checks with `npm test`.
 
-The implementation passed 21 planner/migration/export tests, six Git sync integration tests, and 19 local browser checks. Browser evidence is in `verification/hospital-planner-browser.json`; screenshots include the overview, interactive timeline, and mobile setup. An exported MS Project XML file was also read back successfully with MPXJ, including its workstream summaries and dependencies.
+The initial implementation passed 21 planner/migration/export tests, six Git sync integration tests, and 19 local browser checks. Browser evidence is in `verification/hospital-planner-browser.json`; screenshots include the overview, interactive timeline, and mobile setup. An exported MS Project XML file was also read back successfully with MPXJ, including its workstream summaries and dependencies.
 
 ## Run locally
 

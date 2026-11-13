@@ -161,6 +161,26 @@ main#top {
   width: 17px;
   height: 17px;
 }
+.nav-domain-code {
+  width: 34px;
+  height: 25px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccdae8;
+  border-radius: 5px;
+  background: #edf3f8;
+  color: var(--navy);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .025em;
+  line-height: 1;
+}
+.nav-item[aria-current="page"] .nav-domain-code {
+  background: #fff;
+  border-color: #aac4de;
+}
 .nav-expand {
   border: 0;
   background: transparent;

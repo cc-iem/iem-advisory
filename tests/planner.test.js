@@ -19,6 +19,7 @@ const catalog = JSON.parse(JSON.stringify(context.window.CC_CATALOG));
 const domains = JSON.parse(JSON.stringify(context.window.CC_DOMAINS));
 const E = require("../assets/planner-engine.js");
 const X = require("../assets/planner-export.js");
+const Example = require("../data/example-project.js");
 const project = (changes = {}) => ({
   name: "Test Hospital",
   openingBeds: 100,
@@ -44,6 +45,86 @@ const project = (changes = {}) => ({
   ...changes,
 });
 
+test("a fresh browser receives Example Hospital with all 18 MS Project workstreams", () => {
+  const seeded = Example.ensure([], T, E);
+  assert.equal(seeded.changed, true);
+  assert.equal(seeded.projects.length, 1);
+  const p = seeded.projects[0];
+  assert.equal(p.name, "Example Hospital");
+  assert.equal(p.openingBeds, 180);
+  assert.equal(p.totalBeds, 500);
+  assert.equal(p.departmentCount, 12);
+  assert.equal(p.templateVersion, T.version);
+  assert.deepEqual(
+    p.exampleSource.workstreams,
+    T.workstreams.map((w) => w.id),
+  );
+  const plan = E.schedule(T, p);
+  for (const w of T.workstreams)
+    assert.ok(plan.tasks.some((t) => t.workstream === w.id));
+  assert.equal(plan.tasks.length, 346);
+  assert.equal(plan.forecastDate, "2028-11-13");
+  assert.equal(p.scenarios.length, 2);
+  assert.ok(p.scenarios[0].forecastDate > p.scenarios[0].project.targetDate);
+});
+test("reloading the default project does not add duplicates", () => {
+  const first = Example.ensure([], T, E);
+  const reloaded = Example.ensure(
+    JSON.parse(JSON.stringify(first.projects)),
+    T,
+    E,
+  );
+  assert.equal(reloaded.changed, false);
+  assert.equal(reloaded.projects.length, 1);
+  assert.deepEqual(reloaded.projects, first.projects);
+});
+test("an existing Example Hospital is adopted without replacing user edits", () => {
+  const existing = {
+    ...project(),
+    id: "existing-example",
+    name: "Example Hospital",
+    openingBeds: 210,
+    totalBeds: 600,
+    taskStates: { "GF-140": { duration: 240 } },
+    selectedProducts: ["IT-06"],
+    scenarios: [],
+  };
+  const original = structuredClone(existing);
+  const seeded = Example.ensure([existing], T, E);
+  assert.equal(seeded.projects.length, 1);
+  assert.equal(seeded.projects[0].id, existing.id);
+  assert.deepEqual(existing, original);
+  const { exampleSeed, ...preserved } = seeded.projects[0];
+  assert.ok(exampleSeed);
+  assert.deepEqual(preserved, original);
+});
+test("other projects are preserved when adding the default example", () => {
+  const other = { ...project(), id: "client-project", name: "Client Hospital" };
+  const seeded = Example.ensure([other], T, E);
+  assert.equal(seeded.projects.length, 2);
+  assert.equal(seeded.projects[1], other);
+});
+test("renaming or archiving the example does not cause it to be recreated", () => {
+  const p = Example.create(T, E);
+  p.name = "My customized hospital";
+  p.archived = true;
+  const seeded = Example.ensure([p], T, E);
+  assert.equal(seeded.changed, false);
+  assert.equal(seeded.projects.length, 1);
+  assert.equal(seeded.projects[0].archived, true);
+});
+test("new example projects do not share mutable project or scenario data", () => {
+  const a = Example.create(T, E),
+    b = Example.create(T, E);
+  a.departments.pop();
+  a.scenarios[0].project.departments.pop();
+  a.taskStates["GF-140"] = { duration: 300 };
+  assert.equal(b.departments.length, 8);
+  assert.equal(b.scenarios[0].project.departments.length, 8);
+  assert.deepEqual(b.taskStates, {});
+  assert.ok(!b.scenarios[0].project.exampleSeed);
+});
+
 test("all 42 original IDs survive migration, each with one of ten primary domains", () => {
   assert.equal(domains.length, 10);
   assert.equal(catalog.length, 42);
@@ -56,6 +137,23 @@ test("all 42 original IDs survive migration, each with one of ten primary domain
       assert.ok(domains.some((x) => x.id === d));
   }
   assert.equal(context.window.CC_PACKAGES.length, 0);
+});
+test("domain codes are unique and products are sequential in the complete catalog", () => {
+  assert.equal(new Set(domains.map((d) => d.code)).size, 10);
+  assert.equal(new Set(catalog.map((p) => p.code)).size, 42);
+  for (const d of domains) {
+    assert.match(d.code, /^[A-Z]{1,4}$/);
+    catalog
+      .filter((p) => p.domain === d.id)
+      .forEach((p, i) => {
+        assert.equal(p.code, `${d.code}-${String(i + 1).padStart(2, "0")}`);
+        assert.equal(p.number, i + 1);
+      });
+  }
+  // Moved offerings acquire their primary-domain code without breaking saved IDs.
+  assert.equal(catalog.find((p) => p.id === "FIN-01").code, "STR-01");
+  assert.equal(catalog.find((p) => p.id === "SL-06").code, "GOV-02");
+  assert.equal(catalog.find((p) => p.id === "REC-05").code, "REG-02");
 });
 test("all 18 workstreams have a home and every domain has at least one workstream", () => {
   assert.equal(T.workstreams.length, 18);

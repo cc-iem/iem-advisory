@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "All ten domain badges use the new letter codes",
+      "passed": true
+    },
+    {
+      "check": "New Project omits the non-working holiday input",
+      "passed": true
+    },
+    {
+      "check": "All hospitals shows 42 unique sequential product codes",
+      "passed": true
+    },
+    {
+      "check": "New hospitals retains full-catalog numbering including gaps",
+      "passed": true
+    },
+    {
+      "check": "Search accepts new product codes",
+      "passed": true
+    },
+    {
+      "check": "Product detail displays DIG-03 and keeps its original brochure link",
+      "passed": true
+    },
+    {
+      "check": "Saved package retains its selection and displays GOV-02",
+      "passed": true
+    },
+    {
+      "check": "Proposal form uses the new advisory code",
+      "passed": true
+    },
+    {
+      "check": "Hospital Advisory Plan displays the new product references",
+      "passed": true
+    },
+    {
+      "check": "FIN-01 search identifies only its renumbered Finance offering",
+      "passed": true
+    }
+  ],
+  "automatedPlannerTests": 28
+}
