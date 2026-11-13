@@ -18,7 +18,7 @@ Projects are saved in the current browser. Export JSON backups for portability; 
 
 My Projects and New Project use the full blue workspace style. Hospital setup starts with prefilled dates, name, capacity and service choices; quantities use sliders with common-value presets. Radio cards show the selected default for stage, planning scale, digital foundation, teams and international hiring. A confirmed building-handover date is optional. Capacity and service-count limits keep the form consistent, and the live preview recalculates as choices change.
 
-Project setup includes a blue right-hand navigation panel with every question, Back, reset-to-opened-values and a live Your answers summary. Both New Project and existing project Setup use it.
+Project setup includes a blue left-hand navigation panel with every question, Back, reset-to-opened-values and a live Your answers summary. Both New Project and existing project Setup use it.
 
 The complete mapping is available at `reports/advisory-workstream-map.html`. `data/workstream-solutions.js` separates primary, supporting, conditional and post-opening relationships, and narrows activity links by workstream and subject. Owner-led delivery responsibilities remain unchanged. Example Hospital adopts the primary advisory selections once per mapping version while preserving prior selections, dates, capacity and task records. The global package is only changed by an explicit Add action.
 

@@ -833,10 +833,14 @@
       '</span><button class="btn btn-primary" type="submit">' +
       (isNew ? "Generate hospital plan" : "Save & recalculate") +
       "</button></div></form>";
+    const sidebarHTML =
+      '<aside class="setup-side" id="setupSidebar" aria-label="Project setup navigation"><div class="setup-nav-controls"><button type="button" class="link-btn" id="setupBack" data-plan-action="setup-back">← Back</button><button type="button" class="link-btn" data-plan-action="reset-setup" title="Restore the values from when you opened this form">Reset answers</button></div><nav aria-label="Setup progress"><p class="finder-nav-title">Your hospital plan</p><p class="setup-nav-note">Every question has a starting answer. Select any question to review it.</p><ol class="setup-steps" id="setupSteps"></ol></nav><section class="setup-answers" id="setupAnswers" aria-label="Your answers"></section></aside>';
     return (
-      '<div class="setup-shell"><button type="button" class="setup-nav-toggle" data-plan-action="toggle-setup-nav" aria-controls="setupSidebar" aria-expanded="false">Setup navigation <span aria-hidden="true">⌄</span></button><div class="setup-main">' +
+      '<div class="setup-shell"><button type="button" class="setup-nav-toggle" data-plan-action="toggle-setup-nav" aria-controls="setupSidebar" aria-expanded="false">Setup navigation <span aria-hidden="true">⌄</span></button>' +
+      sidebarHTML +
+      '<div class="setup-main">' +
       formHTML +
-      '</div><aside class="setup-side" id="setupSidebar" aria-label="Project setup navigation"><div class="setup-nav-controls"><button type="button" class="link-btn" id="setupBack" data-plan-action="setup-back">← Back</button><button type="button" class="link-btn" data-plan-action="reset-setup" title="Restore the values from when you opened this form">Reset answers</button></div><nav aria-label="Setup progress"><p class="finder-nav-title">Your hospital plan</p><p class="setup-nav-note">Every question has a starting answer. Select any question to review it.</p><ol class="setup-steps" id="setupSteps"></ol></nav><section class="setup-answers" id="setupAnswers" aria-label="Your answers"></section></aside></div>'
+      "</div></div>"
     );
   }
   const setupQuestions = [
