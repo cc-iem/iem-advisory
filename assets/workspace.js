@@ -350,7 +350,10 @@
         .join("") +
       "</ol>";
   }
+  let hospitalModel = null;
   function render() {
+    hospitalModel?.dispose();
+    hospitalModel = null;
     route = parseRoute();
     current = projects.find((p) => p.id === route.id) || null;
     if (route.id && !current) {
@@ -393,6 +396,17 @@
         if ($("#projectForm")) {
           setupCursor = "name";
           renderSetupNavigation($("#projectForm"));
+          hospitalModel = window.HospitalModel.mount(
+            $("#hospitalModel"), projectFromForm($("#projectForm")), {
+              collapsed: ui.modelCollapsed ?? (window.innerWidth <= 1100),
+              onToggle(collapsed) {
+                ui.modelCollapsed = collapsed;
+                saveUI();
+                hospitalModel.setCollapsed(collapsed);
+                $(collapsed ? ".model-expand" : '[data-model="collapse"]').focus();
+              },
+            },
+          );
         }
       } catch (e) {
         $("#plannerContent").innerHTML =
@@ -570,6 +584,10 @@
     );
   }
   function rangeField(label, name, value, min, max, presets, note, unit = "") {
+    const progress =
+      max > min
+        ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
+        : 100;
     return (
       '<div class="form-field range-field"><label for="setup-' +
       name +
@@ -592,7 +610,9 @@
       min +
       '" max="' +
       max +
-      '" step="1" data-default-min="' +
+      '" style="--range-fill:' +
+      progress +
+      '%" step="1" data-default-min="' +
       min +
       '" data-default-max="' +
       max +
@@ -840,7 +860,7 @@
       sidebarHTML +
       '<div class="setup-main">' +
       formHTML +
-      "</div></div>"
+      '</div><aside class="hospital-model-pane" id="hospitalModel" aria-label="Hospital 3D preview"></aside></div>'
     );
   }
   const setupQuestions = [
@@ -976,6 +996,17 @@
     $("#handoverField", form).hidden =
       form.elements.handoverMode.value !== "set";
     $$('input[type="range"]', form).forEach((input) => {
+      const min = +input.min,
+        max = +input.max;
+      input.style.setProperty(
+        "--range-fill",
+        (max > min
+          ? Math.max(
+              0,
+              Math.min(100, ((+input.value - min) / (max - min)) * 100),
+            )
+          : 100) + "%",
+      );
       const output = $("#setup-" + input.name + "-value", form);
       if (output) output.value = input.value + (input.dataset.unit || "");
       $$('[data-range-field="' + input.name + '"]', form).forEach((b) =>
@@ -2078,6 +2109,7 @@
         setupCursor = "name";
         renderSetupNavigation(form);
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(form));
+        hospitalModel?.update(projectFromForm(form));
         $(".setup-main").scrollTop = 0;
         break;
       }
@@ -2395,6 +2427,7 @@
         if (Number.isFinite(n)) f.elements.targetDays.value = Math.round(n);
       }
       syncSetupControls(f, ev.target);
+      hospitalModel?.update(projectFromForm(f));
       renderSetupNavigation(f);
       if ($("#setupPreview"))
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(f));

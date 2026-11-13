@@ -20,6 +20,8 @@ My Projects and New Project use the full blue workspace style. Hospital setup st
 
 Project setup includes a blue left-hand navigation panel with every question, Back, reset-to-opened-values and a live Your answers summary. Both New Project and existing project Setup use it.
 
+A collapsible right pane shows a live, white-wireframe 3D hospital concept alongside the form. Bed capacity, department count and selected services change its massing and wings. Drag to orbit, Shift/right-drag to pan, scroll or pinch to zoom, or use the zoom, north, top-view and reset controls. Auto-rotation can be paused and starts paused when reduced motion is requested. Collapse the pane to restore form width. This schematic preview is illustrative, not an architectural design or capacity validation; dates and delivery assumptions affect the schedule rather than the building geometry.
+
 The complete mapping is available at `reports/advisory-workstream-map.html`. `data/workstream-solutions.js` separates primary, supporting, conditional and post-opening relationships, and narrows activity links by workstream and subject. Owner-led delivery responsibilities remain unchanged. Example Hospital adopts the primary advisory selections once per mapping version while preserving prior selections, dates, capacity and task records. The global package is only changed by an explicit Add action.
 
 Run automated planner and migration checks with `npm test`.
