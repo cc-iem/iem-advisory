@@ -1175,9 +1175,12 @@ main#top {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 0 22px;
+  padding: 0 0 18px;
   margin-bottom: 22px;
   border-bottom: 1px solid #ffffff24;
+}
+#finderNav > nav {
+  margin-bottom: 24px;
 }
 .finder-controls .link-btn,
 .finder-another {
