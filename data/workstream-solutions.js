@@ -13,12 +13,12 @@
     "FAC-02",
     "DIG-07",
     "CLIN-04",
-    "WORK-15",
+    "HR-15",
     "CLIN-05",
     "CLIN-06",
     "SQPE-08",
-    "WORK-15",
-    "WORK-16",
+    "HR-15",
+    "HR-16",
     "SUP-01",
     "SUP-02",
     "STR-05",
@@ -30,8 +30,8 @@
   var post = {
     "FIN-01": [3],
     "CLIN-01": [8],
-    "WORK-07": [8, 14],
-    "WORK-14": [9, 10, 13],
+    "HR-07": [8, 14],
+    "HR-14": [9, 10, 13],
     "SQPE-01": [12],
     "SQPE-02": [12],
     "SQPE-06": [12, 14],
@@ -109,28 +109,28 @@
     "CLIN-05": "nurs|roster|unit|medication|competenc|orientation|staffing",
     "CLIN-06":
       "laboratory|pharmacy|imaging|sterile|blood|transfusion|clinical.support|medicin|reagent|consumable|competenc",
-    "WORK-01": "placement|observation|visiting|clinical.education",
-    "WORK-02": "placement|fellow|rotation|research|clinical.education",
-    "WORK-03": "leadership|leader|executive|director",
-    "WORK-04":
+    "HR-01": "placement|observation|visiting|clinical.education",
+    "HR-02": "placement|fellow|rotation|research|clinical.education",
+    "HR-03": "leadership|leader|executive|director",
+    "HR-04":
       "orientation|onboarding|culture|patient.experience|communicat|caregiver",
-    "WORK-05": "simulat|mock|scenario|rehears|skills|resuscitation",
-    "WORK-06":
+    "HR-05": "simulat|mock|scenario|rehears|skills|resuscitation",
+    "HR-06":
       "faculty|knowledge|education.calendar|best.practice|education.strategy",
-    "WORK-07": "clinical.review|second.opinion|complex.case",
-    "WORK-08": "staff|skill.mix|workforce|competenc|roster|FTE|nurs.*model",
-    "WORK-09":
+    "HR-07": "clinical.review|second.opinion|complex.case",
+    "HR-08": "staff|skill.mix|workforce|competenc|roster|FTE|nurs.*model",
+    "HR-09":
       "organi[sz]ation|structure|hiring.wave|leadership|reporting.line|staffing.plan",
-    "WORK-10": "profile|role|job|selection.criteria|demand.by.specialty",
-    "WORK-11": "recruit|sourc|hiring|candidate|workforce|foreign",
-    "WORK-12": "recruit|selection|appointed|director|head.of|on.board",
-    "WORK-13": "onboard|orientation|relocation|foreign|in.post",
-    "WORK-14": "retention|engagement|succession|performance|ramp.up",
-    "WORK-15":
+    "HR-10": "profile|role|job|selection.criteria|demand.by.specialty",
+    "HR-11": "recruit|sourc|hiring|candidate|workforce|foreign",
+    "HR-12": "recruit|selection|appointed|director|head.of|on.board",
+    "HR-13": "onboard|orientation|relocation|foreign|in.post",
+    "HR-14": "retention|engagement|succession|performance|ramp.up",
+    "HR-15":
       "staff|recruit|hir|workforce|physician|headcount|onboard|cohort|in.post|appointed|arrival",
-    "WORK-16":
+    "HR-16":
       "training|education|competenc|orientation|simulation|rehears|assessment|sign.off",
-    "WORK-17":
+    "HR-17":
       "HR|payroll|handbook|policy|policies|housing|transport|badge|uniform|occupational|onboard|system|vaccinat",
     "SQPE-01": "quality|metric|improvement|incident|patient.experience",
     "SQPE-02": "maturity|culture|assessment|improvement",

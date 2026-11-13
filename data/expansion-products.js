@@ -972,7 +972,7 @@
       deliverables: [
         "Role-to-training and competency matrix covering clinical and non-clinical functions",
         "Integrated education calendar linked to hiring, equipment, system availability and service phasing",
-        "Training-provider and modality plan using appropriate existing WORK and SQPE programmes",
+        "Training-provider and modality plan using appropriate existing HR and SQPE programmes",
         "Attendance, assessment and authorized sign-off evidence register",
         "Training readiness dashboard and retest or remediation plan",
       ],

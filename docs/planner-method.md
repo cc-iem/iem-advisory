@@ -70,7 +70,7 @@ Exports include a JSON project backup, spreadsheet-compatible CSV, MS Project-co
 
 ## Catalog migration
 
-All 42 existing product IDs and brochure files remain. The ten domains are Strategy, Governance & Activation, Finance, Regulatory, Facilities & Equipment, Digital, Clinical Operations, Workforce & Education, SQPE, and Support Services.
+All 42 existing product IDs and brochure files remain. The ten domains are Strategy, Governance & Activation, Finance, Regulatory, Facilities & Equipment, Digital, Clinical Operations, Human Resource, SQPE, and Support Services.
 
 The catalog now includes 21 additional proposed scopes, for 63 total solutions. Facilities & Equipment and Support Services have dedicated proposed offerings. Each proposed profile specifies deliverables, purchase rationale, client inputs and delivery boundaries; no brochure or confirmed delivery capability is implied. Every workstream has a primary advisory home, with supporting, conditional and post-opening connections kept distinct. Domain pages and profiles expose these relationships and representative activity evidence.
 

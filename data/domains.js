@@ -39,7 +39,7 @@
     ],
     [
       "workforce",
-      "Workforce & Education",
+      "Human Resource",
       "Workforce planning, recruitment, medical staff, onboarding and education.",
     ],
     [
@@ -61,7 +61,7 @@
       "FAC",
       "DIG",
       "CLIN",
-      "WORK",
+      "HR",
       "SQPE",
       "SUP",
     ];

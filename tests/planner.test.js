@@ -166,6 +166,24 @@ test("domain codes are unique and products are sequential in the complete catalo
   assert.equal(catalog.find((p) => p.id === "SL-06").code, "GOV-02");
   assert.equal(catalog.find((p) => p.id === "REC-05").code, "REG-02");
 });
+test("Human Resource uses HR codes while saved product IDs remain stable", () => {
+  const d = domains.find((d) => d.id === "workforce");
+  assert.equal(d.name, "Human Resource");
+  assert.equal(d.code, "HR");
+  assert.equal(catalog.filter((p) => p.domain === d.id).length, 17);
+  assert.ok(
+    catalog
+      .filter((p) => p.domain === d.id)
+      .every((p) => p.code.startsWith("HR-")),
+  );
+  assert.equal(catalog.find((p) => p.id === "GF-WORK-15").code, "HR-15");
+  assert.equal(
+    catalog.find(
+      (p) => p.id === T.workstreams.find((w) => w.number === 9).leadProduct,
+    ).code,
+    "HR-15",
+  );
+});
 test("21 proposed solutions give all 18 workstreams a primary advisory home", () => {
   assert.equal(catalog.filter((p) => p.proposed).length, 21);
   assert.equal(catalog.filter((p) => !p.proposed && p.pdf).length, 42);
