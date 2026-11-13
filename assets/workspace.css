@@ -1073,6 +1073,262 @@ main#top {
   overflow: hidden;
   background: #0f2f57;
 }
+.planner-blue main#top {
+  background-color: #0f2f57;
+  background-image: radial-gradient(circle at 100% 0%, #1f9be038, transparent 50%), linear-gradient(135deg, #0f2a4a, #14447a 65%, #0f5a92);
+  color: #fff;
+}
+.planner-blue #planner,
+.planner-blue #plannerContent {
+  min-height: 100%;
+}
+.planner-blue #plannerContent {
+  max-width: 1450px;
+  padding: 36px 40px;
+}
+.planner-blue .page-title,
+.planner-blue .section-heading,
+.planner-blue .setup-section h2,
+.planner-blue .planner-card h3,
+.planner-blue .form-section legend {
+  color: #fff;
+}
+.planner-blue .page-sub,
+.planner-blue .muted,
+.planner-blue .card-intro,
+.planner-blue .form-field small,
+.planner-blue .plan-list,
+.choice-note {
+  color: #bdd2e6;
+}
+.planner-blue .page-kicker {
+  color: #a9d6f4;
+}
+.planner-blue .planner-card,
+.hospital-project-card {
+  background: #ffffff0d;
+  border: 1px solid #ffffff29;
+  padding: 26px;
+}
+.planner-blue #planner .btn-secondary {
+  color: #fff;
+  border-color: #ffffff50;
+  background: transparent;
+}
+.planner-blue #planner .btn-secondary:hover {
+  background: #ffffff15;
+}
+.planner-blue #planner .btn-primary {
+  color: #103558;
+  background: #fff;
+  border-color: #fff;
+}
+.planner-blue .planner-hero {
+  padding: 0 0 28px;
+  margin-bottom: 24px;
+  background: none;
+  border-bottom: 1px solid #ffffff29;
+}
+.planner-blue .planner-hero:after {
+  display: none;
+}
+.hospital-projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 18px;
+}
+.hospital-project-card h3 {
+  font-size: 24px;
+  font-weight: 400;
+}
+.hospital-project-card h3 a {
+  color: #fff;
+  text-decoration: none;
+}
+.project-location,
+.project-target {
+  color: #bdd2e6;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.project-metrics {
+  display: flex;
+  gap: 40px;
+  margin: 24px 0;
+}
+.project-metrics strong,
+.project-metrics span {
+  display: block;
+}
+.project-metrics strong {
+  font-size: 28px;
+  font-weight: 400;
+}
+.project-metrics span {
+  color: #bdd2e6;
+  font-size: 12px;
+}
+.project-card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+.planner-blue .plan-notice {
+  background: #ffffff12;
+  color: #d9ebf9;
+  border-color: #64c5ee;
+}
+.planner-blue .form-field {
+  color: #fff;
+}
+.planner-blue .form-field input:not([type="range"]),
+.planner-blue .form-field textarea {
+  color: #fff;
+  background: #ffffff0d;
+  border-color: #ffffff40;
+  color-scheme: dark;
+}
+.setup-section h2 {
+  font-size: 25px;
+  font-weight: 400;
+  margin-bottom: 12px;
+}
+.choice-group {
+  min-width: 0;
+  border: 0;
+  margin: 24px 0 10px;
+  padding: 0;
+}
+.choice-group legend {
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.choice-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 1 150px;
+  padding: 16px;
+  border: 1px solid #ffffff36;
+  background: #ffffff08;
+  color: #e5f0fa;
+  cursor: pointer;
+  font-size: 13px;
+}
+.choice-card input {
+  flex: none;
+  margin-top: 3px;
+  accent-color: #0a75af;
+}
+.choice-card strong,
+.choice-card small {
+  display: block;
+}
+.choice-card small {
+  color: #bdd2e6;
+  font-size: 12px;
+  margin-top: 5px;
+}
+.choice-card:has(input:checked) {
+  background: #fff;
+  color: #173a5c;
+  border-color: #fff;
+}
+.choice-card:has(input:checked) small {
+  color: #52677b;
+}
+.choice-note {
+  font-size: 11px;
+  margin-top: 10px;
+}
+.range-field {
+  padding: 18px;
+  background: #ffffff08;
+  border: 1px solid #ffffff24;
+  margin-top: 18px;
+}
+.range-field > label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.range-field output {
+  color: #fff;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.form-field input[type="range"] {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 36px;
+  accent-color: #65c6f3;
+  cursor: pointer;
+}
+.range-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+.range-presets button {
+  padding: 6px 11px;
+  color: #d9ebf9;
+  background: transparent;
+  border: 1px solid #ffffff40;
+  cursor: pointer;
+  font-size: 12px;
+}
+.range-presets button[aria-pressed="true"] {
+  color: #173a5c;
+  background: #fff;
+  border-color: #fff;
+}
+.planner-blue .service-option {
+  color: #e5f0fa;
+  border-color: #ffffff40;
+  background: #ffffff08;
+}
+.planner-blue .service-option:has(input:checked) {
+  color: #173a5c;
+  background: #fff;
+  border-color: #fff;
+}
+.planning-basis summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+.setup-preview {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  backdrop-filter: blur(18px);
+}
+@media (max-width: 760px) {
+  .planner-blue #plannerContent {
+    padding: 24px 16px;
+  }
+  .planner-blue .planner-card,
+  .hospital-project-card {
+    padding: 18px;
+  }
+  .choice-card {
+    flex-basis: 100%;
+  }
+  .range-field > label {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
 #finder {
   height: 100%;
   min-height: 0;

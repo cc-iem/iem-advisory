@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "New Project uses the blue planner canvas with no numeric text inputs",
+      "passed": true
+    },
+    {
+      "check": "Every choice group has a preselected default",
+      "passed": true
+    },
+    {
+      "check": "Capacity, departments and launch horizon have default slider values",
+      "passed": true
+    },
+    {
+      "check": "Opening-bed preset raises eventual capacity to avoid an invalid plan",
+      "passed": true
+    },
+    {
+      "check": "Slider keyboard adjustment updates the value and linked capacity",
+      "passed": true
+    },
+    {
+      "check": "Launch preset updates the target date and live forecast",
+      "passed": true
+    },
+    {
+      "check": "Optional handover opens with a prefilled date",
+      "passed": true
+    },
+    {
+      "check": "Prefilled form generates and saves a working hospital plan",
+      "passed": true
+    },
+    {
+      "check": "My Projects uses blue project cards and preserves Example Hospital",
+      "passed": true
+    },
+    {
+      "check": "Existing Example Hospital capacity and department values are preserved in the new controls",
+      "passed": true
+    },
+    {
+      "check": "Phone form keeps sliders within the available width and shows live feedback",
+      "passed": true
+    }
+  ],
+  "automatedPlannerTests": 28
+}

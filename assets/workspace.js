@@ -367,6 +367,10 @@
     $("#portfolio").hidden = route.section !== "catalog";
     $("#planner").hidden = route.section !== "planner";
     document.body.classList.toggle("finder-active", route.section === "finder");
+    document.body.classList.toggle(
+      "planner-blue",
+      route.section === "planner" && (!current || route.page === "setup"),
+    );
     renderBreadcrumb();
     if (route.section === "catalog")
       window.CCApp.catalog(domain(route.domain) ? route.domain : null);
@@ -454,37 +458,37 @@
       button("Import project", "import") +
       "</div></div>" +
       (shown.length
-        ? '<div class="planner-table-scroll"><table class="planner-table"><thead><tr><th>Project</th><th>Opening scope</th><th>Target opening</th><th>Updated</th><th></th></tr></thead><tbody>' +
+        ? '<div class="hospital-projects">' +
           shown
             .map(
               (p) =>
-                '<tr><td><a href="' +
+                '<article class="hospital-project-card"><p class="page-kicker">' +
+                (p.archived ? "Archived plan" : "Hospital plan") +
+                '</p><h3><a href="' +
                 projectURL("overview", p.id) +
-                '"><strong>' +
+                '">' +
                 esc(p.name) +
-                '</strong></a><br><span class="muted">' +
+                '</a></h3><p class="project-location">' +
                 esc(p.location || "Location to be confirmed") +
-                "</span></td><td>" +
+                '</p><div class="project-metrics"><div><strong>' +
                 p.openingBeds +
-                " beds · " +
+                "</strong><span>opening beds</span></div><div><strong>" +
                 p.departments.length +
-                " services</td><td>" +
+                '</strong><span>service families</span></div></div><p class="project-target">Target opening · ' +
                 date(p.targetDate) +
-                "</td><td>" +
-                date(p.updatedAt.slice(0, 10)) +
-                '</td><td><a href="' +
+                '</p><div class="project-card-actions"><a class="btn btn-light" href="' +
                 projectURL("overview", p.id) +
-                '">Open →</a> ' +
+                '">Open plan →</a>' +
                 button(
                   p.archived ? "Restore" : "Archive",
                   p.archived ? "unarchive-project" : "archive-project",
                   'data-project="' + p.id + '"',
                 ) +
-                "</td></tr>",
+                "</div></article>",
             )
             .join("") +
-          "</tbody></table></div>"
-        : '<div class="empty-state"><h3>Your first hospital plan starts here</h3><p>Set the opening capacity, select services and choose a target date.</p><a class="btn btn-primary" href="#planner/new">Create project</a></div>') +
+          "</div>"
+        : '<div class="empty-state"><h3>Your first hospital plan starts here</h3><p>Start with the defaults, then tailor capacity, services and opening date.</p><a class="btn btn-light" href="#planner/new">Create project</a></div>') +
       '<div class="plan-notice" style="margin-top:22px">Generalized from a detailed MS Project activation reference. Reference estimates are a starting point for specialist review. Projects stay in this browser until you export or share them.</div>'
     );
   }
@@ -529,18 +533,103 @@
       "</label>"
     );
   }
+  function choiceCards(label, name, value, options, note = "") {
+    return (
+      '<fieldset class="choice-group"><legend>' +
+      esc(label) +
+      '</legend><div class="choice-options">' +
+      options
+        .map(
+          ([v, title, detail]) =>
+            '<label class="choice-card"><input type="radio" name="' +
+            name +
+            '" value="' +
+            esc(v) +
+            '"' +
+            (String(value) === String(v) ? " checked" : "") +
+            "><span><strong>" +
+            esc(title) +
+            "</strong>" +
+            (detail ? "<small>" + esc(detail) + "</small>" : "") +
+            "</span></label>",
+        )
+        .join("") +
+      "</div>" +
+      (note ? '<p class="choice-note">' + esc(note) + "</p>" : "") +
+      "</fieldset>"
+    );
+  }
+  function rangeField(label, name, value, min, max, presets, note, unit = "") {
+    return (
+      '<div class="form-field range-field"><label for="setup-' +
+      name +
+      '"><span>' +
+      esc(label) +
+      '</span><output id="setup-' +
+      name +
+      '-value" for="setup-' +
+      name +
+      '">' +
+      value +
+      esc(unit) +
+      '</output></label><input type="range" id="setup-' +
+      name +
+      '" name="' +
+      name +
+      '" value="' +
+      value +
+      '" min="' +
+      min +
+      '" max="' +
+      max +
+      '" step="1" data-unit="' +
+      esc(unit) +
+      '"><div class="range-presets">' +
+      presets
+        .map(
+          ([n, l]) =>
+            '<button type="button" data-plan-action="set-range" data-range-field="' +
+            name +
+            '" data-value="' +
+            n +
+            '" aria-pressed="' +
+            (n === +value) +
+            '" aria-label="Set ' +
+            esc(label) +
+            " to " +
+            n +
+            '">' +
+            esc(l || n) +
+            "</button>",
+        )
+        .join("") +
+      "</div><small>" +
+      esc(note) +
+      "</small></div>"
+    );
+  }
   function setupHTML(p, isNew = false) {
+    const horizon = Math.round(
+        (Date.parse(p.targetDate) - Date.parse(p.startDate)) / 86400000,
+      ),
+      scale =
+        Math.max(p.openingBeds, p.totalBeds) <= 1000
+          ? 1000
+          : Math.max(p.openingBeds, p.totalBeds) <= 3000
+            ? 3000
+            : 10000;
     return (
       head(
         isNew ? "Plan a new hospital" : "Project setup",
-        "Define the opening scope. The planner recalculates the work and its dependency forecast when you save.",
+        "Start with a complete plan. Choose the closest options, then adjust the sliders to match your hospital.",
         isNew
           ? '<a class="btn btn-secondary" href="#planner">Cancel</a>'
           : button("Export backup", "export-json"),
       ) +
       '<form id="projectForm" data-project-id="' +
       esc(p.id) +
-      '"><div id="projectError" class="form-error" role="alert" hidden></div><div class="planner-card"><fieldset class="form-section"><legend>Your hospital</legend><div class="form-grid">' +
+      '"><div id="projectError" class="form-error" role="alert" hidden></div>' +
+      '<section class="planner-card setup-section"><p class="page-kicker">01 · Your hospital</p><h2>What are you planning?</h2><p class="card-intro">Everything has a starting value. Rename your project whenever you are ready.</p><div class="form-grid">' +
       field(
         "Project name",
         "name",
@@ -552,57 +641,63 @@
       field(
         "Country / location",
         "location",
-        p.location,
+        p.location || "To be confirmed",
         "text",
-        "Regulatory requirements need local confirmation.",
+        "Confirm the location when it is known.",
         'maxlength="120"',
       ) +
-      field(
-        "Beds at opening",
-        "openingBeds",
-        p.openingBeds,
-        "number",
-        "Initial operational beds, not the building’s eventual capacity.",
-        'min="1" max="10000" required',
-      ) +
-      field(
-        "Eventual bed capacity",
-        "totalBeds",
-        p.totalBeds,
-        "number",
-        "Adds up to six future capacity-review gates; timing requires confirmation.",
-        'min="1" max="10000" required',
-      ) +
-      field(
-        "Departments at opening",
-        "departmentCount",
-        p.departmentCount || p.departments.length,
-        "number",
-        "Department count scales workload; choose the service families below.",
-        'min="1" max="200" required',
-      ) +
-      select(
+      "</div>" +
+      choiceCards(
         "Current stage",
         "stage",
         p.stage,
         [
           ["planning", "Planning / design"],
           ["construction", "Under construction"],
-          ["activation", "Activation / preparing to open"],
+          ["activation", "Preparing to open"],
         ],
-        "Stage is context; activities require their own completion evidence.",
+        "Stage provides context; completion still needs activity-level evidence.",
       ) +
-      select(
-        "Digital foundation",
-        "systems",
-        p.systems,
-        [
-          ["enterprise", "Deploy existing group systems"],
-          ["new", "Build / procure new hospital systems"],
-        ],
-        "An existing platform reduces provisional configuration workload by 20%.",
+      "</section>" +
+      '<section class="planner-card setup-section"><p class="page-kicker">02 · Capacity</p><h2>How large is your hospital?</h2><p class="card-intro">Use a preset or move the sliders. Eventual capacity stays at least as large as opening capacity.</p>' +
+      choiceCards("Planning scale", "capacityScale", scale, [
+        [1000, "Hospital", "Up to 1,000 beds"],
+        [3000, "Large hospital", "Up to 3,000 beds"],
+        [10000, "Hospital campus", "Up to 10,000 beds"],
+      ]) +
+      '<div class="form-grid">' +
+      rangeField(
+        "Beds at opening",
+        "openingBeds",
+        p.openingBeds,
+        1,
+        scale,
+        [[100], [250], [500], [1000]],
+        "Initial operational beds, rather than the building’s eventual capacity.",
+        " beds",
       ) +
-      '</div></fieldset></div><div class="planner-card"><fieldset class="form-section"><legend>Opening services</legend><p class="card-intro">Activities specific to unselected services are omitted; shared hospital functions remain.</p><div class="service-options">' +
+      rangeField(
+        "Eventual bed capacity",
+        "totalBeds",
+        p.totalBeds,
+        p.openingBeds,
+        scale,
+        [[300], [500], [1000]],
+        "Adds future capacity-review gates; their timing needs confirmation.",
+        " beds",
+      ) +
+      rangeField(
+        "Departments at opening",
+        "departmentCount",
+        p.departmentCount || p.departments.length,
+        Math.max(1, p.departments.length),
+        200,
+        [[8], [12], [20], [40]],
+        "At least one department for each selected service family.",
+        " departments",
+      ) +
+      "</div></section>" +
+      '<section class="planner-card setup-section"><p class="page-kicker">03 · Opening services</p><h2>Which services will open first?</h2><p class="card-intro">Choose the service families in your opening scope. New plans start with all eight; shared hospital functions remain.</p><div class="service-options">' +
       services
         .map(
           ([id, label]) =>
@@ -610,19 +705,19 @@
             id +
             '"' +
             (p.departments.includes(id) ? " checked" : "") +
-            ">" +
+            "><span>" +
             label +
-            "</label>",
+            "</span></label>",
         )
         .join("") +
-      "</div></fieldset></div>" +
-      '<div class="planner-card"><fieldset class="form-section"><legend>Dates & delivery assumptions</legend><div class="form-grid">' +
+      "</div></section>" +
+      '<section class="planner-card setup-section"><p class="page-kicker">04 · Dates & delivery</p><h2>When do you want to open?</h2><p class="card-intro">A target date sets the ambition. The live forecast shows what the dependency plan currently supports.</p><div class="form-grid">' +
       field(
         "Planning start",
         "startDate",
         p.startDate,
         "date",
-        "All forecasts use a working-day calendar.",
+        "Defaults to today for a new project.",
         "required",
       ) +
       field(
@@ -630,63 +725,131 @@
         "targetDate",
         p.targetDate,
         "date",
-        "Requested date; the forecast may be later.",
+        "Updates automatically when you move the target slider.",
         "required",
       ) +
-      field(
+      rangeField(
         "Calendar days until target",
         "targetDays",
-        Math.round(
-          (Date.parse(p.targetDate) - Date.parse(p.startDate)) / 86400000,
-        ),
-        "number",
-        "Changing this updates the requested target date.",
-        'min="0" max="7300" required',
+        horizon,
+        0,
+        7300,
+        [
+          [365, "1 year"],
+          [540, "18 months"],
+          [730, "2 years"],
+          [1095, "3 years"],
+        ],
+        "Presets use 365, 540, 730 and 1,095 calendar days.",
+        " days",
       ) +
+      "</div>" +
+      choiceCards(
+        "Building handover",
+        "handoverMode",
+        p.handoverDate ? "set" : "none",
+        [
+          ["none", "No fixed date yet", "Use the dependency forecast"],
+          ["set", "Set a handover date", "Add a confirmed external constraint"],
+        ],
+      ) +
+      '<div id="handoverField"' +
+      (p.handoverDate ? "" : " hidden") +
+      ">" +
       field(
         "Earliest building handover",
         "handoverDate",
-        p.handoverDate,
+        p.handoverDate || E.addDays(p.startDate, Math.max(0, horizon - 90)),
         "date",
-        "Optional external constraint, never a substitute for commissioning.",
+        "Only applied when “Set a handover date” is selected.",
       ) +
-      select(
+      "</div>" +
+      choiceCards(
+        "Digital foundation",
+        "systems",
+        p.systems,
+        [
+          [
+            "enterprise",
+            "Existing group systems",
+            "Deploy an established platform",
+          ],
+          ["new", "New hospital systems", "Build or procure new platforms"],
+        ],
+        "An established platform reduces provisional configuration workload by 20%.",
+      ) +
+      choiceCards(
         "Parallel delivery teams",
         "teams",
         p.teams,
         [
-          ["1", "1 team"],
-          ["2", "2 teams"],
-          ["3", "3 teams"],
-          ["4", "4 teams"],
+          [1, "1 team"],
+          [2, "2 teams"],
+          [3, "3 teams"],
+          [4, "4 teams"],
         ],
         "Affects workload activities only; fixed lead times remain unchanged.",
       ) +
-      select(
+      choiceCards(
         "International physician hires",
         "internationalHires",
         p.internationalHires ? "yes" : "no",
         [
           ["no", "Not in initial scope"],
-          ["yes", "Include recruitment and local licensing"],
+          [
+            "yes",
+            "Include international hires",
+            "Add recruitment and local licensing",
+          ],
         ],
       ) +
       (isNew
         ? ""
-        : '<label class="form-field form-wide">Non-working holiday dates<textarea name="holidays" placeholder="YYYY-MM-DD, one date per line">' +
+        : '<label class="form-field">Non-working holiday dates<textarea name="holidays" placeholder="YYYY-MM-DD, one date per line">' +
           esc(p.holidays.join("\n")) +
-          "</textarea><small>Weekends are already excluded. Add locally confirmed public holidays.</small></label>") +
-      "</div></fieldset></div>" +
-      '<div class="planner-card"><h3>Planning basis</h3><p class="card-intro">Activity durations are reference estimates. Workload scaling uses a 100-bed reference, selected services and parallel teams. Review this basis with each workstream lead before baselining.</p><ul class="plan-list">' +
+          "</textarea><small>Weekends are already excluded.</small></label>") +
+      "</section>" +
+      '<details class="planner-card planning-basis"><summary>Planning basis & assumptions</summary><p class="card-intro">Reference estimates need review with the workstream leads before baselining.</p><ul class="plan-list">' +
       T.assumptions.map((a) => "<li>" + esc(a) + "</li>").join("") +
-      '</ul></div><div id="setupPreview" class="plan-notice" aria-live="polite">' +
+      "</ul></details>" +
+      '<div id="setupPreview" class="plan-notice setup-preview" aria-live="polite">' +
       previewHTML(p) +
-      '</div><div class="form-actions"><span class="muted">Saved locally in this browser · Template ' +
+      '</div><div class="form-actions"><span class="muted">Saved in this browser · Template ' +
       T.version +
       '</span><button class="btn btn-primary" type="submit">' +
       (isNew ? "Generate hospital plan" : "Save & recalculate") +
       "</button></div></form>"
     );
+  }
+  function syncSetupControls(form, changed) {
+    const opening = form.elements.openingBeds,
+      total = form.elements.totalBeds;
+    if (changed?.name === "capacityScale") {
+      opening.max = total.max = form.elements.capacityScale.value;
+    }
+    total.min = opening.value;
+    if (+total.value < +opening.value) total.value = opening.value;
+    const selected = $$('input[name="departments"]:checked', form).length;
+    if (!selected && changed?.name === "departments") {
+      changed.checked = true;
+      toast("Keep at least one opening service.");
+    }
+    const count = $$('input[name="departments"]:checked', form).length;
+    form.elements.departmentCount.min = Math.max(1, count);
+    if (+form.elements.departmentCount.value < count)
+      form.elements.departmentCount.value = count;
+    $("#handoverField", form).hidden =
+      form.elements.handoverMode.value !== "set";
+    $$('input[type="range"]', form).forEach((input) => {
+      const output = $("#setup-" + input.name + "-value", form);
+      if (output) output.value = input.value + (input.dataset.unit || "");
+      $$('[data-range-field="' + input.name + '"]', form).forEach((b) =>
+        b.setAttribute(
+          "aria-pressed",
+          String(+b.dataset.value === +input.value),
+        ),
+      );
+    });
   }
   function projectFromForm(form) {
     const f = new FormData(form),
@@ -700,6 +863,7 @@
     ["startDate", "targetDate", "handoverDate", "systems", "stage"].forEach(
       (k) => (p[k] = String(f.get(k) || "")),
     );
+    if (f.get("handoverMode") === "none") p.handoverDate = "";
     p.departments = f.getAll("departments");
     p.internationalHires = f.get("internationalHires") === "yes";
     if (f.has("holidays"))
@@ -1632,6 +1796,16 @@
     const action = ev.target.closest("[data-plan-action]");
     if (!action) return;
     switch (action.dataset.planAction) {
+      case "set-range": {
+        const form = action.closest("#projectForm"),
+          input = form.elements[action.dataset.rangeField];
+        input.value = Math.max(
+          +input.min,
+          Math.min(+input.max, +action.dataset.value),
+        );
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        break;
+      }
       case "close-dialog":
         dialog.close();
         break;
@@ -1923,6 +2097,7 @@
           86400000;
         if (Number.isFinite(n)) f.elements.targetDays.value = Math.round(n);
       }
+      syncSetupControls(f, ev.target);
       if ($("#setupPreview"))
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(f));
     }
