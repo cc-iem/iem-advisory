@@ -89,18 +89,18 @@
     '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="' +
     (paths[name] || paths.page) +
     '"/></svg></span>';
-  const link = (href, label, name, active = false, code = "") =>
+  const link = (href, label, name, active = false, code = "", workstreamId = "", projectId = "") =>
     '<a class="nav-item" href="' +
     href +
     '"' +
     (active ? ' aria-current="page"' : "") +
     ">" +
-    (code
-      ? '<span class="nav-domain-code" aria-hidden="true">' +
-        esc(code) +
-        "</span>"
+    (workstreamId
+      ? window.CCWorkstreamTags.code(workstreamId, projectId)
+      : code
+      ? window.CCDomainTags.code(code)
       : icon(name)) +
-    "<span>" +
+    (code || workstreamId ? '<span data-domain-plain>' : "<span>") +
     esc(label) +
     "</span></a>";
   function saveUI() {
@@ -211,6 +211,9 @@
       .filter((p) => !p.archived)
       .forEach((p) => {
         const open = ui.expanded?.[p.id] !== false;
+        if (ui.expanded?.["ws-" + p.id]) {
+          try { window.CCWorkstreamTags.setContext(p, p.id === current?.id && result ? result : E.schedule(T, p), today()); } catch (e) {}
+        }
         projectNav +=
           '<div class="nav-link-row"><button class="nav-expand" type="button" data-nav-toggle="' +
           esc(p.id) +
@@ -256,9 +259,10 @@
                         .map((w) =>
                           link(
                             projectURL("workstreams", p.id) + "?ws=" + w.id,
-                            String(w.number).padStart(2, "0") + " " + w.name,
+                            w.name,
                             "",
                             false,
+                            "", w.id, p.id,
                           ),
                         )
                         .join("") +
@@ -380,6 +384,7 @@
       route.section === "planner" &&
         (route.page === "new" || (current && route.page === "setup")),
     );
+    if (route.section !== "planner") window.CCWorkstreamTags.setActive("");
     renderBreadcrumb();
     if (route.section === "catalog")
       window.CCApp.catalog(domain(route.domain) ? route.domain : null);
@@ -388,6 +393,8 @@
     if (route.section === "planner") {
       try {
         result = current ? E.schedule(T, current) : null;
+        window.CCWorkstreamTags.setActive(current?.id);
+        if (current) window.CCWorkstreamTags.setContext(current, result, today());
         $("#plannerContent").innerHTML = current
           ? renderProject()
           : route.page === "new"
@@ -646,12 +653,13 @@
     const horizon = Math.round(
         (Date.parse(p.targetDate) - Date.parse(p.startDate)) / 86400000,
       ),
-      scale =
+      inferredScale =
         Math.max(p.openingBeds, p.totalBeds) <= 1000
           ? 1000
           : Math.max(p.openingBeds, p.totalBeds) <= 3000
             ? 3000
-            : 10000;
+            : 10000,
+      scale = Math.max(inferredScale, [1000, 3000, 10000].includes(+p.capacityScale) ? +p.capacityScale : 1000);
     const formHTML =
       head(
         isNew ? "Plan a new hospital" : "Project setup",
@@ -1023,7 +1031,7 @@
     p.id = form.dataset.projectId;
     p.name = String(f.get("name")).trim();
     p.location = String(f.get("location")).trim();
-    ["openingBeds", "totalBeds", "departmentCount", "teams"].forEach(
+    ["openingBeds", "totalBeds", "departmentCount", "teams", "capacityScale"].forEach(
       (k) => (p[k] = +f.get(k)),
     );
     ["startDate", "targetDate", "handoverDate", "systems", "stage"].forEach(
@@ -1140,9 +1148,9 @@
             '<li><div><button class="text-button" data-task="' +
             t.id +
             '">' +
-            esc(t.name) +
+            (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
             "</button><small>" +
-            esc(ws(t.workstream).name) +
+            window.CCWorkstreamTags.html(t.workstream, current?.id) +
             " · " +
             t.duration +
             ' working days</small></div><span class="plan-tag critical">Critical</span></li>',
@@ -1158,7 +1166,7 @@
             '<li><div><button class="text-button" data-task="' +
             t.id +
             '">' +
-            esc(t.name) +
+            (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
             "</button><small>" +
             date(t.startDate) +
             '</small></div><span class="plan-tag ' +
@@ -1190,7 +1198,7 @@
             '">' +
             String(w.number).padStart(2, "0") +
             " · " +
-            esc(w.name) +
+            window.CCWorkstreamTags.html(w.id, current?.id) +
             '</a></td><td><a href="#catalog/' +
             w.domain +
             '">' +
@@ -1247,7 +1255,7 @@
           })) &&
         (!ui.criticalOnly || route.page !== "timeline" || t.critical) &&
         (!ui.query ||
-          [t.name, t.owner, t.deliverable, t.id]
+          [t.name, t.code, t.owner, t.deliverable, t.id]
             .join(" ")
             .toLowerCase()
             .includes(ui.query.toLowerCase())),
@@ -1261,6 +1269,7 @@
         button("Export activities", "export-csv"),
       ) +
       filtersHTML() +
+      window.CCWorkstreamTags.legend +
       '<div id="workstreamResults">' +
       workstreamResultsHTML() +
       "</div>"
@@ -1288,7 +1297,7 @@
             "><summary><div><strong>" +
             String(w.number).padStart(2, "0") +
             " · " +
-            esc(w.name) +
+            window.CCWorkstreamTags.html(w.id, current?.id) +
             '</strong><a class="domain-link" href="#catalog/' +
             w.domain +
             '">' +
@@ -1311,7 +1320,7 @@
                       '<li><div><button class="text-button" data-task="' +
                       t.id +
                       '">' +
-                      esc(t.name) +
+                      (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
                       "</button><small>" +
                       esc(t.deliverable) +
                       " · " +
@@ -1347,6 +1356,7 @@
           button("Export MS Project XML", "export-xml"),
       ) +
       notice() +
+      window.CCWorkstreamTags.legend +
       filtersHTML(true) +
       '<div class="gantt-legend"><span><i></i>Activity</span><span><i class="critical-key"></i>Critical path</span><span>◆ Milestone</span><span><i class="target-key"></i>Requested opening</span><span><i class="forecast-key"></i>Forecast opening</span></div><div id="timelineResults">' +
       ganttHTML() +
@@ -1387,14 +1397,14 @@
         "%;width:" +
         width +
         '%" aria-label="' +
-        esc(t.name) +
+        esc((t.code ? t.code + " · " : "") + t.name) +
         ": " +
         date(t.startDate) +
         " to " +
         date(t.finishDate) +
         (t.critical && !group ? ", critical path" : "") +
         '" title="' +
-        esc(t.name) +
+        esc((t.code ? t.code + " · " : "") + t.name) +
         " · " +
         date(t.startDate) +
         " – " +
@@ -1412,6 +1422,7 @@
       const group = {
         ...ts[0],
         name: w.name,
+        code: w.code,
         startDate: starts[0],
         finishDate: finishes.at(-1),
         milestone: false,
@@ -1426,7 +1437,7 @@
         " " +
         String(w.number).padStart(2, "0") +
         " " +
-        esc(w.name) +
+        window.CCWorkstreamTags.html(w.id, current?.id) +
         "</button><small>" +
         ts.length +
         '</small></div><div class="gantt-track">' +
@@ -1440,7 +1451,7 @@
               '<div class="gantt-row"><div class="gantt-label"><button class="text-button" data-task="' +
               t.id +
               '">' +
-              esc(t.name) +
+              (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
               '</button></div><div class="gantt-track">' +
               lines() +
               bar(t) +
@@ -1481,7 +1492,7 @@
             '<section class="planner-card gate-card ' +
             (t.verified ? "is-verified" : "") +
             '"><div class="gate-head"><h3>' +
-            esc(t.name) +
+            (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
             '</h3><span class="plan-tag ' +
             (t.verified ? "verified" : "") +
             '">' +
@@ -1509,7 +1520,7 @@
                   p.id +
                   '">' +
                   (p.verified ? "✓ " : "") +
-                  esc(p.name) +
+                  (window.CCWorkstreamTags.activity(p.id, current?.id) || esc(p.name)) +
                   "</button>",
               )
               .join("") +
@@ -1566,7 +1577,7 @@
             '">' +
             String(w.number).padStart(2, "0") +
             " · " +
-            esc(w.name) +
+            window.CCWorkstreamTags.html(w.id, current?.id) +
             "</a></td><td>" +
             productButton(p) +
             (p.proposed ? "<br><small>Proposed scope</small>" : "") +
@@ -1670,7 +1681,7 @@
               .map((id) => {
                 const t = result.tasks.find((t) => t.id === id);
                 return (
-                  '<button data-task="' + id + '">' + esc(t.name) + "</button>"
+                  '<button data-task="' + id + '">' + (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) + "</button>"
                 );
               })
               .join("") +
@@ -1757,17 +1768,18 @@
     const t = result?.tasks.find((t) => t.id === id);
     if (!t) return;
     activeTask = id;
+    dialog.dataset.activity = id;
     const successors = result.tasks.filter((x) =>
         x.dependencies.some((d) => d.id === id),
       ),
       state = t.state;
     dialog.innerHTML =
       '<header><div class="dialog-top"><small>' +
-      t.id +
+      window.CCWorkstreamTags.activityCode(t.id, current?.id) +
       " · " +
-      esc(ws(t.workstream).name) +
+      window.CCWorkstreamTags.html(t.workstream, current?.id) +
       '</small><button class="dialog-close" type="button" data-plan-action="close-dialog" aria-label="Close activity">×</button></div><h2 id="activityTitle">' +
-      esc(t.name) +
+      (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
       '</h2></header><div class="dialog-scroll"><div class="detail-facts"><div><dt>Primary domain</dt><dd>' +
       esc(domain(t.domain).name) +
       "</dd></div><div><dt>Planned window</dt><dd>" +
@@ -1790,7 +1802,7 @@
                 d.id +
                 '">' +
                 (p.verified ? "✓ " : "") +
-                esc(p.name) +
+                (window.CCWorkstreamTags.activity(p.id, current?.id) || esc(p.name)) +
                 " (" +
                 d.type +
                 (d.lag ? ", +" + d.lag + " wd" : "") +
@@ -1804,7 +1816,7 @@
         ? successors
             .map(
               (p) =>
-                '<button data-task="' + p.id + '">' + esc(p.name) + "</button>",
+                '<button data-task="' + p.id + '">' + (window.CCWorkstreamTags.activity(p.id, current?.id) || esc(p.name)) + "</button>",
             )
             .join("")
         : "<p>No direct successors.</p>") +
@@ -1913,7 +1925,8 @@
   function exportCSV(onlyGates = false) {
     const rows = [
       [
-        "Activity ID",
+        "Activity code",
+        "Internal ID",
         "Source ID",
         "Workstream",
         "Domain",
@@ -1935,6 +1948,7 @@
       .filter((t) => !onlyGates || t.gate)
       .forEach((t) =>
         rows.push([
+          t.code,
           t.id,
           t.sourceId,
           ws(t.workstream).name,
@@ -1946,7 +1960,7 @@
           t.finishDate,
           t.duration,
           t.dependencies
-            .map((d) => d.id + " " + d.type + " +" + d.lag + "wd")
+            .map((d) => (result.tasks.find(t => t.id === d.id)?.code || d.id) + " " + d.type + " +" + d.lag + "wd")
             .join("; "),
           t.critical ? "Yes" : "No",
           t.slack ?? "",
@@ -2109,7 +2123,7 @@
         setupCursor = "name";
         renderSetupNavigation(form);
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(form));
-        hospitalModel?.update(projectFromForm(form));
+        hospitalModel?.update(projectFromForm(form), {name: "reset"});
         $(".setup-main").scrollTop = 0;
         break;
       }
@@ -2427,7 +2441,7 @@
         if (Number.isFinite(n)) f.elements.targetDays.value = Math.round(n);
       }
       syncSetupControls(f, ev.target);
-      hospitalModel?.update(projectFromForm(f));
+      hospitalModel?.update(projectFromForm(f), {name: ev.target.name});
       renderSetupNavigation(f);
       if ($("#setupPreview"))
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(f));

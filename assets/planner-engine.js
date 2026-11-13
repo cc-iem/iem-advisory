@@ -180,6 +180,8 @@
         library.push(
           Object.assign({}, capacityBase, {
             id: "CAP-" + String(c).padStart(2, "0"),
+            code: (template.workstreams.find(function (w) { return w.id === capacityBase.workstream; }).code || "ACT") + "-" +
+              String(template.tasks.filter(function (t) { return t.workstream === capacityBase.workstream; }).length + c).padStart(2, "0"),
             name:
               "Capacity review: " +
               Math.round(

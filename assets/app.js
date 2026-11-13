@@ -80,12 +80,12 @@
     var links=p.workstreamLinks || [];
     return '<section class="dsec solution-connections"><h3>Why this solution matters</h3><p>'+esc(p.purchaseReason || p.outcomes[0])+'</p>'+
       (p.proposed?'<p class="scope-note">Proposed advisory scope. Specialist capability, resourcing, responsibilities and acceptance criteria are confirmed at proposal.</p>':'')+
-      '<h3>Workstream connections</h3><p class="scope-note">A connection identifies potential advisory support. The hospital and its appointed providers retain delivery and approval responsibilities.</p><ul>'+links.map(function(w){return '<li><small>'+esc(w.role)+'</small><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+String(w.number).padStart(2,'0')+' · '+esc(w.name)+'</button>'+(w.activities.length?'<ul>'+w.activities.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul>':'<p class="scope-note">'+esc(p.conditionLabel || 'Relevant after opening; confirm the specific scope and operational evidence required.')+'</p>')+'</li>';}).join('')+'</ul></section>';
+      '<h3>Workstream connections</h3><p class="scope-note">A connection identifies potential advisory support. The hospital and its appointed providers retain delivery and approval responsibilities.</p><ul>'+links.map(function(w){return '<li data-workstream-id="'+w.id+'"><small>'+esc(w.role)+'</small><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+String(w.number).padStart(2,'0')+' · '+window.CCWorkstreamTags.html(w.id)+'</button>'+(w.activities.length?'<ul>'+w.activities.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul>':'<p class="scope-note">'+esc(p.conditionLabel || 'Relevant after opening; confirm the specific scope and operational evidence required.')+'</p>')+'</li>';}).join('')+'</ul></section>';
   }
   function domainWorkstreamsHTML(d) {
     var T=window.CC_GREENFIELD;
     if(!T) return '';
-    return '<div class="domain-workstreams"><h3>Hospital workstreams in this domain</h3><ul>'+T.workstreams.filter(function(w){return w.domain===d.id;}).map(function(w){var p=BY_ID[w.leadProduct];return '<li><span>'+String(w.number).padStart(2,'0')+' · '+esc(w.name)+'</span><button type="button" class="text-button" data-action="detail" data-id="'+p.id+'">Primary advisory home: '+esc(p.code+' · '+p.title)+'</button></li>';}).join('')+'</ul><p>Primary and supporting scopes are mapped to the hospital plan. Proposed scopes require specialist confirmation. <a href="reports/advisory-workstream-map.html" target="_blank" rel="noopener">View the complete mapping</a>.</p></div>';
+    return '<div class="domain-workstreams"><h3>Hospital workstreams in this domain</h3><ul>'+T.workstreams.filter(function(w){return w.domain===d.id;}).map(function(w){var p=BY_ID[w.leadProduct];return '<li><span>'+String(w.number).padStart(2,'0')+' · '+window.CCWorkstreamTags.html(w.id)+'</span><button type="button" class="text-button" data-action="detail" data-id="'+p.id+'">Primary advisory home: '+esc(p.code+' · '+p.title)+'</button></li>';}).join('')+'</ul><p>Primary and supporting scopes are mapped to the hospital plan. Proposed scopes require specialist confirmation. <a href="reports/advisory-workstream-map.html" target="_blank" rel="noopener">View the complete mapping</a>.</p></div>';
   }
 
   var ICON = {
@@ -312,7 +312,7 @@
       b.tabIndex = -1;
       b.setAttribute("data-action", "detail");
       b.setAttribute("data-id", p.id);
-      b.style.backgroundColor = DOMAIN_COLOR[p.domain] || DOMAIN_COLOR.finance;
+      b.style.background = window.CCDomainTags.background(p.fit);
       // Stable number within the complete primary-domain catalog.
       var num = p.number;
       b.setAttribute("data-num", num);
@@ -372,7 +372,7 @@
       field.appendChild(labelProbe);
     }
     labelProbe.style.width = width + "px";
-    labelProbe.textContent = text;
+    labelProbe.innerHTML = window.CCDomainTags.domain((DOMAINS.find(function(d){return d.name===text;})||{}).id) || esc(text);
     return Math.ceil(labelProbe.scrollHeight);
   }
 
@@ -474,7 +474,8 @@
       t.classList.toggle("is-alt", isAlt);
       t.classList.toggle("has-text", L.text);
       t.style.setProperty("--accent", DOMAIN_COLOR[p.domain]);
-      t.style.backgroundColor = isTop ? "var(--tile-top, #ffffff)" : L.text ? "var(--tile-alt, #235692)" : DOMAIN_COLOR[p.domain];
+      t.style.background = window.CCDomainTags.background(p.fit);
+      t.style.color = "#fff";
       $(".tile-label", t).textContent = isTop ? "Best match" : isAlt ? "Also consider" : "";
       t.tabIndex = 0;
       t.removeAttribute("aria-hidden");
@@ -486,7 +487,7 @@
       var spec = L.labels.filter(function (x) { return x.id === d.id; })[0];
       if (!spec) { l.classList.add("is-out"); return; }
       if (l.classList.contains("is-out")) { l.style.transition = "none"; }
-      l.textContent = spec.text;
+      l.innerHTML = window.CCDomainTags.domain(d.id);
       l.style.left = spec.x + "px";
       l.style.top = spec.y + "px";
       l.style.width = spec.w + "px";
@@ -752,6 +753,7 @@
     if (!p) return;
     var d = DOMAIN_BY_ID[p.domain];
     var panel = $("#detailPanel");
+    panel.dataset.domainProduct = p.id;
     var res = "";
     var clientLabel = p.proposed ? "Client team and inputs" : p.assumptions.length ? "Your team" : "Your team and inputs";
     if (p.resourcesCC.length || p.resourcesClient.length) {

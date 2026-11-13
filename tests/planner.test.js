@@ -14,6 +14,7 @@ for (const f of [
   "data/domains.js",
   "data/greenfield-template.js",
   "data/workstream-solutions.js",
+  "data/workstream-codes.js",
 ])
   vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), context);
 const T = JSON.parse(JSON.stringify(context.window.CC_GREENFIELD));
@@ -469,4 +470,14 @@ test("MS Project XML preserves 18 workstream summaries, activities, calendars an
   assert.match(xml, /<ConstraintDate>2028-05-15T08:00:00/);
   const quoted = X.xml(T, project({ name: "A & B <Hospital>" }), r, domains);
   assert.match(quoted, /A &amp; B &lt;Hospital&gt;/);
+});
+
+test("display codes remain unique after filtering and adding dynamic capacity reviews", () => {
+  const p=project({totalBeds:1000}),r=E.schedule(T,p);
+  assert.ok(r.tasks.every(t=>t.code));
+  assert.equal(new Set(r.tasks.map(t=>t.code)).size,r.tasks.length);
+  for(const t of r.tasks.filter(t=>!t.id.startsWith('CAP-')))assert.equal(t.code,T.tasks.find(x=>x.id===t.id).code);
+  const xml=X.xml(T,p,r,domains);
+  assert.match(xml, /<Name>PMO-01 · Workstream leads/);
+  assert.ok(r.tasks.filter(t=>t.id.startsWith('CAP-')).every(t=>xml.includes(t.code+' · Capacity review')));
 });

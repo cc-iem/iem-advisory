@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Advisory solutions and hospital workstreams</title>
+    <link rel="stylesheet" href="../assets/advisory-tags.css?v=20261113-1" />
     <style>
       :root {
         font-family: Arial, sans-serif;
@@ -275,6 +276,9 @@
     <script src="../data/domains.js?v=20261113-19"></script>
     <script src="../data/greenfield-template.js?v=20261113-2"></script>
     <script src="../data/workstream-solutions.js?v=2"></script>
+    <script src="../data/workstream-codes.js?v=20261113-3"></script>
+    <script src="../assets/workstream-tags.js?v=20261113-2"></script>
+    <script src="../assets/domain-tags.js?v=20261113-3"></script>
     <script>
       (function () {
         "use strict";
@@ -315,7 +319,7 @@
               '"><td>' +
               String(w.number).padStart(2, "0") +
               " · " +
-              e(w.name) +
+              window.CCWorkstreamTags.html(w.id) +
               "<small>Accountable hospital role: " +
               e(w.owner) +
               "</small></td><td>" +
@@ -382,14 +386,14 @@
                         '">' +
                         String(w.number).padStart(2, "0") +
                         " · " +
-                        e(w.name) +
+                        window.CCWorkstreamTags.html(w.id) +
                         "</a> — " +
                         e(w.role) +
                         "</p>" +
                         (w.activities.length
                           ? "<ul>" +
                             w.activities
-                              .map((a) => "<li>" + e(a) + "</li>")
+                              .map((a) => '<li data-workstream-id="' + w.id + '">' + e(a) + "</li>")
                               .join("") +
                             "</ul>"
                           : "<p>" +

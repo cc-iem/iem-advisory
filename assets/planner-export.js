@@ -63,7 +63,7 @@
           "</UID><ID>" +
           ++row +
           "</ID><Name>" +
-          esc(w.name) +
+          esc((w.code ? w.code + " · " : "") + w.name) +
           "</Name><OutlineLevel>1</OutlineLevel><Summary>1</Summary><Start>" +
           start +
           "T08:00:00</Start><Finish>" +
@@ -82,7 +82,7 @@
               "</UID><ID>" +
               ++row +
               "</ID><Name>" +
-              esc(t.name) +
+              esc((t.code ? t.code + " · " : "") + t.name) +
               "</Name><OutlineLevel>2</OutlineLevel><Summary>0</Summary><Start>" +
               t.startDate +
               "T08:00:00</Start><Finish>" +

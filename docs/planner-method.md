@@ -83,3 +83,47 @@ The old fixed twelve-product bundle is replaced in the UI by project-specific ad
 `npm test` checks migration completeness, workstream coverage, sanitization, valid dependencies, optional modules, calendar behavior, capacity rules, workload scaling, critical-path propagation, completion evidence and readiness gating. Browser evidence is stored separately under `verification/`.
 
 `SOURCE.json` remains the unmodified original public-deployment snapshot. `npm run verify:source` intentionally reports changed application files after this implementation; it is a provenance comparison, not the revised application's acceptance test.
+
+
+## Display codes and status tags
+
+`data/workstream-codes.js` assigns the following stable display codes. A workstream that is its domain's sole primary workstream reuses the domain code. Other workstreams use distinct abbreviations. The original `WS-*` and `GF-*` keys remain the storage, import and dependency identifiers.
+
+| Workstream | Code | Primary domain |
+| --- | --- | --- |
+| Governance & PMO | PMO | Governance & Activation |
+| Strategy & Business Planning | BSP | Strategy |
+| Finance | FIN | Finance |
+| Regulatory & Licensing | REG | Regulatory |
+| Building & Construction | BLD | Facilities & Equipment |
+| Equipment & Biomedical Engineering | EQP | Facilities & Equipment |
+| IT & Digital | DIG | Digital |
+| Clinical Operations & Service Lines | COPS | Clinical Operations |
+| Medical Staff | MED | Human Resource |
+| Nursing | NURS | Clinical Operations |
+| Clinical Support Services | CSUP | Clinical Operations |
+| Safety, Quality & Patient Experience | SQPE | SQPE |
+| Human Resources | HRES | Human Resource |
+| Education & Training | EDU | Human Resource |
+| Supply Chain | SCM | Support Services |
+| Support Services & Facilities Operations | SUPP | Support Services |
+| Marketing & Patient Access | MKT | Strategy |
+| Activation & Operational Readiness | ACT | Governance & Activation |
+
+Every reference activity is numbered sequentially in its parent workstream's original template order, such as `PMO-01`. Codes do not change when optional activities are filtered out. Dynamic capacity-review gates continue after the final reference activity in their parent workstream. Activity titles use sentence capitalization while preserving acronyms such as PMO, ICU and EHR; editorial fixes remove duplicate words and errors inherited from generalization. CSV exports include display codes and internal IDs, and MS Project XML names include display codes while retaining predecessor relationships.
+
+Domain and solution tags use the same rectangular style. Blue means existing-hospital eligibility; green means new-hospital eligibility; a diagonal blue/green split means both. A generic domain tag aggregates eligibility across its catalog offerings; a domain mentioned within a solution profile uses that solution's eligibility. Native selectors retain code prefixes and color the selected value. The same rendering is applied to navigation, tables, prose, Finder, project pages and the standalone mapping report.
+
+Workstream and activity tags use a separate status palette, with text descriptions in tooltips and accessible labels:
+
+- **Yellow:** on track/not started, in progress, or verified complete. Generic templates without a project are explicitly not assessed, and omitted workstreams are marked not in scope.
+- **Orange:** an unfinished activity has negative target float, or its scheduled start is past and it has not been marked in progress.
+- **Red:** an unfinished activity is past its scheduled finish, or an explicit blocked status is present.
+
+A workstream takes the most severe status of its unfinished activities. Future prerequisites alone do not make a workstream blocked. Verified completion still requires the existing evidence checks. Status is calculated separately for each project and uses the current local date.
+
+## Live 3D concept and focused labels
+
+The model uses schematic massing, not architectural sizing standards. Total beds change the tower count and dimensions. Opening beds change the active inpatient volume and the clinical wing sizes. Department counts add named-but-unspecified department modules, while service selections add or remove their specific wings. Hospital scale changes the spread and site/expansion reserve and is saved with the project. Partial camera fitting preserves visible size differences rather than normalizing every hospital to the same apparent size.
+
+Every rendered segment belongs to a named element. Labels start hidden. A form edit focuses its corresponding element, highlights its outline and shows one anchored label; a newly added service or department receives focus. The next edit replaces that label. Removing an element focuses the remaining clinical podium and explains the removal. Clicking the model or using the element inspector can select an existing element or hide labels again. Date, stage, digital foundation, team and hiring settings update explicit planning markers, and name/location edits update their labels. These overlays represent planning context, not added clinical departments.
