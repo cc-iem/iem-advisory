@@ -2147,3 +2147,54 @@ main#top {
 .model-inspector select { display: block; width: 100%; margin-top: 6px; padding: 8px; color: #e2f3ff; background: #123b5b; border: 1px solid #ffffff35; border-radius: 5px; font-size: 11px; }
 @media (prefers-reduced-motion: reduce) { .model-focus.is-updated { animation: none; } }
 @media (max-width: 760px) { .model-inspector { grid-column: 1 / -1; margin: 0; } .model-inspector label { font-size: 9px; } .model-focus { width: 150px; } }
+
+/* Workstreams are project child pages, with a compact directory at their parent. */
+.ws-overview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.ws-overview-card { display: flex; flex-direction: column; padding: 22px; border: 1px solid #dce5ee; background: #fff; color: #223d58; text-decoration: none; min-width: 0; transition: border-color .15s, box-shadow .15s; }
+.ws-overview-card:hover { border-color: #4d92bd; box-shadow: 0 5px 18px #173e6510; }
+.ws-overview-card:focus-visible { outline: 2px solid #0078ad; outline-offset: 3px; }
+.ws-overview-card h2 { font-size: 16px; line-height: 1.6; font-weight: 500; margin: 0 0 12px; }
+.ws-card-domain { font-size: 11px; margin-bottom: 12px; }
+.ws-overview-card > .muted { font-size: 12px; line-height: 1.6; margin-bottom: 20px; flex: 1; }
+.ws-card-progress { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; margin-bottom: 8px; }
+.ws-overview-card .progress-track { height: 4px; margin-bottom: 16px; }
+.ws-open-link { font-size: 12px; font-weight: 500; color: #006a9b; }
+.ws-page-summary { margin-bottom: 20px; }
+.ws-page-summary > p { font-size: 13px; margin: 8px 0; }
+.ws-page-summary .ws-meta { align-items: center; }
+.ws-page-activities { margin-top: 22px; }
+.ws-page-activities > h2 { font-size: 19px; font-weight: 500; margin-bottom: 16px; }
+.ws-page-neighbors { display: flex; justify-content: space-between; gap: 16px; margin-top: 24px; }
+.ws-page-neighbors a { max-width: 48%; white-space: normal; text-align: left; }
+@media (max-width: 1250px) { .ws-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .ws-overview-grid { grid-template-columns: 1fr; } .ws-page-neighbors { flex-direction: column; } .ws-page-neighbors a { max-width: 100%; } }
+
+/* Per-solution workstream connections replace the domain-level callout. */
+.catalog-solutions { container-type: inline-size; }
+.catalog-solutions .row, .catalog-column-heads { display: grid; grid-template-columns: 68px minmax(0, 1.6fr) minmax(165px, 1fr) minmax(145px, .8fr) 145px; gap: 18px; align-items: start; }
+.catalog-column-heads { color: #5a7084; font-size: 11px; font-weight: 500; padding: 13px 0; border-top: 1px solid #dce5ee; }
+.catalog-solutions .row-actions { grid-column: auto; }
+.catalog-solutions .row > * { min-width: 0; }
+.row-workstreams { font-size: 12px; }
+.row-workstreams > ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.row-workstreams .text-button { font-size: 12px; text-align: left; line-height: 1.7; }
+.row-workstreams small { display: block; margin-top: 3px; color: #60748a; font-size: 10px; }
+.row-workstreams-label { display: none; }
+@container (max-width: 1040px) {
+  .catalog-solutions .row, .catalog-column-heads { grid-template-columns: 65px minmax(0, 1.4fr) minmax(150px, 1fr) minmax(140px, .8fr); gap: 16px; }
+  .catalog-solutions .row-actions { grid-column: 2 / -1; flex-direction: row; }
+  .catalog-column-heads > :last-child { display: none; }
+}
+@container (max-width: 760px) {
+  .catalog-column-heads { display: none; }
+  .catalog-solutions .row { grid-template-columns: 65px minmax(0, 1fr); }
+  .catalog-solutions .row-workstreams, .catalog-solutions .row-meta, .catalog-solutions .row-actions { grid-column: 2; }
+  .row-workstreams-label { display: block; margin: 0 0 10px; color: #60748a; font-size: 11px; font-weight: 500; }
+  .row-workstreams > ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (max-width: 480px) {
+  .catalog-solutions .row { grid-template-columns: minmax(0, 1fr); }
+  .catalog-solutions .row-workstreams, .catalog-solutions .row-meta, .catalog-solutions .row-actions { grid-column: 1; }
+  .row-workstreams > ul { grid-template-columns: 1fr; }
+  .catalog-solutions .row-actions { flex-wrap: wrap; }
+}

@@ -82,10 +82,12 @@
       (p.proposed?'<p class="scope-note">Proposed advisory scope. Specialist capability, resourcing, responsibilities and acceptance criteria are confirmed at proposal.</p>':'')+
       '<h3>Workstream connections</h3><p class="scope-note">A connection identifies potential advisory support. The hospital and its appointed providers retain delivery and approval responsibilities.</p><ul>'+links.map(function(w){return '<li data-workstream-id="'+w.id+'"><small>'+esc(w.role)+'</small><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+window.CCWorkstreamTags.html(w.id)+'</button>'+(w.activities.length?'<ul>'+w.activities.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul>':'<p class="scope-note">'+esc(p.conditionLabel || 'Relevant after opening; confirm the specific scope and operational evidence required.')+'</p>')+'</li>';}).join('')+'</ul></section>';
   }
-  function domainWorkstreamsHTML(d) {
-    var T=window.CC_GREENFIELD;
-    if(!T) return '';
-    return '<div class="domain-workstreams"><h3>Hospital workstreams in this domain</h3><ul>'+T.workstreams.filter(function(w){return w.domain===d.id;}).map(function(w){var p=BY_ID[w.leadProduct];return '<li><span>'+window.CCWorkstreamTags.html(w.id)+'</span><button type="button" class="text-button" data-action="detail" data-id="'+p.id+'">Primary advisory home: '+esc(p.code+' · '+p.title)+'</button></li>';}).join('')+'</ul><p>Primary and supporting scopes are mapped to the hospital plan. Proposed scopes require specialist confirmation. <a href="reports/advisory-workstream-map.html" target="_blank" rel="noopener">View the complete mapping</a>.</p></div>';
+  function solutionWorkstreamsHTML(p) {
+    var links = Array.from(new Map((p.workstreamLinks || []).map(function(w) { return [w.id, w]; })).values());
+    return '<div class="row-workstreams" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
+      (links.length ? '<ul>' + links.map(function(w) {
+        return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button><small>' + esc(w.role) + '</small></li>';
+      }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
   }
 
   var ICON = {
@@ -628,7 +630,6 @@
         '<span class="domain-count">' + countText + "</span>" +
         '<span class="chev" aria-hidden="true">' + ICON.chev + "</span></button>" +
         '<div class="domain-body" id="db-' + d.id + '"' + (open ? "" : " hidden") + ">";
-      html += domainWorkstreamsHTML(d);
       if (d.packet && list.length) {
         html += '<div class="packet-bar"><div><p class="packet-title">' + esc(d.packet.title) + '</p><p class="packet-text">' + esc(d.packet.text) + "</p></div>" +
           packetLinkHTML(d, true, "Download packet (PDF)") + "</div>";
@@ -636,16 +637,19 @@
       if (!list.length) {
         html += '<div class="empty-domain"><p>Dedicated specialist scope to be agreed. Explore the related hospital workstreams and cross-domain support in Hospital Planner.</p><a class="btn btn-secondary btn-small" href="#planner">Explore Hospital Planner</a></div>';
       }
+      if (list.length) html += '<div class="catalog-solutions" role="table" aria-label="' + esc(d.name) + ' solutions"><div class="catalog-column-heads" role="row"><span role="columnheader">Code</span><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Hospital fit & duration</span><span role="columnheader">Actions</span></div>';
       list.forEach(function (p) {
-        html += '<div class="row">' +
-          '<span class="ref">' + esc(p.code) + "</span>" +
-          '<div><button type="button" class="row-title" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
+        html += '<div class="row" role="row" data-domain-product="' + p.id + '">' +
+          '<span class="ref" role="cell">' + esc(p.code) + "</span>" +
+          '<div role="cell"><button type="button" class="row-title" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
           '<p class="row-sub">' + rich(p.subtitle) + "</p></div>" +
-          '<div class="row-meta">' + markersHTML(p) + "<span>Typical duration: " + rich(p.durationShort) + "</span></div>" +
-          '<div class="row-actions">' + cartButtonHTML(p.id, "btn-small") +
+          solutionWorkstreamsHTML(p) +
+          '<div class="row-meta" role="cell">' + markersHTML(p) + "<span>Typical duration: " + rich(p.durationShort) + "</span></div>" +
+          '<div class="row-actions" role="cell">' + cartButtonHTML(p.id, "btn-small") +
           '<button type="button" class="btn btn-quiet btn-small" data-action="detail" data-id="' + p.id + '" aria-label="View details: ' + esc(p.title) + '">View details</button></div>' +
           "</div>";
       });
+      if (list.length) html += "</div>";
       html += "</div></section>";
     });
     if (!total && state.query) {

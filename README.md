@@ -12,9 +12,13 @@ Open the Hospital Planner from the left navigation and create a project. Enter o
 
 **Example Hospital is included under My Projects by default**, including in a fresh browser. It matches the illustrated 180-bed opening, 500-bed eventual capacity, 12 departments and eight service families. Its 18 MS Project-derived workstreams generate 346 applicable activities, with two saved example scenarios. Existing examples and user edits are preserved; reloads do not create duplicates. You can archive or customize the example.
 
+The Workstreams page is a directory of 18 dedicated child pages, one per workstream. Each child has its own activity list, advisory connections, search, scoped CSV export, clickable breadcrumb and previous/next navigation. Existing `?ws=WS-*` links open the corresponding child page.
+
 Explore the Gantt, change duration or earliest-start assumptions, inspect dependencies and critical activities, record readiness evidence, select advisory support, save scenarios and export backups or schedules. The requested opening date and dependency forecast remain distinct.
 
 Projects are saved in the current browser. Export JSON backups for portability; there is no shared cloud project storage. Reference durations, workload coefficients, local requirements and resourcing require specialist confirmation. See [the method and limitations](docs/planner-method.md).
+
+Every dashboard page uses the Guided Finder blue canvas, with a dark navy left navigation and top bar and a white Package button. Solution catalog rows include a Workstreams column linking to the dedicated workstream pages; the old domain-level workstream callout is removed.
 
 My Projects and New Project use the full blue workspace style. Hospital setup starts with prefilled dates, name, capacity and service choices; quantities use sliders with common-value presets. Radio cards show the selected default for stage, planning scale, digital foundation, teams and international hiring. A confirmed building-handover date is optional. Capacity and service-count limits keep the form consistent, and the live preview recalculates as choices change.
 

@@ -58,7 +58,7 @@ A backward pass over ancestors of first patient computes float and critical acti
 
 Verified completion requires a named accountable owner, completion evidence and an actual finish date. Gate completion additionally requires every direct prerequisite to be verified. The UI rejects future actual finish dates. Recording purchases or selecting advisory support does not complete activities.
 
-Each activity can be inspected from the workstream list, Gantt or readiness view. Its panel shows predecessors, successors, deliverables, reference role, advisory connections and provenance. Users can override duration and earliest start; dependent dates recalculate.
+Each of the 18 workstreams has a dedicated child page under Workstreams, reached through the directory, left navigation, catalog workstream column or project tables. Each page contains only its own activities and advisory connections, with separate activity search and a CSV export scoped to that workstream. Workstream URLs use their display code; legacy query links remain compatible. Each activity can be inspected from its workstream page, Gantt or readiness view. Its panel shows predecessors, successors, deliverables, reference role, advisory connections and provenance. Users can override duration and earliest start; dependent dates recalculate.
 
 ## Projects, scenarios and exports
 
@@ -72,7 +72,7 @@ Exports include a JSON project backup, spreadsheet-compatible CSV, MS Project-co
 
 All 42 existing product IDs and brochure files remain. The ten domains are Strategy, Governance & Activation, Finance, Regulatory, Facilities & Equipment, Digital, Clinical Operations, Human Resource, SQPE, and Support Services.
 
-The catalog now includes 21 additional proposed scopes, for 63 total solutions. Facilities & Equipment and Support Services have dedicated proposed offerings. Each proposed profile specifies deliverables, purchase rationale, client inputs and delivery boundaries; no brochure or confirmed delivery capability is implied. Every workstream has a primary advisory home, with supporting, conditional and post-opening connections kept distinct. Domain pages and profiles expose these relationships and representative activity evidence.
+The catalog now includes 21 additional proposed scopes, for 63 total solutions. Facilities & Equipment and Support Services have dedicated proposed offerings. Each proposed profile specifies deliverables, purchase rationale, client inputs and delivery boundaries; no brochure or confirmed delivery capability is implied. Every workstream has a primary advisory home, with supporting, conditional and post-opening connections kept distinct. Domain catalog tables list every connected workstream per solution, with role labels distinguishing primary, supporting, conditional and post-opening scope. The former domain-level callout is replaced by this solution-level column. Profiles retain detailed relationships and representative activity evidence.
 
 `data/workstream-solutions.js` narrows activity-level connections by workstream and subject. A connection is advisory support, not an assignment to execute a hospital, vendor or contractor activity. Original `Owner-led` responsibility remains intact; proposed advisory support can review the relevant planning and readiness evidence. The model does not make advisers responsible for construction, clinical practice, procurement execution, licensing decisions or technical certification.
 

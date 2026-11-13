@@ -171,6 +171,10 @@
   function projectURL(page, id = current?.id) {
     return "#planner/" + encodeURIComponent(id) + "/" + page;
   }
+  function workstreamURL(id, projectId = current?.id) {
+    const w = ws(id);
+    return projectURL("workstreams", projectId) + "/" + encodeURIComponent(w?.code || id);
+  }
   function navSection(key, title, body) {
     const open = ui.expanded?.[key] !== false;
     return (
@@ -241,7 +245,7 @@
                     : key === "readiness"
                       ? "check"
                       : "page",
-                  current?.id === p.id && route.page === key,
+                  current?.id === p.id && route.page === key && !route.workstream,
                 );
                 if (key !== "workstreams") return item;
                 const expanded = ui.expanded?.["ws-" + p.id] === true;
@@ -258,10 +262,10 @@
                       T.workstreams
                         .map((w) =>
                           link(
-                            projectURL("workstreams", p.id) + "?ws=" + w.id,
+                            workstreamURL(w.id, p.id),
                             w.name,
                             "",
-                            false,
+                            current?.id === p.id && route.workstream === w.id,
                             "", w.id, p.id,
                           ),
                         )
@@ -310,6 +314,12 @@
             : parts[2] || "projects"
           : "",
       domain: parts[0] === "catalog" ? parts[1] : null,
+      workstream: parts[0] === "planner" && parts[2] === "workstreams"
+        ? (() => {
+            const key = parts[3] || new URLSearchParams(location.hash.split("?")[1] || "").get("ws");
+            return T.workstreams.find(w => w.id === key || w.code === key)?.id || key || null;
+          })()
+        : null,
     };
   }
   function renderBreadcrumb() {
@@ -328,6 +338,10 @@
           pages.find((p) => p[0] === route.page)[1],
           projectURL(route.page),
         ]);
+        if (route.workstream) {
+          const w = ws(route.workstream);
+          crumbs.push([w.name, workstreamURL(w.id), window.CCWorkstreamTags.html(w.id, current.id)]);
+        }
       } else {
         crumbs.push(
           route.page === "new"
@@ -340,7 +354,7 @@
       "<ol>" +
       crumbs
         .map(
-          ([label, href], i) =>
+          ([label, href, markup], i) =>
             '<li><a href="' +
             esc(href) +
             '" title="' +
@@ -348,7 +362,7 @@
             '"' +
             (i === crumbs.length - 1 ? ' aria-current="page"' : "") +
             ">" +
-            esc(label) +
+            (markup || esc(label)) +
             "</a></li>",
         )
         .join("") +
@@ -358,6 +372,7 @@
   function render() {
     hospitalModel?.dispose();
     hospitalModel = null;
+    const previousWorkstream = route.workstream;
     route = parseRoute();
     current = projects.find((p) => p.id === route.id) || null;
     if (route.id && !current) {
@@ -370,6 +385,21 @@
     if (current && !pages.some((p) => p[0] === route.page)) {
       location.hash = projectURL("overview");
       return;
+    }
+    if (current && route.workstream) {
+      if (!ws(route.workstream)) {
+        location.hash = projectURL("workstreams");
+        toast("That workstream is not available. Choose one from the overview.");
+        return;
+      }
+      if (location.hash !== workstreamURL(route.workstream))
+        history.replaceState(null, "", workstreamURL(route.workstream));
+      if (previousWorkstream !== route.workstream) {
+        ui.expanded = ui.expanded || {};
+        ui.expanded[current.id] = true;
+        ui.expanded["ws-" + current.id] = true;
+        saveUI();
+      }
     }
     $("#finder").hidden = route.section !== "finder";
     $("#portfolio").hidden = route.section !== "catalog";
@@ -385,7 +415,6 @@
         (route.page === "new" || (current && route.page === "setup")),
     );
     if (route.section !== "planner") window.CCWorkstreamTags.setActive("");
-    renderBreadcrumb();
     if (route.section === "catalog")
       window.CCApp.catalog(domain(route.domain) ? route.domain : null);
     if (route.section === "finder")
@@ -421,6 +450,7 @@
           '<a class="btn btn-primary" href="#planner">Back to projects</a>';
       }
     }
+    renderBreadcrumb();
     renderNav();
     $("#top").scrollTop = 0;
     if (window.innerWidth <= 760) {
@@ -428,12 +458,12 @@
       $("#navToggle").setAttribute("aria-expanded", "false");
     }
   }
-  function head(title, subtitle, actions = "", kicker = "Hospital Planner") {
+  function head(title, subtitle, actions = "", kicker = "Hospital Planner", titleHTML = "") {
     return (
       '<div class="page-head"><div><p class="page-kicker">' +
       esc(kicker) +
       '</p><h1 class="page-title">' +
-      esc(title) +
+      (titleHTML || esc(title)) +
       "</h1>" +
       (subtitle ? '<p class="page-sub">' + esc(subtitle) + "</p>" : "") +
       "</div>" +
@@ -1192,9 +1222,7 @@
           const ts = result.tasks.filter((t) => t.workstream === w.id);
           return (
             '<tr><td><a href="' +
-            projectURL("workstreams") +
-            "?ws=" +
-            w.id +
+            workstreamURL(w.id) +
             '">' +
             window.CCWorkstreamTags.html(w.id, current?.id) +
             '</a></td><td><a href="#catalog/' +
@@ -1213,6 +1241,8 @@
     );
   }
   function filtersHTML(timeline = false) {
+    if (route.page === "workstreams" && route.workstream)
+      return '<div class="planner-toolbar"><label>Find activity<input type="search" id="planSearch" placeholder="Activity code, name, deliverable or role" value="' + esc(ui.activityQueries?.[current.id + route.workstream] || "") + '"></label></div>';
     return (
       '<div class="planner-toolbar"><label>Domain<select id="planDomain"><option value="">All 10 domains</option>' +
       D.map(
@@ -1225,7 +1255,7 @@
           esc(d.name) +
           "</option>",
       ).join("") +
-      '</select></label><label>Find activity<input type="search" id="planSearch" placeholder="Name, deliverable or role" value="' +
+      '</select></label><label>' + (route.page === "workstreams" ? "Find workstream" : "Find activity") + '<input type="search" id="planSearch" placeholder="Name, deliverable or role" value="' +
       esc(ui.query || "") +
       '"></label>' +
       (timeline
@@ -1241,9 +1271,11 @@
     );
   }
   function matchingTasks() {
+    const child = route.page === "workstreams" && route.workstream;
+    const query = child ? ui.activityQueries?.[current.id + route.workstream] || "" : ui.query;
     return result.tasks.filter(
       (t) =>
-        (!ui.domain ||
+        (child || !ui.domain ||
           t.domain === ui.domain ||
           t.products.some((id) => {
             const p = C.find((x) => x.id === id);
@@ -1252,96 +1284,41 @@
             );
           })) &&
         (!ui.criticalOnly || route.page !== "timeline" || t.critical) &&
-        (!ui.query ||
-          [t.name, t.code, t.owner, t.deliverable, t.id]
+        (!query ||
+          [t.name, t.code, t.owner, t.deliverable, t.id, ws(t.workstream).name, ws(t.workstream).code]
             .join(" ")
             .toLowerCase()
-            .includes(ui.query.toLowerCase())),
+            .includes(query.toLowerCase())),
     );
   }
   function workstreamsHTML() {
-    return (
-      head(
-        "Workstreams",
-        "Explore the operational plan, its deliverables and the support each function needs.",
-        button("Export activities", "export-csv"),
-      ) +
-      filtersHTML() +
-      window.CCWorkstreamTags.legend +
-      '<div id="workstreamResults">' +
-      workstreamResultsHTML() +
-      "</div>"
-    );
+    if (route.workstream) return workstreamPageHTML(ws(route.workstream));
+    return head("Workstreams", "Choose a workstream to open its dedicated page, activities and advisory support.", button("Export all activities", "export-csv")) +
+      filtersHTML() + window.CCWorkstreamTags.legend + '<div id="workstreamResults">' + workstreamResultsHTML() + '</div>';
   }
   function workstreamResultsHTML() {
-    const visible = matchingTasks(),
-      chosen = new URLSearchParams(location.hash.split("?")[1] || "").get("ws");
-    return (
-      '<div class="ws-list">' +
-      T.workstreams
-        .filter(
-          (w) =>
-            visible.some((t) => t.workstream === w.id) ||
-            (!ui.domain && !ui.query),
-        )
-        .map((w) => {
-          const ts = visible.filter((t) => t.workstream === w.id),
-            verified = ts.filter((t) => t.verified).length;
-          return (
-            '<details class="ws-card" data-ws-details="' +
-            w.id +
-            '"' +
-            (chosen === w.id || ui.openWS?.[w.id] ? " open" : "") +
-            "><summary><div><strong>" +
-            window.CCWorkstreamTags.html(w.id, current?.id) +
-            '</strong><a class="domain-link" href="#catalog/' +
-            w.domain +
-            '">' +
-            esc(domain(w.domain).name) +
-            "</a></div><span>" +
-            ts.length +
-            " activities · " +
-            verified +
-            ' verified　⌄</span></summary><div class="ws-detail"><div class="ws-meta"><span class="muted">Accountable role: ' +
-            esc(w.owner) +
-            '</span><span class="muted">' +
-            esc(w.coverage) +
-            "</span></div>" +
-            workstreamSolutionsHTML(w) +
-            (ts.length
-              ? '<ul class="activity-list">' +
-                ts
-                  .map(
-                    (t) =>
-                      '<li><div><button class="text-button" data-task="' +
-                      t.id +
-                      '">' +
-                      (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
-                      "</button><small>" +
-                      esc(t.deliverable) +
-                      " · " +
-                      date(t.startDate) +
-                      " – " +
-                      date(t.finishDate) +
-                      '</small></div><span class="plan-tag ' +
-                      (t.verified ? "verified" : t.critical ? "critical" : "") +
-                      '">' +
-                      (t.verified
-                        ? "Verified"
-                        : t.milestone
-                          ? "Milestone"
-                          : t.duration + " wd") +
-                      "</span></li>",
-                  )
-                  .join("") +
-                "</ul>"
-              : '<p class="muted">No activities in this scope. The workstream remains available for coordination.</p>') +
-            "</div></details>"
-          );
-        })
-        .join("") +
-      "</div>"
-    );
+    if (route.workstream) return workstreamActivitiesHTML(ws(route.workstream));
+    const visible = matchingTasks();
+    const streams = T.workstreams.filter(w => visible.some(t => t.workstream === w.id) || (!ui.domain && !ui.query));
+    if (!streams.length) return '<div class="empty-state"><h3>No workstreams match</h3><p>Adjust the domain or search to see more workstreams.</p></div>';
+    return '<div class="ws-overview-grid">' + streams.map(w => {
+      const tasks = result.tasks.filter(t => t.workstream === w.id), verified = tasks.filter(t => t.verified).length;
+      return '<a class="ws-overview-card" href="' + workstreamURL(w.id) + '"><h2>' + window.CCWorkstreamTags.html(w.id, current.id) + '</h2><p class="ws-card-domain">' + window.CCDomainTags.domain(w.domain) + '</p><p class="muted">Accountable role: ' + esc(w.owner) + '</p><div class="ws-card-progress"><span>' + tasks.length + ' activities</span><span>' + verified + ' verified</span></div><div class="progress-track" aria-label="' + verified + ' of ' + tasks.length + ' activities verified"><span style="width:' + (tasks.length ? verified / tasks.length * 100 : 0) + '%"></span></div><span class="ws-open-link">Open workstream →</span></a>';
+    }).join('') + '</div>';
+  }
+  function workstreamPageHTML(w) {
+    const tasks = result.tasks.filter(t => t.workstream === w.id), verified = tasks.filter(t => t.verified).length;
+    const index = T.workstreams.findIndex(x => x.id === w.id);
+    const neighbor = (item, label) => item ? '<a class="btn btn-secondary" href="' + workstreamURL(item.id) + '">' + label + ' ' + window.CCWorkstreamTags.html(item.id, current.id) + '</a>' : '<span></span>';
+    return head(w.name, "Activities, deliverables and advisory support for this workstream.", '<a class="btn btn-secondary" href="' + projectURL("workstreams") + '">← All workstreams</a>' + button("Export workstream activities", "export-csv"), "Hospital Planner · Workstreams", window.CCWorkstreamTags.html(w.id, current.id)) +
+      '<section class="planner-card ws-page-summary"><div class="ws-meta"><span>Accountable role: ' + esc(w.owner) + '</span><a href="#catalog/' + w.domain + '">' + window.CCDomainTags.domain(w.domain) + '</a></div><p>' + tasks.length + ' activities · ' + verified + ' verified · ' + tasks.filter(t => t.critical).length + ' on the critical path</p><p class="muted">' + esc(w.coverage) + '</p></section>' +
+      workstreamSolutionsHTML(w) + '<section class="planner-card ws-page-activities" aria-label="Workstream activities"><h2>Activities & deliverables</h2>' + filtersHTML() + window.CCWorkstreamTags.legend + '<div id="workstreamResults">' + workstreamActivitiesHTML(w) + '</div></section><nav class="ws-page-neighbors" aria-label="Other workstreams">' + neighbor(T.workstreams[index - 1], '← Previous:') + neighbor(T.workstreams[index + 1], 'Next:') + '</nav>';
+  }
+  function workstreamActivitiesHTML(w) {
+    const all = result.tasks.filter(t => t.workstream === w.id);
+    const tasks = matchingTasks().filter(t => t.workstream === w.id);
+    if (!tasks.length) return '<div class="empty-state"><h3>' + (all.length ? 'No activities match' : 'No activities in this project scope') + '</h3><p>' + (all.length ? 'Try another activity code, name or role.' : 'This workstream remains available for coordination. Update the project setup to include the relevant services.') + '</p></div>';
+    return '<ul class="activity-list">' + tasks.map(t => '<li><div><button class="text-button" data-task="' + t.id + '">' + window.CCWorkstreamTags.activity(t.id, current.id) + '</button><small>' + esc(t.deliverable) + ' · ' + date(t.startDate) + ' – ' + date(t.finishDate) + '</small></div><span class="plan-tag ' + (t.verified ? 'verified' : t.critical ? 'critical' : '') + '">' + (t.verified ? 'Verified' : t.milestone ? 'Milestone' : t.duration + ' wd') + '</span></li>').join('') + '</ul>';
   }
   function timelineHTML() {
     return (
@@ -1565,9 +1542,7 @@
           const p = C.find((p) => p.id === w.leadProduct);
           return (
             '<tr><td><a href="' +
-            projectURL("workstreams") +
-            "?ws=" +
-            w.id +
+            workstreamURL(w.id) +
             '">' +
             window.CCWorkstreamTags.html(w.id, current?.id) +
             "</a></td><td>" +
@@ -1937,7 +1912,7 @@
       ],
     ];
     result.tasks
-      .filter((t) => !onlyGates || t.gate)
+      .filter((t) => (!onlyGates || t.gate) && (!route.workstream || t.workstream === route.workstream))
       .forEach((t) =>
         rows.push([
           t.code,
@@ -1967,7 +1942,7 @@
       return '"' + v.replace(/"/g, '""') + '"';
     };
     download(
-      filename() + (onlyGates ? "-readiness" : "-schedule") + ".csv",
+      filename() + (route.workstream ? "-" + ws(route.workstream).code.toLowerCase() : "") + (onlyGates ? "-readiness" : "-schedule") + ".csv",
       "\uFEFF" + rows.map((r) => r.map(safe).join(",")).join("\r\n"),
       "text/csv;charset=utf-8",
     );
@@ -2080,9 +2055,7 @@
         window.CCApp.close();
         if (p)
           location.hash =
-            projectURL("workstreams", p.id) +
-            "?ws=" +
-            action.dataset.workstream;
+            workstreamURL(action.dataset.workstream, p.id);
         break;
       }
       case "select-extra": {
@@ -2439,7 +2412,10 @@
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(f));
     }
     if (ev.target.id === "planSearch") {
-      ui.query = ev.target.value;
+      if (route.page === "workstreams" && route.workstream) {
+        ui.activityQueries = ui.activityQueries || {};
+        ui.activityQueries[current.id + route.workstream] = ev.target.value;
+      } else ui.query = ev.target.value;
       saveUI();
       if (route.page === "timeline")
         $("#timelineResults").innerHTML = ganttHTML();
@@ -2470,17 +2446,6 @@
           current.selectedProducts.length;
     }
   });
-  document.addEventListener(
-    "toggle",
-    (ev) => {
-      if (ev.target.dataset?.wsDetails) {
-        ui.openWS = ui.openWS || {};
-        ui.openWS[ev.target.dataset.wsDetails] = ev.target.open;
-        saveUI();
-      }
-    },
-    true,
-  );
   $("#navToggle").addEventListener("click", () => {
     const collapsed = document.body.classList.toggle("nav-collapsed");
     ui.collapsed = collapsed;

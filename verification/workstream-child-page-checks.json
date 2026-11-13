@@ -1,0 +1,106 @@
+{
+  "workstreamChildPages": [
+    {
+      "code": "PMO",
+      "activities": 26,
+      "isolated": true
+    },
+    {
+      "code": "BSP",
+      "activities": 13,
+      "isolated": true
+    },
+    {
+      "code": "FIN",
+      "activities": 19,
+      "isolated": true
+    },
+    {
+      "code": "REG",
+      "activities": 18,
+      "isolated": true
+    },
+    {
+      "code": "BLD",
+      "activities": 23,
+      "isolated": true
+    },
+    {
+      "code": "EQP",
+      "activities": 19,
+      "isolated": true
+    },
+    {
+      "code": "DIG",
+      "activities": 23,
+      "isolated": true
+    },
+    {
+      "code": "COPS",
+      "activities": 23,
+      "isolated": true
+    },
+    {
+      "code": "MED",
+      "activities": 9,
+      "isolated": true
+    },
+    {
+      "code": "NURS",
+      "activities": 17,
+      "isolated": true
+    },
+    {
+      "code": "CSUP",
+      "activities": 20,
+      "isolated": true
+    },
+    {
+      "code": "SQPE",
+      "activities": 20,
+      "isolated": true
+    },
+    {
+      "code": "HRES",
+      "activities": 19,
+      "isolated": true
+    },
+    {
+      "code": "EDU",
+      "activities": 16,
+      "isolated": true
+    },
+    {
+      "code": "SCM",
+      "activities": 13,
+      "isolated": true
+    },
+    {
+      "code": "SUPP",
+      "activities": 15,
+      "isolated": true
+    },
+    {
+      "code": "MKT",
+      "activities": 14,
+      "isolated": true
+    },
+    {
+      "code": "ACT",
+      "activities": 39,
+      "isolated": true
+    }
+  ],
+  "catalogSolutionRows": 63,
+  "catalogWorkstreamCells": 63,
+  "remainingDomainCallouts": 0,
+  "scopedExport": {
+    "workstream": "PMO",
+    "rows": 26
+  },
+  "mobileViewport": {
+    "width": 390,
+    "documentScrollWidth": 390
+  },
+  "legacyLinkResolvedTo": "workstreams/FIN"
+}
