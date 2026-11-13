@@ -1,0 +1,100 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "Finder fills the center pane with blue and places navigation in a second left sidebar",
+      "passed": true
+    },
+    {
+      "check": "Future progress steps are disabled before any answers",
+      "passed": true
+    },
+    {
+      "check": "Your priorities progress link returns to the question and preserves hospital and domain answers",
+      "passed": true
+    },
+    {
+      "check": "Replacing a priority updates the recommendation to FIN-02",
+      "passed": true
+    },
+    {
+      "check": "Advisory area progress link keeps only the hospital answer",
+      "passed": true
+    },
+    {
+      "check": "Your hospital progress link returns to the beginning",
+      "passed": true
+    },
+    {
+      "check": "Sidebar Back returns one question while preserving earlier answers",
+      "passed": true
+    },
+    {
+      "check": "Sidebar Start over clears answers and restores the full portfolio",
+      "passed": true
+    },
+    {
+      "check": "Blue Finder canvas covers the full center-pane height",
+      "passed": true
+    },
+    {
+      "check": "Domains without standalone products still reach the specialist-scope result",
+      "passed": true
+    },
+    {
+      "check": "Recommendation and alternatives use the current DIG product codes",
+      "passed": true
+    },
+    {
+      "check": "Portfolio in the second sidebar still opens product profiles",
+      "passed": true
+    },
+    {
+      "check": "Your answers Change control returns to the selected question",
+      "passed": true
+    },
+    {
+      "check": "Phone layout expands the consolidated Finder navigation",
+      "passed": true
+    },
+    {
+      "check": "Phone Back returns to the previous question and closes navigation",
+      "passed": true
+    },
+    {
+      "check": "New hospital route still opens Hospital Planner and restores the regular canvas",
+      "passed": true
+    }
+  ],
+  "desktopGeometry": [
+    {
+      "height": 1152,
+      "name": "top",
+      "width": 1272,
+      "x": 263,
+      "y": 69
+    },
+    {
+      "height": 1152,
+      "name": "finder",
+      "width": 1272,
+      "x": 263,
+      "y": 69
+    },
+    {
+      "height": 1152,
+      "name": "finderNav",
+      "width": 280,
+      "x": 263,
+      "y": 69
+    },
+    {
+      "height": 1152,
+      "name": "finder-grid",
+      "width": 992,
+      "x": 543,
+      "y": 69
+    }
+  ],
+  "mobileViewport": "390 × 844"
+}

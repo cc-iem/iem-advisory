@@ -1068,6 +1068,208 @@ main#top {
 .finder {
   padding: 28px;
 }
+/* Guided Finder uses a second navigation column and the full center canvas. */
+.finder-active main#top {
+  overflow: hidden;
+  background: #0f2f57;
+}
+#finder {
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  background: #0f2f57;
+}
+#finder > .wrap {
+  height: 100%;
+  padding: 0;
+}
+#finder .finder {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  padding: 0;
+  box-shadow: none;
+}
+#finder .finder-side {
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 20px;
+  border: 0;
+  border-right: 1px solid #ffffff24;
+  background: #102f53cc;
+  order: 0;
+}
+#finder .finder-grid {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  margin: 0;
+  padding: 40px;
+  overflow: auto;
+}
+#finder .finder-main {
+  min-height: 0;
+}
+.finder-nav-title {
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #c4e2f6;
+}
+#finder .finder-steps {
+  grid-template-columns: 1fr;
+  gap: 3px;
+}
+#finder .finder-steps li {
+  height: auto;
+  padding: 0;
+  border: 0;
+  font-size: 13px;
+}
+#finder .finder-steps button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #e1edf8;
+  text-align: left;
+  cursor: pointer;
+}
+#finder .finder-steps button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+#finder .finder-steps button:not(:disabled):hover,
+#finder .finder-steps .is-current button {
+  background: #ffffff14;
+  color: #fff;
+}
+.step-index {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffff40;
+  border-radius: 50%;
+  font-size: 11px;
+}
+.is-done .step-index {
+  background: #007bc2;
+  border-color: #4aa7d8;
+}
+.is-current .step-index {
+  background: #fff;
+  color: #153c66;
+  border-color: #fff;
+}
+.finder-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid #ffffff24;
+}
+.finder-controls .link-btn,
+.finder-another {
+  font-size: 13px;
+}
+.finder-controls button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.finder-another {
+  margin: -6px 0 22px;
+}
+#finder .map-count {
+  font-size: 12px;
+  min-height: 0;
+  margin-top: 6px;
+}
+#finder .field-label {
+  font-size: 11px;
+}
+#finder .field-hint,
+.answers-empty {
+  color: #b9cde1;
+  font-size: 12px;
+}
+#finder .tile.is-top .tile-title {
+  font-size: 15px;
+}
+#finder .tile-title {
+  font-size: 12px;
+}
+#finder .tile-label,
+#finder .tile-num {
+  font-size: 10px;
+}
+#finder .answers {
+  display: block;
+}
+#finder .answer-row dd {
+  font-size: 13px;
+}
+#finder .answer-row .link-btn {
+  font-size: 12px;
+}
+.finder-nav-toggle {
+  display: none;
+}
+@media (min-width: 761px) and (max-width: 1150px) {
+  #finder .finder {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+  #finder .finder-grid {
+    padding: 28px;
+  }
+  #finder .options,
+  #finder .result-cols {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  #finder .finder {
+    display: flex;
+    flex-direction: column;
+  }
+  .finder-nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: none;
+    padding: 14px 16px;
+    border: 0;
+    border-bottom: 1px solid #ffffff24;
+    background: #102f53;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #finder .finder-side {
+    flex: none;
+    max-height: 55dvh;
+    border-right: 0;
+    border-bottom: 1px solid #ffffff24;
+  }
+  #finder .finder:not(.finder-nav-open) .finder-side {
+    display: none;
+  }
+  #finder .finder-grid {
+    flex: 1;
+    height: auto;
+    padding: 24px 16px;
+  }
+}
 .toolbar {
   top: 0;
 }

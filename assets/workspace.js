@@ -366,6 +366,7 @@
     $("#finder").hidden = route.section !== "finder";
     $("#portfolio").hidden = route.section !== "catalog";
     $("#planner").hidden = route.section !== "planner";
+    document.body.classList.toggle("finder-active", route.section === "finder");
     renderBreadcrumb();
     if (route.section === "catalog")
       window.CCApp.catalog(domain(route.domain) ? route.domain : null);

@@ -18,7 +18,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="assets/styles.css" />
-    <link rel="stylesheet" href="assets/workspace.css?v=20261113-8" />
+    <link rel="stylesheet" href="assets/workspace.css?v=20261113-9" />
   </head>
   <body>
     <a class="skip-link" href="#top" data-skip-main>Skip to main content</a>
@@ -215,37 +215,115 @@
           >
             <div class="wrap">
               <div class="finder">
-                <ol class="finder-steps" id="finderSteps" aria-label="Progress">
-                  <li data-step="status">Your hospital</li>
-                  <li data-step="domain">Advisory area</li>
-                  <li data-step="needs">Your priorities</li>
-                  <li data-step="result">Recommendation</li>
-                </ol>
-
+                <button
+                  class="finder-nav-toggle"
+                  type="button"
+                  data-action="toggle-finder-nav"
+                  aria-controls="finderNav"
+                  aria-expanded="false"
+                >
+                  Finder navigation <span aria-hidden="true">⌄</span>
+                </button>
+                <aside
+                  class="finder-side"
+                  id="finderNav"
+                  aria-label="Finder navigation"
+                >
+                  <nav aria-label="Finder progress">
+                    <p class="finder-nav-title">Guided Finder</p>
+                    <ol
+                      class="finder-steps"
+                      id="finderSteps"
+                      aria-label="Progress"
+                    >
+                      <li data-step="status">
+                        <button
+                          type="button"
+                          data-action="finder-step"
+                          data-step="status"
+                        >
+                          <span class="step-index" aria-hidden="true">1</span
+                          >Your hospital
+                        </button>
+                      </li>
+                      <li data-step="domain">
+                        <button
+                          type="button"
+                          data-action="finder-step"
+                          data-step="domain"
+                        >
+                          <span class="step-index" aria-hidden="true">2</span
+                          >Advisory area
+                        </button>
+                      </li>
+                      <li data-step="needs">
+                        <button
+                          type="button"
+                          data-action="finder-step"
+                          data-step="needs"
+                        >
+                          <span class="step-index" aria-hidden="true">3</span
+                          >Your priorities
+                        </button>
+                      </li>
+                      <li data-step="result">
+                        <button
+                          type="button"
+                          data-action="finder-step"
+                          data-step="result"
+                        >
+                          <span class="step-index" aria-hidden="true">4</span
+                          >Recommendation
+                        </button>
+                      </li>
+                    </ol>
+                  </nav>
+                  <div class="finder-controls">
+                    <button
+                      type="button"
+                      class="link-btn"
+                      id="finderBack"
+                      data-action="back"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      class="link-btn"
+                      id="finderRestart"
+                      data-action="restart"
+                    >
+                      Start over
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="link-btn finder-another"
+                    id="finderAnother"
+                    data-action="another"
+                    hidden
+                  >
+                    Choose another area
+                  </button>
+                  <div class="map-head">
+                    <h2 class="map-title">The portfolio</h2>
+                    <p class="map-count" id="mapCount" aria-live="polite"></p>
+                  </div>
+                  <div
+                    class="field"
+                    id="portfolioField"
+                    role="group"
+                    aria-label="Solutions still in the running"
+                  ></div>
+                  <p class="field-hint" id="fieldHint">
+                    Hover over a box to see what it offers. Select it for the
+                    full profile.
+                  </p>
+                  <div class="tip" id="fieldTip" role="tooltip" hidden></div>
+                  <div class="answers" id="answerList"></div>
+                </aside>
                 <div class="finder-grid">
                   <div class="finder-main" id="finderMain" tabindex="-1"></div>
-
-                  <aside
-                    class="finder-side"
-                    aria-label="How your answers narrow the portfolio"
-                  >
-                    <div class="map-head">
-                      <h2 class="map-title">The portfolio</h2>
-                      <p class="map-count" id="mapCount" aria-live="polite"></p>
-                    </div>
-                    <div
-                      class="field"
-                      id="portfolioField"
-                      role="group"
-                      aria-label="Solutions still in the running"
-                    ></div>
-                    <p class="field-hint" id="fieldHint">
-                      Hover over a box to see what it offers. Select it for the
-                      full profile.
-                    </p>
-                    <div class="tip" id="fieldTip" role="tooltip" hidden></div>
-                    <div class="answers" id="answerList"></div>
-                  </aside>
                 </div>
               </div>
             </div>
@@ -396,7 +474,7 @@
     <script src="assets/planner-engine.js?v=20261113-2"></script>
     <script src="data/example-project.js?v=1"></script>
     <script src="assets/planner-export.js?v=20261113-2"></script>
-    <script src="assets/app.js?v=20261113-6"></script>
-    <script src="assets/workspace.js?v=20261113-8"></script>
+    <script src="assets/app.js?v=20261113-10"></script>
+    <script src="assets/workspace.js?v=20261113-9"></script>
   </body>
 </html>

@@ -145,14 +145,14 @@
     if (step.type === "result") renderResult(); else renderQuestion(step);
     renderMap(step);
     renderAnswers();
+    $("#finderBack").disabled = state.order.length === 0;
+    $("#finderRestart").disabled = state.order.length === 0;
+    $("#finderAnother").hidden = step.type !== "result";
     if (opts.focus) {
       var target = $(".q-title", finderMain) || $(".result-title", finderMain);
       if (target) { target.setAttribute("tabindex", "-1"); target.focus({ preventScroll: true }); }
-      var top = finderMain.getBoundingClientRect().top;
-      if (top < 0 || top > window.innerHeight * 0.7) {
-        var y = window.scrollY + $(".finder").getBoundingClientRect().top - 12;
-        window.scrollTo({ top: y, behavior: reduceMotion ? "auto" : "smooth" });
-      }
+      $(".finder-grid").scrollTop = 0;
+      if (window.innerWidth <= 760) setFinderNav(false);
     }
   }
 
@@ -162,7 +162,22 @@
       li.classList.toggle("is-done", i < idx);
       li.classList.toggle("is-current", i === idx);
       if (i === idx) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+      var button = $("button", li);
+      button.disabled = i > idx || (i === 2 && idx === 3 && !state.order[2]);
+      if (i === idx) button.setAttribute("aria-current", "step"); else button.removeAttribute("aria-current");
     });
+  }
+
+  function setFinderNav(open) {
+    $(".finder").classList.toggle("finder-nav-open", open);
+    $(".finder-nav-toggle").setAttribute("aria-expanded", String(open));
+  }
+
+  function goToFinderStep(target) {
+    var type = currentStep().type;
+    if (target === "status" && type !== "status") change("status");
+    else if (target === "domain" && (type === "question" || type === "result")) change("domain");
+    else if (target === "needs" && type === "result" && state.order[2]) change(state.order[2]);
   }
 
   function renderQuestion(step) {
@@ -189,10 +204,6 @@
         "</span></button>";
     });
     html += "</div>";
-    if (state.order.length) {
-      html += '<div class="q-nav"><button type="button" class="link-btn" data-action="back">' + ICON.back + "Back</button>" +
-        '<button type="button" class="link-btn" data-action="restart">Start over</button></div>';
-    }
     html += "</div>";
     finderMain.innerHTML = html;
   }
@@ -203,7 +214,7 @@
 
   function renderResult() {
     var rec = recommendation();
-    if (!rec) { finderMain.innerHTML = '<h2 class="q-title">Plan this workstream with us</h2><p class="q-help">This domain has a home in the hospital plan. A dedicated advisory offering needs to be scoped with the appropriate specialists.</p><a class="btn btn-light" href="#planner/new">Build a hospital plan</a><div class="q-nav"><button class="link-btn" type="button" data-action="another">Choose another area</button></div>'; return; }
+    if (!rec) { finderMain.innerHTML = '<h2 class="q-title">Plan this workstream with us</h2><p class="q-help">This domain has a home in the hospital plan. A dedicated advisory offering needs to be scoped with the appropriate specialists.</p><a class="btn btn-light" href="#planner/new">Build a hospital plan</a>'; return; }
     var p = rec.top, d = DOMAIN_BY_ID[p.domain];
     var nAnswers = state.order.length - 2;
     var shown = p.deliverables.slice(0, 4);
@@ -236,7 +247,7 @@
     if (rec.alternatives.length) {
       html += '<section class="also" aria-label="Also consider"><h3>Also consider</h3>';
       rec.alternatives.forEach(function (a) {
-        html += '<div class="also-row"><span class="ref">' + esc(a.id) + "</span><div>" +
+        html += '<div class="also-row"><span class="ref">' + esc(a.code) + "</span><div>" +
           '<button type="button" class="also-title" data-action="detail" data-id="' + a.id + '">' + esc(a.title) + "</button>" +
           "<p>" + rich(a.durationShort) + "</p></div>" +
           cartButtonHTML(a.id, "btn-small on-navy-btn") + "</div>";
@@ -249,10 +260,6 @@
         "<p>Prefer one coordinated engagement? The " + esc(pkgNew.title) + " combines two offerings from each of the six areas, from design to opening day.</p></div>" +
         '<button type="button" class="btn btn-light btn-small" data-action="go-bundle">See the package</button></div>';
     }
-    html += '<div class="result-more">' +
-      '<button type="button" class="link-btn" data-action="another">Find a solution in another area</button>' +
-      '<button type="button" class="link-btn" data-action="back">' + ICON.back + "Change my last answer</button>" +
-      '<button type="button" class="link-btn" data-action="restart">Start over</button></div>';
     html += "</div>";
     finderMain.innerHTML = html;
     // The primary add button on the result sheet uses the filled style.
@@ -356,7 +363,7 @@
 
   function fieldLayout(ids, W, isResult) {
     if (!ids.length) return { boxes:[], labels:[], height:80, text:false };
-    var stacked = window.matchMedia("(max-width: 900px)").matches;
+    var stacked = W < 320;
     var n = ids.length, gap = 6, boxes = [], i, y = 0;
     var groups = DOMAINS.map(function (d) {
       return { d: d, ids: ids.filter(function (id) { return BY_ID[id].domain === d.id; }) };
@@ -367,13 +374,13 @@
       var labelsOut = [];
       var cg = stacked ? 14 : 20;                 // space between clusters
       var cw = (W - cg) / 2;                      // cluster width
-      var ccols = stacked ? 7 : 4;                // boxes per cluster row
+      var ccols = Math.max(1, Math.min(4, Math.floor((cw + gap) / 28)));
       var bw = Math.min(stacked ? 30 : 40, (cw - gap * (ccols - 1)) / ccols);
       var rowGap = stacked ? 12 : 22;
       for (var gi = 0; gi < groups.length; gi += 2) {
         var rowH = 0;
         // room for the area names in this row: two lines, or more when a name needs it
-        var lh = stacked ? 18 : Math.max(34, labelHeight(groups[gi].d.name, cw), groups[gi + 1] ? labelHeight(groups[gi + 1].d.name, cw) : 0);
+        var lh = Math.max(18, labelHeight(groups[gi].d.name, cw), groups[gi + 1] ? labelHeight(groups[gi + 1].d.name, cw) : 0);
         [groups[gi], groups[gi + 1]].forEach(function (g, side) {
           if (!g) return;
           var x0 = side * (cw + cg);
@@ -501,8 +508,8 @@
     var th = tip.offsetHeight;
     var top = tr.top - sr.top - th - 10;
     if (tr.top - th - 10 < 8) top = tr.bottom - sr.top + 10;
-    tip.style.left = left + "px";
-    tip.style.top = top + "px";
+    tip.style.left = (left + side.scrollLeft) + "px";
+    tip.style.top = (top + side.scrollTop) + "px";
   }
 
   function hideTip() { tip.hidden = true; }
@@ -515,7 +522,7 @@
 
   function renderAnswers() {
     var box = $("#answerList");
-    if (!state.order.length) { box.innerHTML = ""; return; }
+    if (!state.order.length) { box.innerHTML = '<h3>Your answers</h3><p class="answers-empty">Your selections will appear here.</p>'; return; }
     var html = "<h3>Your answers</h3><dl>";
     state.order.forEach(function (key) {
       html += '<div class="answer-row"><dt>' + esc(questionShort(key)) + "</dt><dd>" + esc(answerLabel(key)) + "</dd>" +
@@ -1129,6 +1136,8 @@
       case "back": back(); break;
       case "change": change(el.getAttribute("data-key")); break;
       case "restart": restart(); break;
+      case "finder-step": goToFinderStep(el.getAttribute("data-step")); break;
+      case "toggle-finder-nav": setFinderNav(!$(".finder").classList.contains("finder-nav-open")); break;
       case "another": another(); break;
       case "detail": openDetail(id, el); break;
       case "add": addToCart(id); break;
