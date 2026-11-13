@@ -2,10 +2,11 @@
   "name": "iem-advisory",
   "version": "1.0.0",
   "private": true,
-  "description": "Local copy of the Cleveland Clinic Connected Advisory Solution Builder",
+  "description": "Advisory catalog and interactive greenfield Hospital Planner",
   "scripts": {
     "start": "python3 -m http.server 4173 --bind 127.0.0.1",
     "dev": "npm start",
+    "test": "node --test tests/planner.test.js",
     "verify:source": "python3 scripts/verify_source.py"
   }
 }

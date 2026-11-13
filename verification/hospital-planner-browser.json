@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-13",
+  "localURL": "http://127.0.0.1:4173/",
+  "templateVersion": "1.0.0",
+  "templateActivities": 347,
+  "workstreams": 18,
+  "domains": 10,
+  "browserChecks": [
+    {
+      "check": "Changing critical construction duration recalculates forecast",
+      "passed": true
+    },
+    {
+      "check": "Project, schedule and MS Project XML downloads",
+      "passed": true
+    },
+    {
+      "check": "Project advisory selections add existing products to the global package",
+      "passed": true
+    },
+    {
+      "check": "JSON project backup imports into a separate project",
+      "passed": true
+    },
+    {
+      "check": "Restoring a baseline creates a separate project",
+      "passed": true
+    },
+    {
+      "check": "Beds, department count, selected services and launch target update the plan",
+      "passed": true
+    },
+    {
+      "check": "Readiness completion requires evidence",
+      "passed": true
+    },
+    {
+      "check": "Gate completion blocked by unresolved prerequisites",
+      "passed": true
+    },
+    {
+      "check": "Mobile project setup fits a 390px viewport",
+      "passed": true
+    },
+    {
+      "check": "Live setup preview recalculates before saving",
+      "passed": true
+    },
+    {
+      "check": "Catalog preserves 42 offerings under ten domains",
+      "passed": true
+    },
+    {
+      "check": "Catalog search and existing product profiles still work",
+      "passed": true
+    },
+    {
+      "check": "New domains with partial coverage have an explicit scope discussion",
+      "passed": true
+    },
+    {
+      "check": "Existing-hospital finder exposes the ten migrated domains",
+      "passed": true
+    },
+    {
+      "check": "New-hospital finder opens Hospital Planner setup",
+      "passed": true
+    },
+    {
+      "check": "Mobile setup has no horizontal overflow at 320px",
+      "passed": true
+    },
+    {
+      "check": "Navigation width and project persist after reload",
+      "passed": true
+    },
+    {
+      "check": "Nested workstream navigation opens the relevant workstream",
+      "passed": true
+    },
+    {
+      "check": "No browser console errors during final workflow",
+      "passed": true
+    }
+  ],
+  "automatedPlannerTests": 21,
+  "gitSyncIntegrationTests": 6,
+  "xmlReadback": {
+    "reader": "MPXJ",
+    "summaryRows": 18,
+    "activityRows": 346,
+    "dependencyLinks": 465
+  },
+  "notes": [
+    "Reference durations and workload rules remain provisional, pending specialist review.",
+    "Source files were generalized locally; original client MPP and JSON were not added to the repository.",
+    "Screenshots use an illustrative locally saved project."
+  ]
+}

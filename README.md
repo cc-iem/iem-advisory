@@ -1,8 +1,20 @@
 # Advisory Solution Builder
 
-An exact copy of the public site at <https://ccconnected-advisory-builder.pages.dev/>, captured on November 12, 2026.
+Advisory catalog and interactive Hospital Planner, based on the public site at <https://ccconnected-advisory-builder.pages.dev/>, captured on November 12, 2026.
 
-The site serves readable HTML, CSS, and JavaScript directly. Those files are preserved unchanged, along with its catalog data, branding images, 42 solution brochures, finance packet, and package brochure. No framework, dependency installation, or build step is required.
+The original copy was verified byte for byte before enhancement. The workspace now has ten advisory domains, a persistent left navigation, and a generalized greenfield Hospital Planner. All 42 product IDs and their original brochures remain. No framework, dependency installation, or build step is required.
+
+## Hospital Planner
+
+Open the Hospital Planner from the left navigation and create a project. Enter opening beds, eventual capacity, department count, opening services, dates, delivery teams and other assumptions. The plan includes 18 workstreams and a generalized library of 347 activities derived from the supplied MS Project reference.
+
+Explore the Gantt, change duration or earliest-start assumptions, inspect dependencies and critical activities, record readiness evidence, select advisory support, save scenarios and export backups or schedules. The requested opening date and dependency forecast remain distinct.
+
+Projects are saved in the current browser. Export JSON backups for portability; there is no shared cloud project storage. Reference durations, workload coefficients, local requirements and resourcing require specialist confirmation. See [the method and limitations](docs/planner-method.md).
+
+Run automated planner and migration checks with `npm test`.
+
+The implementation passed 21 planner/migration/export tests, six Git sync integration tests, and 19 local browser checks. Browser evidence is in `verification/hospital-planner-browser.json`; screenshots include the overview, interactive timeline, and mobile setup. An exported MS Project XML file was also read back successfully with MPXJ, including its workstream summaries and dependencies.
 
 ## Run locally
 
@@ -20,13 +32,13 @@ Open <http://127.0.0.1:4173/>. If Node.js is installed, `npm start` or `npm run 
 python3 scripts/verify_source.py
 ```
 
-This compares every copied file with the SHA-256 checksum in `SOURCE.json` and with a fresh download from the original URL. It requires internet access and `curl`. A future change to the original website will be reported as a difference.
+This compares application files with the original SHA-256 checksums in `SOURCE.json` and a fresh download from the source URL. It requires internet access and `curl`. It now intentionally reports enhanced application files as differences; use `npm test` for the revised application. The original manifest is retained for provenance.
 
 Initial acceptance checks passed: all 54 files matched the live site byte for byte, and the opening screenshots were also byte-identical. Eight settled browser states matched across the original and local copy, covering the finder, recommendation, EHR search, solution profile, package, and proposal fields. Evidence is saved in `verification/browser-checks.json`, `verification/original.jpg`, and `verification/local.jpg`.
 
 ## Scope
 
-- Guided finder, catalog and search, solution details, package selection, request form, printing, and PDF links use the original implementation and data.
+- Product profiles, proposal requests and brochure links build on the original implementation. The domain taxonomy, finder questions, navigation and project-specific selections have been updated.
 - Google Fonts is loaded from the same external URLs as the original, so an internet connection is needed for that font.
 - The original configuration uses an email application for proposal requests. No request endpoint is configured.
 - The public deployment provides the complete browser application. Unpublished development scripts and repository history are not included; comments in the copied files may refer to those original tools.

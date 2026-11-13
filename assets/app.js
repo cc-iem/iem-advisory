@@ -110,7 +110,7 @@
   function domainOptions(status) {
     return DOMAINS.map(function (d) {
       var n = CATALOG.filter(function (p) { return p.domain === d.id && E.fits(p, status); }).length;
-      return { id: d.id, label: d.name, detail: d.blurb, meta: plural(n, "solution", "solutions") + " for " + STATUS_PLURAL[status] };
+      return { id: d.id, label: d.name, detail: d.blurb, meta: n ? plural(n, "solution", "solutions") + " for " + STATUS_PLURAL[status] : "Explore the workstream and discuss specialist scope" };
     });
   }
 
@@ -203,7 +203,7 @@
 
   function renderResult() {
     var rec = recommendation();
-    if (!rec) { finderMain.innerHTML = "<p>No solutions match yet. Try another area.</p>"; return; }
+    if (!rec) { finderMain.innerHTML = '<h2 class="q-title">Plan this workstream with us</h2><p class="q-help">This domain has a home in the hospital plan. A dedicated advisory offering needs to be scoped with the appropriate specialists.</p><a class="btn btn-light" href="#planner/new">Build a hospital plan</a><div class="q-nav"><button class="link-btn" type="button" data-action="another">Choose another area</button></div>'; return; }
     var p = rec.top, d = DOMAIN_BY_ID[p.domain];
     var nAnswers = state.order.length - 2;
     var shown = p.deliverables.slice(0, 4);
@@ -271,6 +271,7 @@
   // Shades of the two Cleveland Clinic logo colors, blue and green: a deeper and a lighter shade of each,
   // all dark enough for white numbers.
   var DOMAIN_COLOR = { finance: "#0a6db0", sqpe: "#1b7638", digital: "#3a8fd0", education: "#3a9150", serviceline: "#1b477b", recruitment: "#0f7b8a" };
+  Object.assign(DOMAIN_COLOR, {strategy:'#1b477b',governance:'#0f7b8a',regulatory:'#1b7638',facilities:'#52718d',clinical:'#1b477b',workforce:'#257943',support:'#52718d'});
   var field = $("#portfolioField");
   var tip = $("#fieldTip");
   var tiles = {};
@@ -321,7 +322,7 @@
     if (!a.domain) return ORDERED.filter(function (p) { return E.fits(p, a.status); }).map(function (p) { return p.id; });
     if (step.type === "result") {
       var rec = recommendation();
-      return [rec.top.id].concat(rec.alternatives.map(function (x) { return x.id; }));
+      return rec ? [rec.top.id].concat(rec.alternatives.map(function (x) { return x.id; })) : [];
     }
     var ranked = E.rank(CATALOG, FINDER, a.status, a.domain, {});
     var n = ranked.length;
@@ -354,6 +355,7 @@
   }
 
   function fieldLayout(ids, W, isResult) {
+    if (!ids.length) return { boxes:[], labels:[], height:80, text:false };
     var stacked = window.matchMedia("(max-width: 900px)").matches;
     var n = ids.length, gap = 6, boxes = [], i, y = 0;
     var groups = DOMAINS.map(function (d) {
@@ -475,7 +477,7 @@
     var n = ids.length, count;
     if (!a.status) count = n + " solutions across " + DOMAINS.length + " domains";
     else if (!a.domain) count = n + " offered to " + STATUS_PLURAL[a.status];
-    else if (isResult) count = "Your best match and " + plural(rec.alternatives.length, "alternative", "alternatives");
+    else if (isResult) count = rec ? "Your best match and " + plural(rec.alternatives.length, "alternative", "alternatives") : "Specialist scope to be agreed";
     else if (state.order.length <= 2) count = plural(n, DOMAIN_BY_ID[a.domain].short + " solution", DOMAIN_BY_ID[a.domain].short + " solutions") + " for " + STATUS_PLURAL[a.status];
     else count = n + " still in the running";
     $("#mapCount").textContent = count;
@@ -523,6 +525,7 @@
   }
 
   function answer(key, value, button) {
+    if (key === "status" && value === "new") { location.hash = "planner/new"; return; }
     if (button) {
       $all(".option", finderMain).forEach(function (b) { b.setAttribute("aria-pressed", b === button ? "true" : "false"); });
     }
@@ -588,6 +591,7 @@
   function renderCatalog() {
     var total = 0, html = "";
     DOMAINS.forEach(function (d) {
+      if (state.domainFilter && state.domainFilter !== d.id) return;
       var list = visibleProducts(d.id);
       total += list.length;
       if (state.query && !list.length) return;
@@ -605,7 +609,7 @@
           packetLinkHTML(d, true, "Download packet (PDF)") + "</div>";
       }
       if (!list.length) {
-        html += '<p class="empty-domain">No ' + esc(d.name) + " solutions are offered to " + STATUS_PLURAL[state.fit] + ".</p>";
+        html += '<div class="empty-domain"><p>Dedicated specialist scope to be agreed. Explore the related hospital workstreams and cross-domain support in Hospital Planner.</p><a class="btn btn-secondary btn-small" href="#planner">Explore Hospital Planner</a></div>';
       }
       list.forEach(function (p) {
         html += '<div class="row">' +
@@ -619,7 +623,7 @@
       });
       html += "</div></section>";
     });
-    if (!total) {
+    if (!total && state.query) {
       html = '<div class="catalog-empty"><h3 class="section-title" style="font-size:24px">No solutions match "' + esc(state.query) + '"</h3>' +
         "<p>Try a broader term such as finance, nursing or EHR, or clear the search to see every solution.</p>" +
         '<p style="margin-top:16px"><button type="button" class="btn btn-secondary btn-small" data-action="clear-search">Clear search</button></p></div>';
@@ -772,7 +776,7 @@
     var foot = $(".panel-foot .btn", panel);
     if (foot && !inCart(p.id)) { foot.classList.remove("btn-secondary"); foot.classList.add("btn-primary"); }
     showPanel(panel, opener);
-    try { history.replaceState(null, "", "#solution=" + p.id); } catch (e) { /* ignore */ }
+    try { history.replaceState(null, "", (location.hash.split('?')[0] || '#catalog') + '?solution=' + p.id); } catch (e) { /* ignore */ }
   }
 
   function hideToast() {
@@ -813,7 +817,7 @@
       if (!swapping && !$("#scrim").classList.contains("is-open")) $("#scrim").hidden = true;
     }, reduceMotion ? 0 : 300);
     if (panel.id === "detailPanel") {
-      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
+      try { history.replaceState(null, "", location.hash.split('?')[0] || '#catalog'); } catch (e) { /* ignore */ }
     }
     if (!swapping && panelReturn && document.body.contains(panelReturn)) panelReturn.focus({ preventScroll: true });
   }
@@ -1211,8 +1215,7 @@
   // The app bar links jump between the two sections and highlight the one in view.
   var SECTIONS = { finder: $("#finder"), catalog: $("#portfolio") };
   function showView(name) {
-    // The catalog actions scroll to their own target, so only the finder needs a jump here
-    if (name === "finder") SECTIONS.finder.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    location.hash = name === 'finder' ? 'finder' : 'catalog';
   }
   function markSection(name) {
     $all(".view-tab").forEach(function (t) {
@@ -1251,4 +1254,12 @@
   }
   window.addEventListener("hashchange", openFromHash);
   openFromHash();
+  window.CCApp = {
+    detail: openDetail, add: addToCart, cart: function () { state.cartView='list'; openCart(document.activeElement); },
+    selected: function () { return state.cart.slice(); },
+    catalog: function (domain) { if(state.domainFilter!==(domain||'')){state.query='';$('#catalogSearch').value='';} state.domainFilter=domain || ''; if(domain)state.open[domain]=true; renderCatalog(); },
+    close: function () { var p=openPanel(); if(p)hidePanel(p); },
+    refresh: function () { renderFinder(); renderCatalog(); },
+    notify:toast
+  };
 })();
