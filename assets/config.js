@@ -10,8 +10,5 @@ window.CC_CONFIG = {
   inquiryEndpoint: "",
 
   /* Shown in the contact section and footer. */
-  contactEmail: "ccconnected@ccf.org",
-
-  /* Shows the review banner at the top of the page. Set to false for production. */
-  showPrototypeNotice: true
+  contactEmail: "ccconnected@ccf.org"
 };

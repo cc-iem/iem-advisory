@@ -1232,7 +1232,6 @@
   window.addEventListener("resize", updateSection);
 
   /* ---------------- Start ---------------- */
-  if (CONFIG.showPrototypeNotice === false) $("#protoNote").hidden = true;
   if (CONFIG.contactEmail) {
     var cl = $("#contactEmailLink"); if (cl) cl.href = "mailto:" + CONFIG.contactEmail;
     $("#footerEmail").href = "mailto:" + CONFIG.contactEmail;

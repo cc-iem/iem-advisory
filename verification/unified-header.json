@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "Yellow banner and separate navigation bar are removed",
+      "passed": true
+    },
+    {
+      "check": "Breadcrumb and Package share the main header",
+      "passed": true
+    },
+    {
+      "check": "Project breadcrumb opens the parent project overview",
+      "passed": true
+    },
+    {
+      "check": "Hospital Planner breadcrumb opens My Projects",
+      "passed": true
+    },
+    {
+      "check": "Catalog breadcrumb opens the parent All offerings page",
+      "passed": true
+    },
+    {
+      "check": "Current child breadcrumb remains a working page link",
+      "passed": true
+    },
+    {
+      "check": "Package CTA still opens the saved shopping cart",
+      "passed": true
+    },
+    {
+      "check": "Phone header keeps the app title, breadcrumb and Package visible",
+      "passed": true
+    }
+  ],
+  "automatedPlannerTests": 28,
+  "mobileViewport": "390 × 844"
+}

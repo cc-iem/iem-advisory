@@ -308,6 +308,48 @@
       domain: parts[0] === "catalog" ? parts[1] : null,
     };
   }
+  function renderBreadcrumb() {
+    let crumbs;
+    if (route.section === "catalog") {
+      crumbs = [["Advisory catalog", "#catalog"]];
+      if (domain(route.domain))
+        crumbs.push([domain(route.domain).name, "#catalog/" + route.domain]);
+    } else if (route.section === "finder") {
+      crumbs = [["Guided Finder", "#finder"]];
+    } else {
+      crumbs = [["Hospital Planner", "#planner"]];
+      if (current) {
+        crumbs.push([current.name, projectURL("overview")]);
+        crumbs.push([
+          pages.find((p) => p[0] === route.page)[1],
+          projectURL(route.page),
+        ]);
+      } else {
+        crumbs.push(
+          route.page === "new"
+            ? ["New Project", "#planner/new"]
+            : ["My Projects", "#planner"],
+        );
+      }
+    }
+    $("#pageBreadcrumb").innerHTML =
+      "<ol>" +
+      crumbs
+        .map(
+          ([label, href], i) =>
+            '<li><a href="' +
+            esc(href) +
+            '" title="' +
+            esc(label) +
+            '"' +
+            (i === crumbs.length - 1 ? ' aria-current="page"' : "") +
+            ">" +
+            esc(label) +
+            "</a></li>",
+        )
+        .join("") +
+      "</ol>";
+  }
   function render() {
     route = parseRoute();
     current = projects.find((p) => p.id === route.id) || null;
@@ -325,21 +367,7 @@
     $("#finder").hidden = route.section !== "finder";
     $("#portfolio").hidden = route.section !== "catalog";
     $("#planner").hidden = route.section !== "planner";
-    $("#pageBreadcrumb").textContent =
-      route.section === "catalog"
-        ? "Advisory catalog" +
-          (route.domain
-            ? " / " + (domain(route.domain)?.name || "All offerings")
-            : "")
-        : route.section === "finder"
-          ? "Guided Finder"
-          : current
-            ? "Hospital Planner / " +
-              current.name +
-              " / " +
-              (pages.find((p) => p[0] === route.page)?.[1] || "Overview")
-            : "Hospital Planner / " +
-              (route.page === "new" ? "New Project" : "My Projects");
+    renderBreadcrumb();
     if (route.section === "catalog")
       window.CCApp.catalog(domain(route.domain) ? route.domain : null);
     if (route.section === "finder")

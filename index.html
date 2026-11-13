@@ -18,17 +18,10 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="assets/styles.css" />
-    <link rel="stylesheet" href="assets/workspace.css?v=20261113-4" />
+    <link rel="stylesheet" href="assets/workspace.css?v=20261113-7" />
   </head>
   <body>
     <a class="skip-link" href="#top" data-skip-main>Skip to main content</a>
-
-    <div class="proto-note" id="protoNote" role="note">
-      <div class="wrap">
-        Internal planning workspace · Template estimates and advisory scopes
-        require specialist confirmation.
-      </div>
-    </div>
 
     <header class="app-bar">
       <div class="app-bar-row">
@@ -52,9 +45,14 @@
             decoding="async"
           />
           <span class="app-divider" aria-hidden="true"></span>
-          <span class="app-name">Advisory Solution Builder</span>
+          <a class="app-name" href="#planner">Advisory Solution Builder</a>
           <span class="app-tag">Internal</span>
         </div>
+        <nav
+          class="page-breadcrumb"
+          id="pageBreadcrumb"
+          aria-label="Breadcrumb"
+        ></nav>
         <nav class="view-tabs" aria-label="Sections" hidden>
           <a
             class="view-tab"
@@ -182,10 +180,6 @@
         tabindex="0"
       ></div>
       <div class="workspace-main">
-        <div class="context-bar">
-          <span id="pageBreadcrumb">Hospital Planner</span
-          ><span class="context-note">Cleveland Clinic Connected</span>
-        </div>
         <main id="top" tabindex="-1">
           <section id="planner" aria-label="Hospital Planner" hidden>
             <div id="plannerContent"></div>
@@ -372,14 +366,14 @@
     <script src="data/products.js"></script>
     <script src="data/finder.js"></script>
     <script src="data/packages.js"></script>
-    <script src="assets/config.js"></script>
+    <script src="assets/config.js?v=20261113-6"></script>
     <script src="data/domains.js?v=20261113-4"></script>
     <script src="data/greenfield-template.js?v=20261113-2"></script>
     <script src="assets/engine.js"></script>
     <script src="assets/planner-engine.js?v=20261113-2"></script>
     <script src="data/example-project.js?v=1"></script>
     <script src="assets/planner-export.js?v=20261113-2"></script>
-    <script src="assets/app.js?v=20261113-5"></script>
-    <script src="assets/workspace.js?v=20261113-4"></script>
+    <script src="assets/app.js?v=20261113-6"></script>
+    <script src="assets/workspace.js?v=20261113-6"></script>
   </body>
 </html>
