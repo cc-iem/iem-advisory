@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Advisory solutions and hospital workstreams</title>
-    <link rel="stylesheet" href="../assets/advisory-tags.css?v=20261113-1" />
+    <link rel="stylesheet" href="../assets/advisory-tags.css?v=20261113-2" />
     <style>
       :root {
         font-family: Arial, sans-serif;
@@ -317,8 +317,6 @@
               '<tr id="' +
               w.id +
               '"><td>' +
-              String(w.number).padStart(2, "0") +
-              " · " +
               window.CCWorkstreamTags.html(w.id) +
               "<small>Accountable hospital role: " +
               e(w.owner) +
@@ -384,8 +382,6 @@
                         '<div class="connection"><p><a href="#' +
                         w.id +
                         '">' +
-                        String(w.number).padStart(2, "0") +
-                        " · " +
                         window.CCWorkstreamTags.html(w.id) +
                         "</a> — " +
                         e(w.role) +

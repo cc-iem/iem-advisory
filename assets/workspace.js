@@ -1196,8 +1196,6 @@
             "?ws=" +
             w.id +
             '">' +
-            String(w.number).padStart(2, "0") +
-            " · " +
             window.CCWorkstreamTags.html(w.id, current?.id) +
             '</a></td><td><a href="#catalog/' +
             w.domain +
@@ -1295,8 +1293,6 @@
             '"' +
             (chosen === w.id || ui.openWS?.[w.id] ? " open" : "") +
             "><summary><div><strong>" +
-            String(w.number).padStart(2, "0") +
-            " · " +
             window.CCWorkstreamTags.html(w.id, current?.id) +
             '</strong><a class="domain-link" href="#catalog/' +
             w.domain +
@@ -1434,8 +1430,6 @@
         !!expanded +
         '">' +
         (expanded ? "▾" : "▸") +
-        " " +
-        String(w.number).padStart(2, "0") +
         " " +
         window.CCWorkstreamTags.html(w.id, current?.id) +
         "</button><small>" +
@@ -1575,8 +1569,6 @@
             "?ws=" +
             w.id +
             '">' +
-            String(w.number).padStart(2, "0") +
-            " · " +
             window.CCWorkstreamTags.html(w.id, current?.id) +
             "</a></td><td>" +
             productButton(p) +
