@@ -457,7 +457,7 @@
     var candidates = new Map();
     result.tasks
       .filter(function (t) {
-        return !t.verified && t.advisory !== "Owner-led";
+        return !t.verified && (t.advisory !== "Owner-led" || t.advisorySupport);
       })
       .forEach(function (t) {
         t.products.forEach(function (id) {
@@ -465,6 +465,7 @@
             return x.id === id;
           });
           if (!p || !p.fit.includes("new")) return;
+          if (p.conditionFlag && !project[p.conditionFlag]) return;
           var item = candidates.get(id) || {
             product: p,
             tasks: [],

@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "All 63 solutions are available across the ten domains",
+      "passed": true
+    },
+    {
+      "check": "Facilities contains FAC-01 through FAC-04 with workstream primary homes",
+      "passed": true
+    },
+    {
+      "check": "New profile provides deliverables, purchase rationale and workstream evidence without a fabricated brochure link",
+      "passed": true
+    },
+    {
+      "check": "Profile workstream link opens Example Hospital at the matched workstream",
+      "passed": true
+    },
+    {
+      "check": "Example Hospital has all 18 mapped primary solutions and all 63 selection options",
+      "passed": true
+    },
+    {
+      "check": "Support Services now contains SUP-01, SUP-02 and SUP-03",
+      "passed": true
+    },
+    {
+      "check": "Guided Finder selects and recommends the new FAC-02 solution with a proposed-scope label",
+      "passed": true
+    },
+    {
+      "check": "Package accepts a new proposed solution while retaining the existing selection",
+      "passed": true
+    },
+    {
+      "check": "Proposal form identifies the new service as a proposed scope",
+      "passed": true
+    },
+    {
+      "check": "A conditional solution can be added explicitly to the project",
+      "passed": true
+    },
+    {
+      "check": "Detailed report renders all 63 profiles and the full 18-workstream matrix",
+      "passed": true
+    },
+    {
+      "check": "Detailed mapping report can filter by solution code",
+      "passed": true
+    },
+    {
+      "check": "Proposed solution profiles remain usable on phones",
+      "passed": true
+    },
+    {
+      "check": "Testing restored the existing global package without auto-adding Example Hospital selections",
+      "passed": true
+    },
+    {
+      "check": "Expanded Workforce portfolio keeps all 17 solutions visible at usable tile sizes",
+      "passed": true
+    }
+  ],
+  "automatedPlannerTests": 32,
+  "originalOfferings": 42,
+  "proposedScopes": 21,
+  "totalSolutions": 63
+}

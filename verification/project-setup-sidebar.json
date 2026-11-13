@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-13",
+  "checks": [
+    {
+      "check": "Right-hand blue sidebar lists all fifteen default setup questions and answers",
+      "passed": true
+    },
+    {
+      "check": "Question navigation focuses the slider and answers update live",
+      "passed": true
+    },
+    {
+      "check": "Back returns to the preceding setup question",
+      "passed": true
+    },
+    {
+      "check": "Reset restores the form defaults and updates the summary",
+      "passed": true
+    },
+    {
+      "check": "Your answers Review jumps back to the matching question",
+      "passed": true
+    },
+    {
+      "check": "Conditional handover question appears in progress and answers when selected",
+      "passed": true
+    },
+    {
+      "check": "Phone layout exposes the complete setup navigation in an expandable blue panel",
+      "passed": true
+    },
+    {
+      "check": "Phone question navigation returns focus to the form and closes the panel",
+      "passed": true
+    },
+    {
+      "check": "Reset restores original capacity values after linked slider limits were raised",
+      "passed": true
+    }
+  ]
+}

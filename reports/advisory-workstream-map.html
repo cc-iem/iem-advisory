@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Advisory solutions and hospital workstreams</title>
+    <style>
+      :root {
+        font-family: Arial, sans-serif;
+        color: #233f58;
+        background: #eff4f8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      header {
+        background: #112f53;
+        color: #fff;
+        padding: 34px max(24px, calc((100vw - 1260px) / 2));
+      }
+      header img {
+        width: 32px;
+        vertical-align: middle;
+        margin-right: 12px;
+      }
+      h1 {
+        font-size: 30px;
+        font-weight: 400;
+        line-height: 1.2;
+      }
+      header p {
+        max-width: 920px;
+        color: #cce0f1;
+        line-height: 1.6;
+      }
+      main {
+        max-width: 1260px;
+        margin: auto;
+        padding: 28px 24px 60px;
+      }
+      a {
+        color: #086eaa;
+      }
+      nav {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 18px 0;
+      }
+      nav a {
+        font-size: 13px;
+      }
+      h2 {
+        font-weight: 400;
+        font-size: 26px;
+        margin-top: 36px;
+      }
+      h3 {
+        font-size: 20px;
+        font-weight: 500;
+      }
+      p,
+      li {
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .badge {
+        font-size: 11px;
+        background: #e2edf5;
+        padding: 4px 7px;
+        margin-right: 7px;
+        display: inline-block;
+        color: #234b70;
+      }
+      .proposed {
+        background: #e3f2ea;
+        color: #236442;
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        background: #fff;
+        font-size: 13px;
+      }
+      th,
+      td {
+        padding: 13px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid #dae5ed;
+      }
+      th {
+        background: #e5eff6;
+      }
+      td small {
+        display: block;
+        color: #60748a;
+        margin-top: 8px;
+      }
+      article {
+        background: #fff;
+        padding: 24px;
+        margin: 18px 0;
+        border: 1px solid #d8e4ec;
+        scroll-margin-top: 20px;
+      }
+      .subgrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+      .subgrid h4 {
+        margin-bottom: 8px;
+      }
+      li + li {
+        margin-top: 6px;
+      }
+      .scope {
+        border-left: 3px solid #7ba7c4;
+        padding-left: 14px;
+        color: #566d82;
+      }
+      .connection {
+        margin-top: 12px;
+        padding: 14px;
+        background: #f3f7fa;
+      }
+      .connection p {
+        margin: 0 0 6px;
+      }
+      .connection ul {
+        margin-bottom: 0;
+      }
+      label {
+        display: block;
+        margin: 18px 0;
+      }
+      input {
+        display: block;
+        width: 100%;
+        max-width: 620px;
+        padding: 12px;
+        border: 1px solid #abc1d2;
+        font: inherit;
+      }
+      button {
+        padding: 9px 14px;
+        color: #fff;
+        background: #145b8c;
+        border: 0;
+        cursor: pointer;
+      }
+      header a {
+        color: #d8edf9;
+      }
+      .report-count {
+        font-size: 13px;
+        color: #526e85;
+      }
+      @media (max-width: 700px) {
+        .subgrid {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 18px 14px;
+        }
+        article {
+          padding: 18px;
+        }
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        header {
+          padding: 0;
+          color: #112f53;
+          background: #fff;
+        }
+        header p {
+          color: #526e85;
+        }
+        nav,
+        label,
+        button,
+        .back-link {
+          display: none;
+        }
+        .subgrid {
+          display: block;
+        }
+        article {
+          break-inside: avoid;
+          border: 0;
+          padding: 0 0 20px;
+        }
+        th,
+        td {
+          font-size: 10px;
+          padding: 7px;
+        }
+        main {
+          padding: 0;
+        }
+        a {
+          color: inherit;
+          text-decoration: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="../assets/favicon.png" alt="Cleveland Clinic logo" /><span
+        >Advisory Solution Builder</span
+      >
+      <h1>Solutions, workstreams and the reason to buy</h1>
+      <p>
+        A workstream describes the hospital's delivery responsibility. A
+        solution defines a scoped advisory contribution, its deliverables and
+        the evidence it supports. Primary homes, supporting services,
+        conditional engagements and post-opening offerings remain distinct.
+      </p>
+      <p class="back-link">
+        <a href="../#catalog">Open the advisory catalog</a> ·
+        <a href="../#planner">Open Hospital Planner</a>
+      </p>
+    </header>
+    <main>
+      <p id="summary"></p>
+      <p class="scope">
+        The 42 original offerings retain their brochure scope. The 21 added
+        solutions are proposed advisory scopes: specialist capability, staffing,
+        commercial terms and acceptance criteria are confirmed at proposal.
+        Hospital teams, licensed professionals, contractors and vendors retain
+        their execution and approval responsibilities.
+      </p>
+      <nav id="domainNav" aria-label="Domains"></nav>
+      <h2>All 18 workstreams have a primary advisory home</h2>
+      <p>
+        Supporting scopes are modular contributions. Conditional or post-opening
+        links do not make a solution necessary for every new hospital.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Workstream</th>
+              <th>Primary advisory home</th>
+              <th>Supporting or later-phase solutions</th>
+            </tr>
+          </thead>
+          <tbody id="matrix"></tbody>
+        </table>
+      </div>
+      <label
+        >Find a solution or workstream<input
+          type="search"
+          id="search"
+          placeholder="Code, solution name, workstream or deliverable"
+      /></label>
+      <p id="count" class="report-count"></p>
+      <button type="button" onclick="window.print()">Print / save PDF</button>
+      <div id="profiles"></div>
+    </main>
+    <script src="../data/products.js"></script>
+    <script src="../data/expansion-products.js?v=1"></script>
+    <script src="../data/finder.js"></script>
+    <script src="../data/domains.js?v=20261113-15"></script>
+    <script src="../data/greenfield-template.js?v=20261113-2"></script>
+    <script src="../data/workstream-solutions.js?v=1"></script>
+    <script>
+      (function () {
+        "use strict";
+        const C = window.CC_CATALOG,
+          T = window.CC_GREENFIELD,
+          D = window.CC_DOMAINS,
+          by = new Map(C.map((p) => [p.id, p]));
+        const e = (s) =>
+          String(s == null ? "" : s).replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+        const link = (p) =>
+          '<a href="#' + p.code + '">' + e(p.code + " · " + p.title) + "</a>";
+        document.getElementById("summary").textContent =
+          C.length +
+          " solutions · 42 existing offerings · 21 proposed scopes · 18 mapped workstreams · 10 domains";
+        document.getElementById("domainNav").innerHTML = D.map(
+          (d) =>
+            '<a href="#domain-' +
+            d.id +
+            '">' +
+            e(d.code + " · " + d.name) +
+            "</a>",
+        ).join("");
+        document.getElementById("matrix").innerHTML = T.workstreams
+          .map(
+            (w) =>
+              '<tr id="' +
+              w.id +
+              '"><td>' +
+              String(w.number).padStart(2, "0") +
+              " · " +
+              e(w.name) +
+              "<small>Accountable hospital role: " +
+              e(w.owner) +
+              "</small></td><td>" +
+              link(by.get(w.leadProduct)) +
+              "</td><td>" +
+              w.products
+                .filter((id) => id !== w.leadProduct)
+                .concat(w.conditionalProducts || [])
+                .map((id) => {
+                  const p = by.get(id);
+                  return (
+                    link(p) +
+                    (p.conditionFlag
+                      ? " (conditional)"
+                      : p.lifecycle === "Post-opening"
+                        ? " (post-opening)"
+                        : "")
+                  );
+                })
+                .join("<br>") +
+              "</td></tr>",
+          )
+          .join("");
+        document.getElementById("profiles").innerHTML = D.map(
+          (d) =>
+            '<section class="domain-section" id="domain-' +
+            d.id +
+            '"><h2>' +
+            e(d.code + " · " + d.name) +
+            "</h2>" +
+            C.filter((p) => p.domain === d.id)
+              .map(
+                (p) =>
+                  '<article id="' +
+                  p.code +
+                  '"><span class="badge">' +
+                  e(p.code) +
+                  '</span><span class="badge ' +
+                  (p.proposed ? "proposed" : "") +
+                  '">' +
+                  (p.proposed ? "Proposed scope" : "Existing offering") +
+                  '</span><span class="badge">' +
+                  e(p.conditionLabel || p.lifecycle) +
+                  "</span><h3>" +
+                  e(p.title) +
+                  "</h3><p>" +
+                  e(p.subtitle) +
+                  "</p><h4>Why clients buy</h4><p>" +
+                  e(p.purchaseReason || p.outcomes[0]) +
+                  '</p><div class="subgrid"><div><h4>What the client receives</h4><ul>' +
+                  p.deliverables.map((a) => "<li>" + e(a) + "</li>").join("") +
+                  "</ul></div><div><h4>Inputs and responsibilities</h4><ul>" +
+                  p.resourcesClient
+                    .map((a) => "<li>" + e(a) + "</li>")
+                    .join("") +
+                  "</ul><ul>" +
+                  p.assumptions.map((a) => "<li>" + e(a) + "</li>").join("") +
+                  "</ul></div></div><h4>Workstream connections and examples</h4>" +
+                  p.workstreamLinks
+                    .map(
+                      (w) =>
+                        '<div class="connection"><p><a href="#' +
+                        w.id +
+                        '">' +
+                        String(w.number).padStart(2, "0") +
+                        " · " +
+                        e(w.name) +
+                        "</a> — " +
+                        e(w.role) +
+                        "</p>" +
+                        (w.activities.length
+                          ? "<ul>" +
+                            w.activities
+                              .map((a) => "<li>" + e(a) + "</li>")
+                              .join("") +
+                            "</ul>"
+                          : "<p>" +
+                            e(
+                              p.conditionLabel ||
+                                "Connect after opening when operational evidence and programme eligibility are available.",
+                            ) +
+                            "</p>") +
+                        "</div>",
+                    )
+                    .join("") +
+                  (p.pdf
+                    ? '<p><a href="../' +
+                      e(p.pdf) +
+                      '" target="_blank" rel="noopener">Original brochure</a></p>'
+                    : "") +
+                  "</article>",
+              )
+              .join("") +
+            "</section>",
+        ).join("");
+        const count = document.getElementById("count");
+        function filter() {
+          const q = document
+            .getElementById("search")
+            .value.toLowerCase()
+            .trim();
+          let n = 0;
+          document.querySelectorAll("article").forEach((el) => {
+            el.hidden = q && !el.textContent.toLowerCase().includes(q);
+            if (!el.hidden) n++;
+          });
+          document
+            .querySelectorAll(".domain-section")
+            .forEach(
+              (el) =>
+                (el.hidden = !Array.from(el.querySelectorAll("article")).some(
+                  (a) => !a.hidden,
+                )),
+            );
+          count.textContent = "Showing " + n + " solution profiles";
+        }
+        document.getElementById("search").addEventListener("input", filter);
+        filter();
+      })();
+    </script>
+  </body>
+</html>

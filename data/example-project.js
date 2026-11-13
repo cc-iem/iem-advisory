@@ -34,7 +34,10 @@
       holidays: [],
       handoverDate: "",
       taskStates: {},
-      selectedProducts: ["SL-06"],
+      selectedProducts: Array.from(
+        new Set(template.workstreams.map((w) => w.leadProduct).filter(Boolean)),
+      ),
+      exampleCatalogVersion: template.solutionMappingVersion,
       exampleSource: {
         templateVersion: template.version,
         workstreams: template.workstreams.map((w) => w.id),
@@ -72,11 +75,25 @@
           p.name === "Example Hospital"),
     );
     if (existing !== -1) {
-      if (saved[existing].exampleSeed === SEED)
+      if (
+        saved[existing].exampleSeed === SEED &&
+        saved[existing].exampleCatalogVersion ===
+          template.solutionMappingVersion
+      )
         return { projects: saved, changed: false };
       // Adopt the existing example without overwriting its settings or user edits.
       const adopted = saved.slice();
-      adopted[existing] = { ...saved[existing], exampleSeed: SEED };
+      adopted[existing] = {
+        ...saved[existing],
+        exampleSeed: SEED,
+        exampleCatalogVersion: template.solutionMappingVersion,
+        selectedProducts: Array.from(
+          new Set([
+            ...(saved[existing].selectedProducts || []),
+            ...template.workstreams.map((w) => w.leadProduct).filter(Boolean),
+          ]),
+        ),
+      };
       return { projects: adopted, changed: true };
     }
     return { projects: [create(template, engine), ...saved], changed: true };

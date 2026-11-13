@@ -105,9 +105,11 @@
   };
   (root.CC_CATALOG || []).forEach(function (p) {
     p.legacyDomain = p.domain;
-    p.domain = primary[p.id] || old[p.domain];
+    p.domain = primary[p.id] || p.primaryDomain || old[p.domain];
     p.secondaryDomains = secondary[p.id] || [];
-    p.scopeStatus = "Existing offering; engagement scope confirmed at proposal";
+    if (!p.proposed)
+      p.scopeStatus =
+        "Existing offering; engagement scope confirmed at proposal";
   });
   // Number the complete catalog once, before hospital-type filters are applied.
   domains.forEach(function (d) {
@@ -126,7 +128,7 @@
     return d.id === "finance";
   })[0].packet = packet;
   finder.domains = domains;
-  /* Ask questions about actual offerings in each migrated domain. No invented products. */
+  /* Include existing offerings and explicitly labelled proposed scopes in each domain. */
   finder.questions = {};
   domains.forEach(function (d) {
     var products = root.CC_CATALOG.filter(function (p) {

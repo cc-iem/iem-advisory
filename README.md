@@ -2,9 +2,9 @@
 
 Advisory catalog and interactive Hospital Planner, based on the public site at <https://ccconnected-advisory-builder.pages.dev/>, captured on November 12, 2026.
 
-The original copy was verified byte for byte before enhancement. The workspace now has ten advisory domains, a persistent left navigation, and a generalized greenfield Hospital Planner. All 42 products and their original brochures remain. No framework, dependency installation, or build step is required.
+The original copy was verified byte for byte before enhancement. The workspace now has ten advisory domains, a persistent left navigation, and a generalized greenfield Hospital Planner. The catalog has 63 solutions: 42 existing offerings with their original brochures and 21 explicitly labelled proposed advisory scopes. No framework, dependency installation, or build step is required.
 
-Domain badges and advisory reference codes use STR (Strategy), GOV (Governance & Activation), FIN (Finance), REG (Regulatory), FAC (Facilities & Equipment), DIG (Digital), CLIN (Clinical Operations), WORK (Workforce & Education), SQPE, and SUP (Support Services). Product codes run sequentially within the primary domain using the complete **All hospitals** catalog, e.g. STR-01. Hospital filters do not renumber products. Saved selections, internal IDs and original brochure filenames remain compatible. Facilities and Support Services currently have workstreams but no standalone catalog offerings.
+Domain badges and advisory reference codes use STR (Strategy), GOV (Governance & Activation), FIN (Finance), REG (Regulatory), FAC (Facilities & Equipment), DIG (Digital), CLIN (Clinical Operations), WORK (Workforce & Education), SQPE, and SUP (Support Services). Product codes run sequentially within the primary domain using the complete **All hospitals** catalog, e.g. STR-01. Hospital filters do not renumber products. Saved selections, internal IDs and original brochure filenames remain compatible. Every domain now has solutions and every workstream has a primary advisory home. Proposed scopes include detailed deliverables, client inputs, purchase rationale and ownership boundaries; they do not imply a confirmed delivery capability or an existing brochure.
 
 ## Hospital Planner
 
@@ -17,6 +17,10 @@ Explore the Gantt, change duration or earliest-start assumptions, inspect depend
 Projects are saved in the current browser. Export JSON backups for portability; there is no shared cloud project storage. Reference durations, workload coefficients, local requirements and resourcing require specialist confirmation. See [the method and limitations](docs/planner-method.md).
 
 My Projects and New Project use the full blue workspace style. Hospital setup starts with prefilled dates, name, capacity and service choices; quantities use sliders with common-value presets. Radio cards show the selected default for stage, planning scale, digital foundation, teams and international hiring. A confirmed building-handover date is optional. Capacity and service-count limits keep the form consistent, and the live preview recalculates as choices change.
+
+Project setup includes a blue right-hand navigation panel with every question, Back, reset-to-opened-values and a live Your answers summary. Both New Project and existing project Setup use it.
+
+The complete mapping is available at `reports/advisory-workstream-map.html`. `data/workstream-solutions.js` separates primary, supporting, conditional and post-opening relationships, and narrows activity links by workstream and subject. Owner-led delivery responsibilities remain unchanged. Example Hospital adopts the primary advisory selections once per mapping version while preserving prior selections, dates, capacity and task records. The global package is only changed by an explicit Add action.
 
 Run automated planner and migration checks with `npm test`.
 

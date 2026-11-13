@@ -1312,6 +1312,222 @@ main#top {
   z-index: 5;
   backdrop-filter: blur(18px);
 }
+.project-setup-active main#top {
+  overflow: clip;
+}
+.project-setup-active #planner,
+.project-setup-active #plannerContent {
+  height: 100%;
+  min-height: 0;
+}
+.project-setup-active #plannerContent {
+  padding: 0;
+  max-width: none;
+}
+.setup-shell {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+.setup-main {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 36px 32px;
+}
+.setup-side {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 20px;
+  background: #102f53ed;
+  border-left: 1px solid #ffffff24;
+}
+.setup-nav-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #ffffff24;
+}
+.setup-nav-controls .link-btn,
+.setup-answers .link-btn {
+  font-size: 12px;
+}
+.setup-nav-controls button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.setup-nav-note {
+  color: #bdd2e6;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+.setup-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.setup-steps button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  color: #d9ebf9;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+.setup-steps button:hover,
+.setup-steps li[aria-current="step"] button {
+  background: #ffffff14;
+  color: #fff;
+}
+.setup-steps li[aria-current="step"] .step-index {
+  color: #173a5c;
+  background: #fff;
+  border-color: #fff;
+}
+.setup-answers {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #ffffff24;
+}
+.setup-answers h3 {
+  font-size: 15px;
+  margin-bottom: 18px;
+}
+.setup-answers dl {
+  display: grid;
+  gap: 14px;
+}
+.setup-answers dd {
+  font-size: 13px;
+}
+.setup-nav-toggle {
+  display: none;
+}
+.offering-status {
+  display: inline-block;
+  margin: 4px 6px;
+  padding: 3px 7px;
+  border: 1px solid #c5d8e8;
+  background: #edf4f9;
+  color: #284d70;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.finder .offering-status,
+.on-navy .offering-status {
+  color: #d9ebf9;
+  background: #ffffff12;
+  border-color: #ffffff35;
+}
+.scope-note {
+  color: #60748a;
+  font-size: 12px;
+  margin: 10px 0;
+}
+.domain-workstreams {
+  background: #f0f6fa;
+  border-left: 3px solid #468ab5;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.domain-workstreams h3 {
+  font-size: 14px;
+  color: #284d70;
+  margin-bottom: 12px;
+}
+.domain-workstreams ul {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.domain-workstreams li > span,
+.domain-workstreams .text-button {
+  display: block;
+  text-align: left;
+  font-size: 13px;
+}
+.domain-workstreams p {
+  font-size: 11px;
+  color: #60748a;
+  margin-top: 14px;
+}
+.solution-connections > ul {
+  list-style: none;
+  padding: 0;
+}
+.solution-connections > ul > li {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #dce5ee;
+}
+.solution-connections small {
+  display: block;
+  color: #60748a;
+  font-size: 11px;
+}
+.solution-connections .text-button {
+  text-align: left;
+  font-size: 14px;
+}
+.solution-connections ul ul {
+  padding-left: 18px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.solution-connections h3:not(:first-child) {
+  margin-top: 24px;
+}
+.ws-solutions {
+  background: #f1f6fa;
+  border: 1px solid #dce5ee;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+.ws-solutions .text-button {
+  font-size: 13px;
+  text-align: left;
+}
+.ws-solutions details {
+  margin: 12px 0;
+  font-size: 12px;
+}
+.ws-solutions summary {
+  cursor: pointer;
+}
+.solution-matrix .text-button {
+  font-size: 12px;
+  text-align: left;
+}
+#extraSolution {
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+@media (min-width: 761px) and (max-width: 1200px) {
+  .setup-shell {
+    grid-template-columns: minmax(0, 1fr) 250px;
+  }
+  .setup-main {
+    padding: 28px 24px;
+  }
+  .setup-main .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 760px) {
   .planner-blue #plannerContent {
     padding: 24px 16px;
@@ -1327,6 +1543,42 @@ main#top {
     align-items: flex-start;
     flex-direction: column;
     gap: 6px;
+  }
+  .project-setup-active #plannerContent {
+    padding: 0;
+  }
+  .setup-shell {
+    display: flex;
+    flex-direction: column;
+  }
+  .setup-nav-toggle {
+    display: flex;
+    flex: none;
+    justify-content: space-between;
+    order: -1;
+    color: #fff;
+    border: 0;
+    border-bottom: 1px solid #ffffff24;
+    background: #102f53;
+    font-size: 13px;
+    padding: 14px 16px;
+    cursor: pointer;
+  }
+  .setup-side {
+    order: 0;
+    flex: none;
+    max-height: 55dvh;
+    border-left: 0;
+    border-bottom: 1px solid #ffffff24;
+  }
+  .setup-shell:not(.setup-nav-open) .setup-side {
+    display: none;
+  }
+  .setup-main {
+    order: 1;
+    flex: 1;
+    height: auto;
+    padding: 24px 16px;
   }
 }
 #finder {

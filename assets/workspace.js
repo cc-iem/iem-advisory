@@ -52,7 +52,8 @@
     current = null,
     result = null,
     activeTask = null,
-    toastTimer;
+    toastTimer,
+    setupCursor = "name";
   if (!Array.isArray(projects)) projects = [];
   const pages = [
     ["overview", "Overview"],
@@ -371,6 +372,11 @@
       "planner-blue",
       route.section === "planner" && (!current || route.page === "setup"),
     );
+    document.body.classList.toggle(
+      "project-setup-active",
+      route.section === "planner" &&
+        (route.page === "new" || (current && route.page === "setup")),
+    );
     renderBreadcrumb();
     if (route.section === "catalog")
       window.CCApp.catalog(domain(route.domain) ? route.domain : null);
@@ -384,6 +390,10 @@
           : route.page === "new"
             ? setupHTML(newProject(), true)
             : landingHTML();
+        if ($("#projectForm")) {
+          setupCursor = "name";
+          renderSetupNavigation($("#projectForm"));
+        }
       } catch (e) {
         $("#plannerContent").innerHTML =
           head("Project needs attention", e.message) +
@@ -582,7 +592,11 @@
       min +
       '" max="' +
       max +
-      '" step="1" data-unit="' +
+      '" step="1" data-default-min="' +
+      min +
+      '" data-default-max="' +
+      max +
+      '" data-unit="' +
       esc(unit) +
       '"><div class="range-presets">' +
       presets
@@ -618,7 +632,7 @@
           : Math.max(p.openingBeds, p.totalBeds) <= 3000
             ? 3000
             : 10000;
-    return (
+    const formHTML =
       head(
         isNew ? "Plan a new hospital" : "Project setup",
         "Start with a complete plan. Choose the closest options, then adjust the sliders to match your hospital.",
@@ -818,8 +832,125 @@
       T.version +
       '</span><button class="btn btn-primary" type="submit">' +
       (isNew ? "Generate hospital plan" : "Save & recalculate") +
-      "</button></div></form>"
+      "</button></div></form>";
+    return (
+      '<div class="setup-shell"><button type="button" class="setup-nav-toggle" data-plan-action="toggle-setup-nav" aria-controls="setupSidebar" aria-expanded="false">Setup navigation <span aria-hidden="true">⌄</span></button><div class="setup-main">' +
+      formHTML +
+      '</div><aside class="setup-side" id="setupSidebar" aria-label="Project setup navigation"><div class="setup-nav-controls"><button type="button" class="link-btn" id="setupBack" data-plan-action="setup-back">← Back</button><button type="button" class="link-btn" data-plan-action="reset-setup" title="Restore the values from when you opened this form">Reset answers</button></div><nav aria-label="Setup progress"><p class="finder-nav-title">Your hospital plan</p><p class="setup-nav-note">Every question has a starting answer. Select any question to review it.</p><ol class="setup-steps" id="setupSteps"></ol></nav><section class="setup-answers" id="setupAnswers" aria-label="Your answers"></section></aside></div>'
     );
+  }
+  const setupQuestions = [
+    ["name", "Project name"],
+    ["location", "Country / location"],
+    ["stage", "Current stage"],
+    ["capacityScale", "Planning scale"],
+    ["openingBeds", "Beds at opening"],
+    ["totalBeds", "Eventual capacity"],
+    ["departmentCount", "Departments at opening"],
+    ["departments", "Opening services"],
+    ["startDate", "Planning start"],
+    ["targetDays", "Days until target"],
+    ["targetDate", "Target opening"],
+    ["handoverMode", "Building handover"],
+    ["handoverDate", "Handover date"],
+    ["systems", "Digital foundation"],
+    ["teams", "Delivery teams"],
+    ["internationalHires", "International hires"],
+    ["holidays", "Holiday dates"],
+  ];
+  function visibleSetupQuestions(form) {
+    return setupQuestions.filter(
+      ([key]) =>
+        form.querySelector('[name="' + key + '"]') &&
+        (key !== "handoverDate" || !$("#handoverField", form).hidden),
+    );
+  }
+  function setupAnswer(key, f) {
+    const value = f.get(key);
+    if (key === "departments")
+      return f
+        .getAll(key)
+        .map((id) => services.find((s) => s[0] === id)?.[1] || id)
+        .join(", ");
+    if (["startDate", "targetDate", "handoverDate"].includes(key))
+      return date(value);
+    if (["openingBeds", "totalBeds"].includes(key)) return value + " beds";
+    if (key === "departmentCount") return value + " departments";
+    if (key === "targetDays") return value + " days";
+    if (key === "teams") return value + (value === "1" ? " team" : " teams");
+    if (key === "capacityScale")
+      return "Up to " + Number(value).toLocaleString() + " beds";
+    const labels = {
+      planning: "Planning / design",
+      construction: "Under construction",
+      activation: "Preparing to open",
+      enterprise: "Existing group systems",
+      new: "New hospital systems",
+      none: "No fixed date yet",
+      set: "Confirmed date",
+      no: "Not in initial scope",
+      yes: "Include international hires",
+    };
+    if (
+      ["stage", "systems", "handoverMode", "internationalHires"].includes(key)
+    )
+      return labels[value] || value;
+    if (key === "holidays") return value?.trim() || "No additional dates";
+    return value?.trim() || "Not set";
+  }
+  function renderSetupNavigation(form) {
+    const questions = visibleSetupQuestions(form),
+      f = new FormData(form);
+    if (!questions.some(([key]) => key === setupCursor)) setupCursor = "name";
+    $("#setupSteps").innerHTML = questions
+      .map(
+        ([key, label], i) =>
+          "<li" +
+          (key === setupCursor ? ' aria-current="step"' : "") +
+          '><button type="button" data-plan-action="goto-setup" data-question="' +
+          key +
+          '"><span class="step-index" aria-hidden="true">' +
+          (i + 1) +
+          "</span>" +
+          esc(label) +
+          "</button></li>",
+      )
+      .join("");
+    $("#setupBack").disabled = questions[0][0] === setupCursor;
+    $("#setupAnswers").innerHTML =
+      "<h3>Your answers</h3><dl>" +
+      questions
+        .map(
+          ([key, label]) =>
+            '<div class="answer-row"><dt>' +
+            esc(label) +
+            "</dt><dd>" +
+            esc(setupAnswer(key, f)) +
+            '</dd><button type="button" class="link-btn" data-plan-action="goto-setup" data-question="' +
+            key +
+            '" aria-label="Review ' +
+            esc(label) +
+            '">Review</button></div>',
+        )
+        .join("") +
+      "</dl>";
+  }
+  function goSetupQuestion(key) {
+    const form = $("#projectForm"),
+      target =
+        form.querySelector('[name="' + key + '"]:checked') ||
+        form.querySelector('[name="' + key + '"]');
+    if (!target) return;
+    setupCursor = key;
+    renderSetupNavigation(form);
+    (
+      target.closest(".form-field,.choice-group,.setup-section") || target
+    ).scrollIntoView({ block: "center", inline: "nearest" });
+    target.focus({ preventScroll: true });
+    if (window.innerWidth <= 760) {
+      $(".setup-shell").classList.remove("setup-nav-open");
+      $(".setup-nav-toggle").setAttribute("aria-expanded", "false");
+    }
   }
   function syncSetupControls(form, changed) {
     const opening = form.elements.openingBeds,
@@ -1136,6 +1267,7 @@
             '</span><span class="muted">' +
             esc(w.coverage) +
             "</span></div>" +
+            workstreamSolutionsHTML(w) +
             (ts.length
               ? '<ul class="activity-list">' +
                 ts
@@ -1355,12 +1487,119 @@
       "</div>"
     );
   }
+  function productButton(p) {
+    return (
+      '<button type="button" class="text-button" data-plan-action="product" data-product="' +
+      p.id +
+      '">' +
+      esc(p.code + " · " + p.title) +
+      "</button>"
+    );
+  }
+  function workstreamSolutionsHTML(w) {
+    const primary = C.find((p) => p.id === w.leadProduct),
+      support = w.products
+        .filter((id) => id !== w.leadProduct)
+        .map((id) => C.find((p) => p.id === id));
+    return (
+      '<div class="ws-solutions"><p class="muted">Primary advisory home</p>' +
+      productButton(primary) +
+      (primary.proposed
+        ? ' <span class="offering-status">Proposed scope</span>'
+        : "") +
+      '<details><summary>Supporting, conditional and post-opening solutions</summary><div class="dependency-links">' +
+      support
+        .concat(
+          (w.conditionalProducts || []).map((id) => C.find((p) => p.id === id)),
+        )
+        .map((p) => productButton(p))
+        .join("") +
+      '</div></details><p class="muted">Hospital and vendor teams retain execution and approval responsibilities.</p></div>'
+    );
+  }
+  function solutionMatrixHTML() {
+    return (
+      '<section class="planner-card"><h3>All 18 workstreams mapped</h3><p class="card-intro">Each workstream has a primary advisory home. Supporting, conditional and post-opening scopes are shown in the product profiles; a connection does not transfer delivery responsibility.</p><div class="planner-table-scroll"><table class="planner-table solution-matrix"><thead><tr><th>Workstream</th><th>Primary advisory solution</th><th>Owner</th></tr></thead><tbody>' +
+      T.workstreams
+        .map((w) => {
+          const p = C.find((p) => p.id === w.leadProduct);
+          return (
+            '<tr><td><a href="' +
+            projectURL("workstreams") +
+            "?ws=" +
+            w.id +
+            '">' +
+            String(w.number).padStart(2, "0") +
+            " · " +
+            esc(w.name) +
+            "</a></td><td>" +
+            productButton(p) +
+            (p.proposed ? "<br><small>Proposed scope</small>" : "") +
+            "</td><td>" +
+            esc(w.owner) +
+            "</td></tr>"
+          );
+        })
+        .join("") +
+      "</tbody></table></div></section>"
+    );
+  }
+  function additionalSolutionsHTML(recs) {
+    const shown = new Set(recs.map((r) => r.product.id)),
+      extras = (current.selectedProducts || [])
+        .filter((id) => !shown.has(id))
+        .map((id) => C.find((p) => p.id === id))
+        .filter(Boolean);
+    return (
+      '<section class="planner-card"><h3>Choose any catalog solution</h3><p class="card-intro">Add a conditional, post-opening or additional scope to this project. This does not confirm eligibility or delivery terms.</p><label class="form-field">Additional solution<select id="extraSolution">' +
+      D.map(
+        (d) =>
+          '<optgroup label="' +
+          esc(d.name) +
+          '">' +
+          C.filter((p) => p.domain === d.id)
+            .map(
+              (p) =>
+                '<option value="' +
+                p.id +
+                '">' +
+                esc(
+                  p.code +
+                    " · " +
+                    p.title +
+                    (p.lifecycle === "Post-opening"
+                      ? " · Post-opening"
+                      : p.proposed
+                        ? " · Proposed"
+                        : ""),
+                ) +
+                "</option>",
+            )
+            .join("") +
+          "</optgroup>",
+      ).join("") +
+      "</select></label>" +
+      button("Add to this advisory plan", "select-extra", "", true) +
+      extras
+        .map(
+          (p) =>
+            '<div class="offering-row"><span class="ref">' +
+            esc(p.code) +
+            "</span><div>" +
+            productButton(p) +
+            "<p>" +
+            esc(p.conditionLabel || p.lifecycle) +
+            '</p></div><label class="service-option"><input type="checkbox" data-product-select="' +
+            p.id +
+            '" checked>Select</label></div>',
+        )
+        .join("") +
+      "</section>"
+    );
+  }
   function advisoryHTML() {
     const recs = E.recommendations(T, current, result, C),
-      selected = new Set(current.selectedProducts || []),
-      gaps = T.workstreams.filter(
-        (w) => !w.products.length || [4, 5, 6, 11].includes(w.number),
-      );
+      selected = new Set(current.selectedProducts || []);
     return (
       head(
         "Advisory Plan",
@@ -1370,7 +1609,7 @@
       ) +
       '<div class="plan-notice">Select support for this hospital, then add it to the global package. <span id="advisorySelectionCount">' +
       selected.size +
-      '</span> services selected. Existing product profiles and brochures retain their original scope.</div><section class="planner-card"><h3>Support matched to the opening plan</h3><p class="card-intro">Ordered by unresolved activity coverage, with extra weight on the critical path. These are potential connections, not confirmed delivery commitments.</p>' +
+      '</span> services selected. New offerings are proposed advisory scopes; specialist capability, delivery roles and terms are confirmed at proposal. Existing brochures retain their original scope.</div><section class="planner-card"><h3>Support matched to the opening plan</h3><p class="card-intro">Ordered by unresolved activity coverage, with extra weight on the critical path. These are potential connections, not confirmed delivery commitments.</p>' +
       recs
         .map(
           (r) =>
@@ -1380,7 +1619,11 @@
             r.product.id +
             '">' +
             esc(r.product.title) +
-            "</button><p>" +
+            "</button>" +
+            (r.product.proposed
+              ? '<span class="offering-status">Proposed scope</span>'
+              : "") +
+            "<p>" +
             esc(domain(r.product.domain).name) +
             " · " +
             r.tasks.length +
@@ -1403,22 +1646,9 @@
             ">Select</label></div>",
         )
         .join("") +
-      '</section><section class="planner-card"><h3>Specialist and owner-led scope to confirm</h3><p class="card-intro">These workstreams have partial catalog coverage or rely on the client and its specialist providers.</p><ul class="activity-list">' +
-      gaps
-        .map(
-          (w) =>
-            "<li><div><strong>" +
-            esc(w.name) +
-            "</strong><small>" +
-            esc(w.coverage) +
-            '</small></div><a class="domain-link" href="' +
-            projectURL("workstreams") +
-            "?ws=" +
-            w.id +
-            '">Review work →</a></li>',
-        )
-        .join("") +
-      "</ul></section>"
+      "</section>" +
+      additionalSolutionsHTML(recs) +
+      solutionMatrixHTML()
     );
   }
   function scenariosHTML() {
@@ -1591,7 +1821,11 @@
             '<button data-plan-action="product" data-product="' +
             id +
             '">' +
-            esc(C.find((p) => p.id === id).title) +
+            esc(
+              C.find((p) => p.id === id).code +
+                " · " +
+                C.find((p) => p.id === id).title,
+            ) +
             "</button>",
         )
         .join("") +
@@ -1796,6 +2030,58 @@
     const action = ev.target.closest("[data-plan-action]");
     if (!action) return;
     switch (action.dataset.planAction) {
+      case "open-workstream": {
+        const p =
+          current ||
+          projects.find((p) => p.exampleSeed && !p.archived) ||
+          projects.find((p) => !p.archived) ||
+          projects[0];
+        window.CCApp.close();
+        if (p)
+          location.hash =
+            projectURL("workstreams", p.id) +
+            "?ws=" +
+            action.dataset.workstream;
+        break;
+      }
+      case "select-extra": {
+        const id = $("#extraSolution").value;
+        current.selectedProducts = Array.from(
+          new Set([...(current.selectedProducts || []), id]),
+        );
+        persist();
+        render();
+        toast("Solution added to this advisory plan.");
+        break;
+      }
+      case "goto-setup":
+        goSetupQuestion(action.dataset.question);
+        break;
+      case "setup-back": {
+        const questions = visibleSetupQuestions($("#projectForm")),
+          i = questions.findIndex(([key]) => key === setupCursor);
+        if (i > 0) goSetupQuestion(questions[i - 1][0]);
+        break;
+      }
+      case "reset-setup": {
+        const form = $("#projectForm");
+        $$('input[type="range"]', form).forEach((input) => {
+          input.min = input.dataset.defaultMin;
+          input.max = input.dataset.defaultMax;
+        });
+        form.reset();
+        syncSetupControls(form, { name: "capacityScale" });
+        setupCursor = "name";
+        renderSetupNavigation(form);
+        $("#setupPreview").innerHTML = previewHTML(projectFromForm(form));
+        $(".setup-main").scrollTop = 0;
+        break;
+      }
+      case "toggle-setup-nav": {
+        const open = $(".setup-shell").classList.toggle("setup-nav-open");
+        action.setAttribute("aria-expanded", String(open));
+        break;
+      }
       case "set-range": {
         const form = action.closest("#projectForm"),
           input = form.elements[action.dataset.rangeField];
@@ -2078,6 +2364,13 @@
       toast("Activity saved. Dependent dates recalculated.");
     }
   });
+  document.addEventListener("focusin", (ev) => {
+    const form = ev.target.closest("#projectForm");
+    if (form && setupQuestions.some(([key]) => key === ev.target.name)) {
+      setupCursor = ev.target.name;
+      renderSetupNavigation(form);
+    }
+  });
   document.addEventListener("input", (ev) => {
     const f = ev.target.closest("#projectForm");
     if (f) {
@@ -2098,6 +2391,7 @@
         if (Number.isFinite(n)) f.elements.targetDays.value = Math.round(n);
       }
       syncSetupControls(f, ev.target);
+      renderSetupNavigation(f);
       if ($("#setupPreview"))
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(f));
     }

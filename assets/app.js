@@ -70,7 +70,22 @@
   function markersHTML(p) {
     return '<span class="markers">' + p.fit.slice().sort(function (a, b) { return a === "new" ? -1 : 1; }).map(function (f) {
       return '<span class="marker marker-' + f + '">' + FIT_LABEL[f] + "</span>";
-    }).join("") + "</span>";
+    }).join("") + (p.proposed ? '<span class="offering-status">Proposed scope</span>' : '') + (p.lifecycle === 'Post-opening' ? '<span class="offering-status">Post-opening</span>' : '') + "</span>";
+  }
+
+  function brochureHTML(p) {
+    return p.pdf ? '<a class="btn btn-quiet" href="' + esc(p.pdf) + '" target="_blank" rel="noopener">' + ICON.pdf + 'Download brochure (PDF)</a>' : '';
+  }
+  function solutionConnectionsHTML(p) {
+    var links=p.workstreamLinks || [];
+    return '<section class="dsec solution-connections"><h3>Why this solution matters</h3><p>'+esc(p.purchaseReason || p.outcomes[0])+'</p>'+
+      (p.proposed?'<p class="scope-note">Proposed advisory scope. Specialist capability, resourcing, responsibilities and acceptance criteria are confirmed at proposal.</p>':'')+
+      '<h3>Workstream connections</h3><p class="scope-note">A connection identifies potential advisory support. The hospital and its appointed providers retain delivery and approval responsibilities.</p><ul>'+links.map(function(w){return '<li><small>'+esc(w.role)+'</small><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+String(w.number).padStart(2,'0')+' · '+esc(w.name)+'</button>'+(w.activities.length?'<ul>'+w.activities.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul>':'<p class="scope-note">'+esc(p.conditionLabel || 'Relevant after opening; confirm the specific scope and operational evidence required.')+'</p>')+'</li>';}).join('')+'</ul></section>';
+  }
+  function domainWorkstreamsHTML(d) {
+    var T=window.CC_GREENFIELD;
+    if(!T) return '';
+    return '<div class="domain-workstreams"><h3>Hospital workstreams in this domain</h3><ul>'+T.workstreams.filter(function(w){return w.domain===d.id;}).map(function(w){var p=BY_ID[w.leadProduct];return '<li><span>'+String(w.number).padStart(2,'0')+' · '+esc(w.name)+'</span><button type="button" class="text-button" data-action="detail" data-id="'+p.id+'">Primary advisory home: '+esc(p.code+' · '+p.title)+'</button></li>';}).join('')+'</ul><p>Primary and supporting scopes are mapped to the hospital plan. Proposed scopes require specialist confirmation. <a href="reports/advisory-workstream-map.html" target="_blank" rel="noopener">View the complete mapping</a>.</p></div>';
   }
 
   var ICON = {
@@ -241,7 +256,7 @@
       '<div class="result-actions">' +
       cartButtonHTML(p.id, "btn-primary-like") +
       '<button type="button" class="btn btn-quiet" data-action="detail" data-id="' + p.id + '">View full profile</button>' +
-      '<a class="btn btn-quiet" href="' + esc(p.pdf) + '" target="_blank" rel="noopener">' + ICON.pdf + "Download brochure (PDF)</a>" +
+      brochureHTML(p) +
       "</div></div></article>";
 
     if (rec.alternatives.length) {
@@ -408,6 +423,7 @@
       return { boxes: boxes, labels: [], height: hTop + (altRows ? altRows * (hAlt + gap) : 0), text: true };
     }
     var cols = stacked ? (n >= 17 ? 14 : n >= 9 ? 9 : n) : (n >= 17 ? 7 : n >= 9 ? 4 : n >= 4 ? 2 : 1);
+    cols = Math.min(cols, Math.max(1, Math.floor((W + gap) / (stacked ? 34 : 64))));
     var w = (W - gap * (cols - 1)) / cols;
     var text = w >= 110;
     var h = text ? (cols === 1 ? 72 : stacked ? 120 : 118) : Math.min(w, 64);
@@ -611,6 +627,7 @@
         '<span class="domain-count">' + countText + "</span>" +
         '<span class="chev" aria-hidden="true">' + ICON.chev + "</span></button>" +
         '<div class="domain-body" id="db-' + d.id + '"' + (open ? "" : " hidden") + ">";
+      html += domainWorkstreamsHTML(d);
       if (d.packet && list.length) {
         html += '<div class="packet-bar"><div><p class="packet-title">' + esc(d.packet.title) + '</p><p class="packet-text">' + esc(d.packet.text) + "</p></div>" +
           packetLinkHTML(d, true, "Download packet (PDF)") + "</div>";
@@ -736,12 +753,12 @@
     var d = DOMAIN_BY_ID[p.domain];
     var panel = $("#detailPanel");
     var res = "";
-    var clientLabel = p.assumptions.length ? "Your team" : "Your team and inputs";
+    var clientLabel = p.proposed ? "Client team and inputs" : p.assumptions.length ? "Your team" : "Your team and inputs";
     if (p.resourcesCC.length || p.resourcesClient.length) {
       res = '<section class="dsec"><h3>Working together</h3>';
       if (p.resourcesCC.length && p.resourcesClient.length) {
         // The percentages note explains the Cleveland Clinic list, so it sits directly under it
-        res += '<div class="res-cols"><div><h4>Cleveland Clinic team</h4>' + listHTML(p.resourcesCC) +
+        res += '<div class="res-cols"><div><h4>' + (p.proposed ? 'Proposed advisory team' : 'Cleveland Clinic team') + '</h4>' + listHTML(p.resourcesCC) +
           (p.resourcesNote ? '<p class="res-note">' + rich(p.resourcesNote) + "</p>" : "") + "</div>" +
           "<div><h4>" + clientLabel + "</h4>" + listHTML(p.resourcesClient, true) + "</div></div>";
       } else {
@@ -766,7 +783,7 @@
       "</dl>" +
       '<section class="dsec"><h3>The need</h3>' + paragraphsHTML(p.need) + "</section>" +
       (p.questions.length ? '<section class="dsec"><h3>Questions we help you answer</h3>' + listHTML(p.questions) + "</section>" : "") +
-      '<section class="dsec"><h3>What Cleveland Clinic brings</h3>' + paragraphsHTML(p.value) + "</section>" +
+      '<section class="dsec"><h3>' + (p.proposed ? 'Proposed advisory approach' : 'What Cleveland Clinic brings') + '</h3>' + paragraphsHTML(p.value) + "</section>" +
       '<section class="dsec"><h3>Key deliverables</h3>' + (p.deliverablesIntro ? "<p class=\"intro\">" + rich(p.deliverablesIntro) + "</p>" : "") + listHTML(p.deliverables, false, p.leadBold || "auto") + "</section>" +
       '<section class="dsec"><h3>How it is delivered</h3>' + (same(p.deliveryModel, p.deliveryShort) && p.deliveryDetail.length ? "" : '<p class="lead-in">' + esc(p.deliveryModel) + "</p>") + paragraphsHTML(p.deliveryDetail) + "</section>" +
       '<section class="dsec"><h3>Typical duration</h3>' + (same(p.duration, p.durationShort) && (p.phases.length || p.durationDetail.length) ? "" : '<p class="lead-in">' + rich(p.duration) + "</p>") +
@@ -776,9 +793,10 @@
       paragraphsHTML(p.durationDetail) + "</section>" +
       res +
       '<section class="dsec"><h3>Expected outcomes</h3>' + listHTML(p.outcomes, true) + "</section>" +
+      solutionConnectionsHTML(p) +
       "</div>" +
       '<div class="panel-foot">' + cartButtonHTML(p.id) +
-      '<a class="btn btn-quiet" href="' + esc(p.pdf) + '" target="_blank" rel="noopener">' + ICON.pdf + "Download brochure (PDF)</a>" +
+      brochureHTML(p) +
       packetLinkHTML(d) + "</div>";
     var foot = $(".panel-foot .btn", panel);
     if (foot && !inCart(p.id)) { foot.classList.remove("btn-secondary"); foot.classList.add("btn-primary"); }
@@ -876,7 +894,7 @@
       var id = (location.hash.match(/solution=([A-Z0-9-]+)/) || [])[1];
       var foot = $(".panel-foot", dp);
       if (id && foot) {
-        foot.innerHTML = cartButtonHTML(id) + '<a class="btn btn-quiet" href="' + esc(BY_ID[id].pdf) + '" target="_blank" rel="noopener">' + ICON.pdf + "Download brochure (PDF)</a>" +
+        foot.innerHTML = cartButtonHTML(id) + brochureHTML(BY_ID[id]) +
           packetLinkHTML(DOMAIN_BY_ID[BY_ID[id].domain]);
         if (!inCart(id)) { var b = $(".btn", foot); b.classList.remove("btn-secondary"); b.classList.add("btn-primary"); }
       }
@@ -936,7 +954,7 @@
     var html = cartHead("Request a proposal", plural(items.length, "solution", "solutions") + " in your advisory service package");
     html += '<div class="panel-body"><form class="form" id="requestForm" novalidate>' +
       '<p class="form-intro">Tell us about your organization. The Cleveland Clinic Connected team will contact you to scope the solutions below.</p>' +
-      listHTML(items.map(function (p) { return p.code + "  " + p.title; })) +
+      listHTML(items.map(function (p) { return p.code + "  " + p.title + (p.proposed ? " (proposed scope)" : ""); })) +
       '<div class="field-row">' + field("name", "Full name", "text", true, ' autocomplete="name"') + field("title", "Job title", "text", true, ' autocomplete="organization-title"') + "</div>" +
       '<div class="field-row">' + field("org", "Organization", "text", true, ' autocomplete="organization"') + field("country", "Country", "text", true, ' autocomplete="country-name"') + "</div>" +
       '<div class="field-row">' + field("email", "Work email", "email", true, ' autocomplete="email"') + field("phone", "Phone", "tel", false, ' autocomplete="tel"') + "</div>" +
@@ -1007,7 +1025,7 @@
       hospitalStatus: data.status || "not specified",
       timing: data.timing,
       notes: data.notes,
-      solutions: state.cart.map(function (id) { var p = BY_ID[id]; return { id: p.id, code: p.code, title: p.title, area: DOMAIN_BY_ID[p.domain].name }; }),
+      solutions: state.cart.map(function (id) { var p = BY_ID[id]; return { id: p.id, code: p.code, title: p.title, scopeStatus: p.proposed ? "Proposed scope" : "Existing offering", area: DOMAIN_BY_ID[p.domain].name }; }),
       finderAnswers: state.order.map(function (k) { return { question: questionShort(k), answer: answerLabel(k) }; })
     };
   }
@@ -1018,7 +1036,7 @@
       "",
       "Solutions of interest:"
     ];
-    req.solutions.forEach(function (s) { lines.push("- " + (s.code || s.id) + " " + s.title); });
+    req.solutions.forEach(function (s) { lines.push("- " + (s.code || s.id) + " " + s.title + (s.scopeStatus === "Proposed scope" ? " (proposed scope)" : "")); });
     lines.push("", "Contact:",
       req.contact.name + ", " + req.contact.title,
       req.contact.organization + ", " + req.contact.country,
@@ -1100,7 +1118,7 @@
     if (req.notes) rows.push(["Notes", req.notes]);
     var sol = req.solutions.map(function (s) {
       var p = BY_ID[s.id];
-      return "<tr><th>" + esc(s.code || p.code) + "</th><td><strong>" + esc(p.title) + "</strong><br>" + esc(s.area) + "<br>Typical duration: " + esc(p.durationShort) + "<br>Delivery: " + esc(p.deliveryShort) + "</td></tr>";
+      return "<tr><th>" + esc(s.code || p.code) + "</th><td><strong>" + esc(p.title) + "</strong><br>" + esc(s.area) + (p.proposed ? " · Proposed scope" : "") + "<br>Typical duration: " + esc(p.durationShort) + "<br>Delivery: " + esc(p.deliveryShort) + "</td></tr>";
     }).join("");
     $("#printArea").innerHTML =
       '<img src="assets/cleveland-clinic-connected-logo.png" alt="Cleveland Clinic Connected">' +

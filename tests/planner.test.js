@@ -8,10 +8,12 @@ const root = path.resolve(__dirname, ".."),
 vm.createContext(context);
 for (const f of [
   "data/products.js",
+  "data/expansion-products.js",
   "data/finder.js",
   "data/packages.js",
   "data/domains.js",
   "data/greenfield-template.js",
+  "data/workstream-solutions.js",
 ])
   vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), context);
 const T = JSON.parse(JSON.stringify(context.window.CC_GREENFIELD));
@@ -94,9 +96,13 @@ test("an existing Example Hospital is adopted without replacing user edits", () 
   assert.equal(seeded.projects.length, 1);
   assert.equal(seeded.projects[0].id, existing.id);
   assert.deepEqual(existing, original);
-  const { exampleSeed, ...preserved } = seeded.projects[0];
+  const { exampleSeed, exampleCatalogVersion, selectedProducts, ...preserved } =
+    seeded.projects[0];
+  const { selectedProducts: originalSelected, ...originalFields } = original;
+  assert.ok(originalSelected.every((id) => selectedProducts.includes(id)));
+  assert.equal(exampleCatalogVersion, T.solutionMappingVersion);
   assert.ok(exampleSeed);
-  assert.deepEqual(preserved, original);
+  assert.deepEqual(preserved, originalFields);
 });
 test("other projects are preserved when adding the default example", () => {
   const other = { ...project(), id: "client-project", name: "Client Hospital" };
@@ -127,12 +133,17 @@ test("new example projects do not share mutable project or scenario data", () =>
 
 test("all 42 original IDs survive migration, each with one of ten primary domains", () => {
   assert.equal(domains.length, 10);
-  assert.equal(catalog.length, 42);
-  assert.equal(new Set(catalog.map((p) => p.id)).size, 42);
+  assert.equal(catalog.length, 63);
+  assert.equal(new Set(catalog.map((p) => p.id)).size, 63);
   for (const p of catalog) {
     assert.ok(domains.some((d) => d.id === p.domain));
-    assert.ok(p.pdf.endsWith(".pdf"));
-    assert.ok(fs.existsSync(path.join(root, p.pdf)));
+    if (p.proposed) {
+      assert.equal(p.pdf, undefined);
+      assert.ok(p.deliverables.length >= 5);
+    } else {
+      assert.ok(p.pdf.endsWith(".pdf"));
+      assert.ok(fs.existsSync(path.join(root, p.pdf)));
+    }
     for (const d of p.secondaryDomains)
       assert.ok(domains.some((x) => x.id === d));
   }
@@ -140,7 +151,7 @@ test("all 42 original IDs survive migration, each with one of ten primary domain
 });
 test("domain codes are unique and products are sequential in the complete catalog", () => {
   assert.equal(new Set(domains.map((d) => d.code)).size, 10);
-  assert.equal(new Set(catalog.map((p) => p.code)).size, 42);
+  assert.equal(new Set(catalog.map((p) => p.code)).size, 63);
   for (const d of domains) {
     assert.match(d.code, /^[A-Z]{1,4}$/);
     catalog
@@ -154,6 +165,52 @@ test("domain codes are unique and products are sequential in the complete catalo
   assert.equal(catalog.find((p) => p.id === "FIN-01").code, "STR-01");
   assert.equal(catalog.find((p) => p.id === "SL-06").code, "GOV-02");
   assert.equal(catalog.find((p) => p.id === "REC-05").code, "REG-02");
+});
+test("21 proposed solutions give all 18 workstreams a primary advisory home", () => {
+  assert.equal(catalog.filter((p) => p.proposed).length, 21);
+  assert.equal(catalog.filter((p) => !p.proposed && p.pdf).length, 42);
+  for (const w of T.workstreams) {
+    const lead = catalog.find((p) => p.id === w.leadProduct);
+    assert.ok(lead, w.name);
+    assert.equal(lead.domain, w.domain);
+    assert.ok(
+      lead.workstreamLinks.some(
+        (link) => link.id === w.id && link.role === "Primary advisory home",
+      ),
+    );
+  }
+  for (const p of catalog) assert.ok(p.workstreamLinks.length, p.code);
+  for (const t of T.tasks)
+    for (const id of t.products) assert.ok(catalog.some((p) => p.id === id));
+});
+test("equipment procurement is mapped to equipment advisory without changing owner responsibility", () => {
+  const t = T.tasks.find(
+    (t) => t.name === "Procurement, manufacture and delivery",
+  );
+  assert.equal(t.advisory, "Owner-led");
+  assert.ok(t.products.includes("GF-FAC-02"));
+  assert.ok(!t.products.includes("IT-02"));
+});
+test("opening recommendations cover every workstream without forcing post-opening or conditional scopes", () => {
+  const p = project(),
+    r = E.schedule(T, p),
+    recs = E.recommendations(T, p, r, catalog);
+  for (const w of T.workstreams)
+    assert.ok(
+      recs.some((r) => r.workstreams.includes(w.id)),
+      w.name,
+    );
+  assert.ok(
+    recs.every(
+      (r) => r.product.lifecycle !== "Post-opening" && !r.product.conditionFlag,
+    ),
+  );
+});
+test("Example Hospital selects the primary mapped scopes without adding them to a global package", () => {
+  const p = Example.create(T, E);
+  for (const w of T.workstreams)
+    assert.ok(p.selectedProducts.includes(w.leadProduct));
+  assert.equal(p.exampleCatalogVersion, T.solutionMappingVersion);
 });
 test("all 18 workstreams have a home and every domain has at least one workstream", () => {
   assert.equal(T.workstreams.length, 18);
