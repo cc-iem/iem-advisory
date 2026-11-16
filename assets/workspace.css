@@ -766,6 +766,23 @@ main#top {
 .gantt {
   min-width: 940px;
 }
+.panel .gantt { min-width: 720px; }
+.panel .gantt-header, .panel .gantt-row { grid-template-columns: 250px minmax(470px, 1fr); }
+.panel .gantt-label button { white-space: normal; text-align: left; }
+.panel .connection-workstream-table { min-width: 650px; }
+.connection-view-toggle { margin: 16px 0; }
+.gantt-no-scope { display: block; padding: 14px; font-size: 12px; color: var(--slate); }
+.workstream-profile-body { padding-top: 22px; }
+.workstream-profile-body .ws-solutions { margin: 20px 0; }
+.workstream-profile-body .ws-page-activities { margin-top: 20px; }
+.workstream-profile-body .ws-page-neighbors { flex-wrap: wrap; }
+.workstream-profile-body .ws-page-neighbors a { flex: 1 1 200px; white-space: normal; text-align: left; }
+.solution-mention { display: inline; }
+.plan-downloads { margin-top: 24px; }
+.plan-downloads summary { cursor: pointer; font-weight: 600; }
+.plan-downloads .page-actions { margin-top: 16px; }
+#selectedSolutions { margin-top: 32px; scroll-margin-top: 20px; }
+.section-heading { font-family: var(--serif); font-size: 30px; line-height: 1.2; margin: 0 0 10px; }
 .gantt-header,
 .gantt-row {
   display: grid;

@@ -74,14 +74,11 @@
     return p.pdf ? '<a class="btn btn-quiet" href="' + esc(p.pdf) + '" target="_blank" rel="noopener">' + ICON.pdf + 'Download brochure (PDF)</a>' : '';
   }
   function solutionConnectionsHTML(p) {
-    var links=p.workstreamLinks || [];
-    return '<section class="dsec solution-connections"><h3>Why this solution matters</h3><p>'+esc(p.purchaseReason || p.outcomes[0])+'</p>'+
-      (p.proposed?'<p class="scope-note">Proposed advisory scope. Specialist capability, resourcing, responsibilities and acceptance criteria are confirmed at proposal.</p>':'')+
-      '<h3>Workstream connections</h3><p class="scope-note">A connection identifies potential advisory support. The hospital and its appointed providers retain delivery and approval responsibilities.</p><ul>'+links.map(function(w){return '<li data-workstream-id="'+w.id+'"><small>'+esc(w.role)+'</small><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+window.CCWorkstreamTags.html(w.id)+'</button>'+(w.activities.length?'<ul>'+w.activities.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul>':'<p class="scope-note">'+esc(p.conditionLabel || 'Relevant after opening; confirm the specific scope and operational evidence required.')+'</p>')+'</li>';}).join('')+'</ul></section>';
+    return '<section class="dsec solution-connections"><h3>Why this solution matters</h3><p>'+esc(p.purchaseReason || p.outcomes[0])+'</p>'+(p.proposed?'<p class="scope-note">Proposed advisory scope. Specialist capability, resourcing, responsibilities and acceptance criteria are confirmed at proposal.</p>':'')+'<h3>Workstream connections</h3><p class="scope-note">Mapped workstreams in your current hospital plan. Select a workstream to view its profile.</p><div data-product-connections="'+p.id+'" data-tag-context="workstream"></div></section>';
   }
   function solutionWorkstreamsHTML(p) {
     var links = Array.from(new Map((p.workstreamLinks || []).map(function(w) { return [w.id, w]; })).values());
-    return '<div class="row-workstreams" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
+    return '<div class="row-workstreams" data-tag-context="workstream" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
       (links.length ? '<ul>' + links.map(function(w) {
         return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button><small>' + esc(w.role) + '</small></li>';
       }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
@@ -158,7 +155,7 @@
     renderSteps(step);
     if (step.type === "result") renderResult(); else renderQuestion(step);
     var plan = S.get();
-    finderMain.insertAdjacentHTML('afterbegin', '<div class="finder-project-context"><div><strong>' + esc(plan.name) + '</strong><span>' + (plan.hospitalType === 'existing' ? 'Existing hospital' : 'New hospital') + ' · ' + plan.openingBeds + ' opening beds · ' + plan.departmentCount + ' departments · ' + plan.selectedProducts.length + ' selected solutions</span></div><div class="finder-context-links"><a href="#planner/setup">Configure hospital →</a><a href="#planner/advisory">View selected solutions →</a></div></div>');
+    finderMain.insertAdjacentHTML('afterbegin', '<div class="finder-project-context"><div><strong>' + esc(plan.name) + '</strong><span>' + (plan.hospitalType === 'existing' ? 'Existing hospital' : 'New hospital') + ' · ' + plan.openingBeds + ' opening beds · ' + plan.departmentCount + ' departments · ' + plan.selectedProducts.length + ' selected solutions</span></div><div class="finder-context-links"><a href="#planner/setup">Configure hospital →</a><a href="#planner/overview?section=solutions">View selected solutions →</a></div></div>');
     renderMap(step);
     renderAnswers();
     $("#finderBack").disabled = state.order.length === 0;
@@ -214,7 +211,7 @@
       html += '<button type="button" class="option" data-action="answer" data-key="' + esc(q.id) + '" data-value="' + esc(o.id) +
         '" aria-pressed="' + (recall === o.id ? "true" : "false") + '">' +
         "<span>" +
-        '<span class="option-label">' + esc(o.label) + "</span>" +
+        '<span class="option-label">' + (BY_ID[o.id] ? window.CCDomainTags.solutionLabel(BY_ID[o.id]) : step.type === 'domain' ? window.CCDomainTags.domain(o.id) : esc(o.label)) + "</span>" +
         (o.detail ? '<span class="option-detail">' + esc(o.detail) + "</span>" : "") +
         (o.meta ? '<span class="option-meta">' + esc(o.meta) + "</span>" : "") +
         "</span></button>";
@@ -237,12 +234,12 @@
     var more = p.deliverables.length - shown.length;
 
     var html = '<div class="q-enter">' +
-      '<article class="result" aria-labelledby="resultTitle">' +
+      '<article class="result" data-tag-context="solution" data-tag-id="' + p.id + '" aria-labelledby="resultTitle">' +
       '<div class="result-band"><p class="result-for">Your best match</p>' +
       "<p>For " + STATUS_PHRASE[state.answers.status] + ", based on your " + plural(nAnswers, "answer", "answers") + " about " + esc(d.phrase || d.name.toLowerCase()) + ".</p></div>" +
       '<div class="result-body">' +
       '<p class="ref">' + esc(p.code) + "</p>" +
-      '<h2 class="result-title" id="resultTitle">' + esc(p.title) + "</h2>" +
+      '<h2 class="result-title" data-domain-plain="true" data-tag-context="solution" id="resultTitle">' + esc(p.title) + "</h2>" +
       '<p class="result-sub">' + rich(p.subtitle) + "</p>" +
       '<div style="margin-top:14px">' + markersHTML(p) + "</div>" +
       '<div class="result-cols"><div><h4>What you receive</h4><ul class="squares">' +
@@ -263,8 +260,8 @@
     if (rec.alternatives.length) {
       html += '<section class="also" aria-label="Also consider"><h3>Also consider</h3>';
       rec.alternatives.forEach(function (a) {
-        html += '<div class="also-row"><span class="ref">' + esc(a.code) + "</span><div>" +
-          '<button type="button" class="also-title" data-action="detail" data-id="' + a.id + '">' + esc(a.title) + "</button>" +
+        html += '<div class="also-row" data-tag-context="solution" data-tag-id="' + a.id + '"><span class="ref">' + esc(a.code) + "</span><div>" +
+          '<button type="button" class="also-title" data-domain-plain="true" data-tag-context="solution" data-action="detail" data-id="' + a.id + '">' + esc(a.title) + "</button>" +
           "<p>" + rich(a.durationShort) + "</p></div>" +
           cartButtonHTML(a.id, "btn-small on-navy-btn") + "</div>";
       });
@@ -313,12 +310,13 @@
       b.tabIndex = -1;
       b.setAttribute("data-action", "detail");
       b.setAttribute("data-id", p.id);
+      b.setAttribute('data-tag-context','solution');b.setAttribute('data-tag-id',p.id);
       b.style.background = window.CCDomainTags.background(p.fit);
       // Stable number within the complete primary-domain catalog.
       var num = p.number;
       b.setAttribute("data-num", num);
       b.innerHTML = '<span class="tile-num" aria-hidden="true">' + num + "</span>" +
-        '<span class="tile-text"><span class="tile-label"></span><span class="tile-title">' + esc(p.title) + "</span></span>";
+        '<span class="tile-text"><span class="tile-label"></span><span class="tile-title" data-domain-plain="true" data-tag-context="solution">' + esc(p.title) + "</span></span>";
       b.addEventListener("mouseenter", function () { showTip(p.id); });
       b.addEventListener("mouseleave", hideTip);
       b.addEventListener("focus", function () { showTip(p.id); });
@@ -512,8 +510,8 @@
     var t = tiles[id];
     if (!t || t.classList.contains("is-out")) return;
     var p = BY_ID[id];
-    tip.innerHTML = '<p class="tip-domain">' + esc(p.code) + " · " + esc(DOMAIN_BY_ID[p.domain].name) + "</p>" +
-      '<p class="tip-title">' + esc(p.title) + "</p>" +
+    tip.innerHTML = '<p class="tip-domain">' + window.CCDomainTags.solution(p) + ' · <span data-domain-plain>' + esc(DOMAIN_BY_ID[p.domain].name) + "</span></p>" +
+      '<p class="tip-title" data-domain-plain>' + esc(p.title) + "</p>" +
       '<p class="tip-sub">' + rich(p.subtitle) + "</p>" +
       '<p class="tip-meta">Typical duration: ' + rich(p.durationShort) + "</p>";
     tip.hidden = false;
@@ -543,7 +541,7 @@
     if (!state.order.length) { box.innerHTML = '<h3>Your answers</h3><p class="answers-empty">Your selections will appear here.</p>'; return; }
     var html = "<h3>Your answers</h3><dl>";
     state.order.forEach(function (key) {
-      html += '<div class="answer-row"><dt>' + esc(questionShort(key)) + "</dt><dd>" + esc(answerLabel(key)) + "</dd>" +
+      html += '<div class="answer-row"><dt>' + esc(questionShort(key)) + "</dt><dd>" + (BY_ID[state.answers[key]] ? window.CCDomainTags.solutionLabel(BY_ID[state.answers[key]]) : key === 'domain' ? window.CCDomainTags.domain(state.answers[key]) : esc(answerLabel(key))) + "</dd>" +
         '<button type="button" class="link-btn" data-action="change" data-key="' + esc(key) + '" aria-label="Change ' + esc(questionShort(key)) + '">Change</button></div>';
     });
     box.innerHTML = html + "</dl>";
@@ -642,9 +640,9 @@
       }
       if (list.length) html += '<div class="catalog-solutions" role="table" aria-label="' + esc(d.name) + ' solutions"><div class="catalog-column-heads" role="row"><span role="columnheader">Code</span><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Hospital fit & duration</span><span role="columnheader">Actions</span></div>';
       list.forEach(function (p) {
-        html += '<div class="row" role="row" data-domain-product="' + p.id + '">' +
+        html += '<div class="row" role="row" data-tag-context="solution" data-tag-id="' + p.id + '" data-domain-product="' + p.id + '">' +
           '<span class="ref" role="cell">' + esc(p.code) + "</span>" +
-          '<div role="cell"><button type="button" class="row-title" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
+          '<div role="cell"><button type="button" class="row-title" data-domain-plain="true" data-tag-context="solution" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
           '<p class="row-sub">' + rich(p.subtitle) + "</p></div>" +
           solutionWorkstreamsHTML(p) +
           '<div class="row-meta" role="cell">' + markersHTML(p) + "<span>Typical duration: " + rich(p.durationShort) + "</span></div>" +
@@ -697,7 +695,7 @@
           return '<li><div class="phase-head"><p class="phase-name">' + esc(ph.name) + '</p><p class="phase-when">' + esc(ph.when) + "</p></div><ul>" +
             ph.ids.map(function (id) {
               var p = BY_ID[id];
-              return '<li><button type="button" class="phase-item" data-action="detail" data-id="' + id + '"><span class="phase-ref">' + esc(id) + "</span>" + esc(p.title) + "</button></li>";
+              return '<li><button type="button" class="phase-item" data-action="detail" data-id="' + id + '">' + window.CCDomainTags.solutionLabel(p) + "</button></li>";
             }).join("") + cap + "</ul></li>";
         }).join("") + "</ol></section>";
     }).join("");
@@ -761,6 +759,8 @@
     var d = DOMAIN_BY_ID[p.domain];
     var panel = $("#detailPanel");
     panel.dataset.domainProduct = p.id;
+    panel.dataset.tagContext = 'solution'; panel.dataset.tagId = p.id;
+    delete panel.dataset.workstreamProfile;
     var res = "";
     var clientLabel = p.proposed ? "Client team and inputs" : p.assumptions.length ? "Your team" : "Your team and inputs";
     if (p.resourcesCC.length || p.resourcesClient.length) {
@@ -780,9 +780,9 @@
     }
     panel.innerHTML =
       '<div class="panel-head on-navy">' +
-      '<div class="panel-top"><span class="ref">' + esc(p.code) + " &nbsp;&nbsp;" + esc(d.name) + "</span>" +
+      '<div class="panel-top"><span class="ref">' + window.CCDomainTags.solution(p) + " &nbsp;&nbsp;<span data-domain-plain>" + esc(d.name) + "</span>" + "</span>" +
       '<button type="button" class="close-btn" data-action="close-panel" aria-label="Close">' + ICON.close + "</button></div>" +
-      '<h2 class="panel-title" id="detailTitle">' + esc(p.title) + "</h2>" +
+      '<h2 class="panel-title" id="detailTitle" data-domain-plain="true" data-tag-context="solution">' + esc(p.title) + "</h2>" +
       '<p class="panel-sub">' + rich(p.subtitle) + "</p>" + markersHTML(p) + "</div>" +
       '<div class="panel-body">' +
       '<dl class="fact-strip">' +
@@ -936,8 +936,8 @@
         '<button type="button" class="btn btn-primary" data-action="go-finder">Open the product navigator</button></div>';
     } else {
       html += '<ul class="cart-list">' + items.map(function (p) {
-        return '<li class="cart-item"><span class="ref">' + esc(p.code) + " &nbsp;&nbsp;" + esc(DOMAIN_BY_ID[p.domain].name) + "</span>" +
-          '<button type="button" class="cart-item-title" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
+        return '<li class="cart-item" data-tag-context="solution" data-tag-id="' + p.id + '"><span class="ref">' + window.CCDomainTags.solution(p) + " &nbsp;&nbsp;<span data-domain-plain>" + esc(DOMAIN_BY_ID[p.domain].name) + "</span>" + "</span>" +
+          '<button type="button" class="cart-item-title" data-domain-plain="true" data-tag-context="solution" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
           markersHTML(p) + '<span class="cart-dur">Typical duration: ' + rich(p.durationShort) + "</span>" +
           '<button type="button" class="remove" data-action="remove" data-id="' + p.id + '" aria-label="Remove ' + esc(p.title) + '">Remove</button></li>';
       }).join("") + "</ul>";
@@ -963,7 +963,7 @@
     var html = cartHead("Request a proposal", plural(items.length, "solution", "solutions") + " in your advisory service package");
     html += '<div class="panel-body"><form class="form" id="requestForm" novalidate>' +
       '<p class="form-intro">Tell us about your organization. The Cleveland Clinic Connected team will contact you to scope the solutions below.</p>' +
-      listHTML(items.map(function (p) { return p.code + "  " + p.title + (p.proposed ? " (proposed scope)" : ""); })) +
+      '<ul class="squares">'+items.map(function(p){return '<li>'+window.CCDomainTags.solutionLabel(p)+(p.proposed?' (proposed scope)':'')+'</li>';}).join('')+'</ul>' +
       '<div class="field-row">' + field("name", "Full name", "text", true, ' autocomplete="name"') + field("title", "Job title", "text", true, ' autocomplete="organization-title"') + "</div>" +
       '<div class="field-row">' + field("org", "Organization", "text", true, ' autocomplete="organization"') + field("country", "Country", "text", true, ' autocomplete="country-name"') + "</div>" +
       '<div class="field-row">' + field("email", "Work email", "email", true, ' autocomplete="email"') + field("phone", "Phone", "tel", false, ' autocomplete="tel"') + "</div>" +
@@ -1127,7 +1127,7 @@
     if (req.notes) rows.push(["Notes", req.notes]);
     var sol = req.solutions.map(function (s) {
       var p = BY_ID[s.id];
-      return "<tr><th>" + esc(s.code || p.code) + "</th><td><strong>" + esc(p.title) + "</strong><br>" + esc(s.area) + (p.proposed ? " · Proposed scope" : "") + "<br>Typical duration: " + esc(p.durationShort) + "<br>Delivery: " + esc(p.deliveryShort) + "</td></tr>";
+      return '<tr data-tag-context="solution" data-tag-id="' + p.id + '"><th>' + window.CCDomainTags.solution(p) + "</th><td><strong data-domain-plain>" + esc(p.title) + "</strong><br>" + esc(s.area) + (p.proposed ? " · Proposed scope" : "") + "<br>Typical duration: " + esc(p.durationShort) + "<br>Delivery: " + esc(p.deliveryShort) + "</td></tr>";
     }).join("");
     $("#printArea").innerHTML =
       '<img src="assets/cleveland-clinic-connected-logo.png" alt="Cleveland Clinic Connected">' +
@@ -1213,6 +1213,7 @@
   $("#scrim").addEventListener("click", function () { var p = openPanel(); if (p) hidePanel(p); });
 
   document.addEventListener("keydown", function (ev) {
+    if (document.querySelector('dialog[open]')) return;
     var panel = openPanel();
     if (!panel) return;
     if (ev.key === "Escape") { hidePanel(panel); return; }
@@ -1301,6 +1302,7 @@
   window.addEventListener("hashchange", openFromHash);
   openFromHash();
   window.CCApp = {
+    profile: function(html,opener) { var panel=$('#detailPanel');delete panel.dataset.domainProduct;delete panel.dataset.tagId;panel.dataset.tagContext='workstream';panel.innerHTML=html;showPanel(panel,opener);try{history.replaceState(null,'',location.hash.split('?')[0]);}catch(e){} },
     detail: openDetail, add: addToCart, cart: function () { state.cartView='list'; openCart(document.activeElement); },
     selected: function () { return state.cart.slice(); },
     catalog: function (domain) { if(state.domainFilter!==(domain||'')){state.query='';$('#catalogSearch').value='';} state.domainFilter=domain || ''; if(domain)state.open[domain]=true; renderCatalog(); },

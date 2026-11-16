@@ -278,7 +278,7 @@
     <script src="../data/workstream-solutions.js?v=2"></script>
     <script src="../data/workstream-codes.js?v=20261113-3"></script>
     <script src="../assets/workstream-tags.js?v=20261113-2"></script>
-    <script src="../assets/domain-tags.js?v=20261113-3"></script>
+    <script src="../assets/domain-tags.js?v=20261116-2"></script>
     <script>
       (function () {
         "use strict";
@@ -299,7 +299,7 @@
               })[c],
           );
         const link = (p) =>
-          '<a href="#' + p.code + '">' + e(p.code + " · " + p.title) + "</a>";
+          '<a href="#' + p.code + '">' + window.CCDomainTags.solutionLabel(p) + "</a>";
         document.getElementById("summary").textContent =
           C.length +
           " solutions · 42 existing offerings · 21 proposed scopes · 18 mapped workstreams · 10 domains";
@@ -351,7 +351,7 @@
             C.filter((p) => p.domain === d.id)
               .map(
                 (p) =>
-                  '<article id="' +
+                  '<article data-tag-context="solution" data-tag-id="' + p.id + '" id="' +
                   p.code +
                   '"><span class="badge">' +
                   e(p.code) +
@@ -361,7 +361,7 @@
                   (p.proposed ? "Proposed scope" : "Existing offering") +
                   '</span><span class="badge">' +
                   e(p.conditionLabel || p.lifecycle) +
-                  "</span><h3>" +
+                  '</span><h3 data-domain-plain="true">' +
                   e(p.title) +
                   "</h3><p>" +
                   e(p.subtitle) +
@@ -379,7 +379,7 @@
                   p.workstreamLinks
                     .map(
                       (w) =>
-                        '<div class="connection"><p><a href="#' +
+                        '<div class="connection" data-tag-context="workstream"><p><a href="#' +
                         w.id +
                         '">' +
                         window.CCWorkstreamTags.html(w.id) +

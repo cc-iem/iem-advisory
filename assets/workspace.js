@@ -62,8 +62,6 @@
     ["workstreams", "Workstreams"],
     ["timeline", "Timeline"],
     ["readiness", "Readiness"],
-    ["advisory", "Selected Solutions"],
-    ["scenarios", "Scenarios & Exports"],
   ];
   const services = [
     ["inpatient", "Inpatient"],
@@ -139,7 +137,7 @@
     renderNav();
   }
   function projectURL(page, id = current?.id) {
-    return "#planner/" + page;
+    return page === "advisory" ? "#planner/overview?section=solutions" : "#planner/" + page;
   }
   function workstreamURL(id, projectId = current?.id) {
     const w = ws(id);
@@ -166,8 +164,8 @@
   function renderNav() {
     const p = S.get(), selected = new Set(S.selectedWorkstreams());
     window.CCWorkstreamTags.setContext(p, current?.id === p.id && result ? result : E.schedule(T, p), today());
-    let nav = '<div class="nav-section">' + link("#finder", "Guided Finder", "finder", route.section === "finder") + link(projectURL("overview"), "Hospital Planner", "planner", route.section === "planner" && route.page === "overview") + '</div>';
-    let planNav = '<p class="nav-plan-name">' + esc(p.name) + '</p>';
+    let nav = '<div class="nav-section">' + link("#finder", "Guided Finder", "finder", route.section === "finder") + link(projectURL("overview"), "Hospital Planner", "planner", route.section === "planner" && route.page === "overview");
+    let planNav = "";
     for (const [key, label] of pages.filter(([key]) => key !== "overview")) {
       const item = link(projectURL(key), label, key === "timeline" ? "timeline" : key === "readiness" ? "check" : "page", route.section === "planner" && route.page === key && !route.workstream);
       if (key !== "workstreams") { planNav += item; continue; }
@@ -175,7 +173,7 @@
       planNav += '<div class="nav-link-row">' + item + '<button class="nav-expand" data-nav-toggle="ws-' + p.id + '" type="button" aria-label="Expand hospital workstreams" aria-expanded="' + expanded + '">›</button></div>';
       if (expanded) planNav += '<div class="nav-children">' + T.workstreams.map(w => link(workstreamURL(w.id), w.name + (selected.has(w.id) ? " · Selected" : ""), "", route.workstream === w.id, "", w.id, p.id)).join('') + '</div>';
     }
-    nav += navSection("plan", "My Advisory Plan", planNav);
+    nav += planNav + '</div>';
     nav += navSection(
       "catalog",
       "Advisory catalog",
@@ -202,7 +200,8 @@
     if (parts[0] === "portfolio") parts[0] = "catalog";
     const planner = !["finder", "catalog"].includes(parts[0]);
     const legacy = parts[1] && !pages.some(p => p[0] === parts[1]) && parts[1] !== "new";
-    const page = parts[1] === "new" ? "setup" : (legacy ? parts[2] : parts[1]) || "overview";
+    const rawPage = parts[1] === "new" ? "setup" : (legacy ? parts[2] : parts[1]) || "overview";
+    const page = ["advisory", "scenarios"].includes(rawPage) ? "overview" : rawPage;
     const token = (legacy ? parts[3] : parts[2]) || new URLSearchParams(location.hash.split("?")[1] || "").get("ws");
     return {section: planner ? "planner" : parts[0], id: planner ? S.get().id : null, page: planner ? page : "", domain: parts[0] === "catalog" ? parts[1] : null, workstream: planner && page === "workstreams" ? T.workstreams.find(w => w.id === token || w.code === token)?.id || token || null : null};
   }
@@ -265,7 +264,7 @@
       location.hash = projectURL("overview");
       return;
     }
-    if (current && !route.workstream && !location.hash.includes("?solution=") && location.hash !== projectURL(route.page))
+    if (current && !route.workstream && !location.hash.includes("?solution=") && !location.hash.includes("?section=solutions") && location.hash !== projectURL(route.page))
       history.replaceState(null, "", projectURL(route.page));
     if (current && route.workstream) {
       if (!ws(route.workstream)) {
@@ -330,6 +329,7 @@
     renderBreadcrumb();
     renderNav();
     $("#top").scrollTop = 0;
+    if (location.hash.includes("?section=solutions")) requestAnimationFrame(() => $("#selectedSolutions")?.scrollIntoView({block:"start"}));
     if (window.innerWidth <= 760) {
       document.body.classList.add("nav-collapsed");
       $("#navToggle").setAttribute("aria-expanded", "false");
@@ -946,15 +946,15 @@
         return timelineHTML();
       case "readiness":
         return readinessHTML();
-      case "advisory":
-        return advisoryHTML();
-      case "scenarios":
-        return scenariosHTML();
       default:
         return overviewHTML();
     }
   }
   function overviewHTML() {
+    return hospitalOverviewHTML() + advisoryHTML() + '<details class="planner-card plan-downloads"><summary>Backups & downloads</summary><div class="page-actions">' +
+      button("Plan backup (JSON)", "export-json") + button("Import backup", "import") + button("Activity schedule (CSV)", "export-csv") + button("MS Project XML", "export-xml") + button("Review report (HTML)", "export-report") + '</div></details>';
+  }
+  function hospitalOverviewHTML() {
     const critical = result.tasks
         .filter((t) => t.critical && t.id !== "GF-016")
         .slice(0, 6),
@@ -1139,11 +1139,11 @@
       return '<a class="ws-overview-card" href="' + workstreamURL(w.id) + '"><h2>' + window.CCWorkstreamTags.html(w.id, current.id) + '</h2><p class="workstream-selection-state">' + (S.selectedWorkstreams().includes(w.id) ? 'Connected to your selected solutions' : 'Available template · no selected solution') + '</p><p class="ws-card-domain">' + window.CCDomainTags.domain(w.domain) + '</p><p class="muted">Accountable role: ' + esc(w.owner) + '</p><div class="ws-card-progress"><span>' + tasks.length + ' activities</span><span>' + verified + ' verified</span></div><div class="progress-track" aria-label="' + verified + ' of ' + tasks.length + ' activities verified"><span style="width:' + (tasks.length ? verified / tasks.length * 100 : 0) + '%"></span></div><span class="ws-open-link">Open workstream →</span></a>';
     }).join('') + '</div>';
   }
-  function workstreamPageHTML(w) {
+  function workstreamPageHTML(w, bodyOnly = false) {
     const tasks = result.tasks.filter(t => t.workstream === w.id), verified = tasks.filter(t => t.verified).length;
     const index = T.workstreams.findIndex(x => x.id === w.id);
     const neighbor = (item, label) => item ? '<a class="btn btn-secondary" href="' + workstreamURL(item.id) + '">' + label + ' ' + window.CCWorkstreamTags.html(item.id, current.id) + '</a>' : '<span></span>';
-    return head(w.name, "Activities, deliverables and advisory support for this workstream.", '<a class="btn btn-secondary" href="' + projectURL("workstreams") + '">← All workstreams</a>' + button("Export workstream activities", "export-csv"), "Hospital Planner · Workstreams", window.CCWorkstreamTags.html(w.id, current.id)) +
+    return (bodyOnly ? "" : head(w.name, "Activities, deliverables and advisory support for this workstream.", '<a class="btn btn-secondary" href="' + projectURL("workstreams") + '">← All workstreams</a>' + button("Export workstream activities", "export-csv"), "Hospital Planner · Workstreams", window.CCWorkstreamTags.html(w.id, current.id))) +
       '<section class="planner-card ws-page-summary"><div class="ws-meta"><span>Accountable role: ' + esc(w.owner) + '</span><a href="#catalog/' + w.domain + '">' + window.CCDomainTags.domain(w.domain) + '</a></div><p>' + tasks.length + ' activities · ' + verified + ' verified · ' + tasks.filter(t => t.critical).length + ' on the critical path</p><p class="muted">' + esc(w.coverage) + '</p></section>' +
       workstreamSolutionsHTML(w) + '<section class="planner-card ws-page-activities" aria-label="Workstream activities"><h2>Activities & deliverables</h2>' + workstreamViewToggle(w) + filtersHTML() + window.CCWorkstreamTags.legend + '<div id="workstreamResults">' + workstreamContentHTML(w) + '</div></section><nav class="ws-page-neighbors" aria-label="Other workstreams">' + neighbor(T.workstreams[index - 1], '← Previous:') + neighbor(T.workstreams[index + 1], 'Next:') + '</nav>';
   }
@@ -1176,8 +1176,8 @@
       '</div><p class="muted" style="margin-top:12px">Durations use working days. The chart uses calendar dates. Use the activity panel to change duration or earliest start; dependent activities recalculate. Resource levelling is not included.</p>'
     );
   }
-  function ganttHTML() {
-    const visible = matchingTasks().filter(t => !route.workstream || t.workstream === route.workstream),
+  function ganttHTML(options = {}) {
+    const visible = matchingTasks().filter(t => (!route.workstream || t.workstream === route.workstream) && (!options.workstreamIds || options.workstreamIds.includes(t.workstream))),
       origin = Date.parse(current.startDate),
       end =
         Math.max(
@@ -1203,7 +1203,7 @@
         (t.verified ? "verified" : t.critical && !group ? "critical" : "") +
         '" ' +
         (group
-          ? 'data-plan-action="toggle-gantt" data-ws="' + t.workstream + '"'
+          ? (options.groupsOnly ? 'data-plan-action="open-workstream" data-workstream="' + t.workstream + '"' : 'data-plan-action="toggle-gantt" data-ws="' + t.workstream + '"')
           : 'data-task="' + t.id + '"') +
         ' style="left:' +
         x +
@@ -1228,8 +1228,11 @@
     let rows = "";
     T.workstreams.forEach((w) => {
       const ts = visible.filter((t) => t.workstream === w.id);
-      if (!ts.length) return;
-      const expanded = route.workstream ? ui.workstreamTimelineExpanded?.[w.id] !== false : ui.allExpanded || ui.timelineWS?.[w.id];
+      if (!ts.length) {
+        if (options.groupsOnly && options.workstreamIds?.includes(w.id)) rows += '<div class="gantt-row group"><div class="gantt-label"><button class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id,current.id) + '</button></div><div class="gantt-track"><span class="gantt-no-scope">Not in the current service scope</span></div></div>';
+        return;
+      }
+      const expanded = !options.groupsOnly && (route.workstream ? ui.workstreamTimelineExpanded?.[w.id] !== false : ui.allExpanded || ui.timelineWS?.[w.id]);
       const starts = ts.map((t) => t.startDate).sort(),
         finishes = ts.map((t) => t.finishDate).sort();
       const group = {
@@ -1241,13 +1244,10 @@
         milestone: false,
       };
       rows +=
-        '<div class="gantt-row group"><div class="gantt-label"><button class="text-button" data-plan-action="toggle-gantt" data-ws="' +
+        '<div class="gantt-row group"><div class="gantt-label"><button class="text-button" ' + (options.groupsOnly ? 'data-plan-action="open-workstream" data-workstream="' : 'data-plan-action="toggle-gantt" data-ws="') +
         w.id +
-        '" aria-expanded="' +
-        !!expanded +
-        '">' +
-        (expanded ? "▾" : "▸") +
-        " " +
+        (options.groupsOnly ? '">' : '" aria-expanded="' + !!expanded + '">') +
+        (options.groupsOnly ? "" : (expanded ? "▾ " : "▸ ")) +
         window.CCWorkstreamTags.html(w.id, current?.id) +
         "</button><small>" +
         ts.length +
@@ -1344,12 +1344,12 @@
       "</div>"
     );
   }
-  function productButton(p) {
+  function productButton(p, withCode = true) {
     return (
       '<button type="button" class="text-button" data-plan-action="product" data-product="' +
       p.id +
       '">' +
-      esc(p.code + " · " + p.title) +
+      (withCode ? window.CCDomainTags.solutionLabel(p) : window.CCDomainTags.solutionTitle(p)) +
       "</button>"
     );
   }
@@ -1436,10 +1436,10 @@
       extras
         .map(
           (p) =>
-            '<div class="offering-row"><span class="ref">' +
+            '<div class="offering-row" data-tag-context="solution" data-tag-id="' + p.id + '"><span class="ref">' +
             esc(p.code) +
             "</span><div>" +
-            productButton(p) +
+            productButton(p, false) +
             "<p>" +
             esc(p.conditionLabel || p.lifecycle) +
             '</p></div><label class="service-option"><input type="checkbox" data-product-select="' +
@@ -1454,23 +1454,19 @@
     const recs = E.recommendations(T, current, result, C),
       selected = new Set(current.selectedProducts || []);
     return (
-      head(
-        "Selected Solutions",
-        "Connect selected services to actual work. Engagement scope and delivery roles are agreed separately.",
-        button("Open package", "cart", "", true),
-      ) +
+      '<section id="selectedSolutions"><div class="page-head"><div><h2 class="section-heading">Selected solutions</h2><p class="page-sub">The same advisory selections used in Guided Finder and Package.</p></div><div class="page-actions">' + button("Open package", "cart", "", true) + '</div></div>' +
       '<div class="plan-notice">Selections here are the same selections shown in Package and Guided Finder. <span id="advisorySelectionCount">' +
       selected.size +
       '</span> services selected. New offerings are proposed advisory scopes; specialist capability, delivery roles and terms are confirmed at proposal. Existing brochures retain their original scope.</div><section class="planner-card"><h3>Support matched to your hospital plan</h3><p class="card-intro">Ordered by unresolved activity coverage, with extra weight on the critical path. These are potential connections, not confirmed delivery commitments.</p>' +
       recs
         .map(
           (r) =>
-            '<div class="offering-row"><span class="ref">' +
+            '<div class="offering-row" data-tag-context="solution" data-tag-id="' + r.product.id + '"><span class="ref">' +
             esc(r.product.code) +
             '</span><div><button class="text-button" data-plan-action="product" data-product="' +
             r.product.id +
             '">' +
-            esc(r.product.title) +
+            window.CCDomainTags.solutionTitle(r.product) +
             "</button>" +
             (r.product.proposed
               ? '<span class="offering-status">Proposed scope</span>'
@@ -1500,70 +1496,44 @@
         .join("") +
       "</section>" +
       additionalSolutionsHTML(recs) +
-      solutionMatrixHTML()
+      solutionMatrixHTML() + "</section>"
     );
   }
-  function scenariosHTML() {
-    return (
-      head(
-        "Scenarios & Exports",
-        "Save a comparison point before changing scope or estimates. A baseline is a reference snapshot, not an approval of readiness.",
-        button("Save scenario", "snapshot", "", true),
-      ) +
-      '<div class="planner-grid"><section class="planner-card"><h3>Current plan</h3><p class="card-intro">' +
-      current.openingBeds +
-      " opening beds · " +
-      current.departments.length +
-      ' services</p><ul class="activity-list"><li>Requested opening<strong>' +
-      date(current.targetDate) +
-      "</strong></li><li>Forecast opening<strong>" +
-      date(result.forecastDate) +
-      "</strong></li><li>Reference template<strong>" +
-      T.version +
-      '</strong></li></ul><div class="page-actions" style="margin-top:18px">' +
-      button("Set baseline", "baseline") +
-      '<a class="btn btn-secondary" href="' +
-      projectURL("setup") +
-      '">Change parameters</a></div></section><section class="planner-card"><h3>Export this project</h3><p class="card-intro">Keep a portable backup and take the plan into review or further scheduling.</p><div class="page-actions">' +
-      button("Project backup (JSON)", "export-json") +
-      button("Activity schedule (CSV)", "export-csv") +
-      button("MS Project XML", "export-xml") +
-      button("Review report (HTML)", "export-report") +
-      '</div></section></div><section class="planner-card" style="margin-top:18px"><h3>Saved comparisons</h3>' +
-      (current.scenarios.length
-        ? '<div style="overflow:auto"><table class="planner-table"><thead><tr><th>Scenario</th><th>Opening scope</th><th>Target</th><th>Forecast at save</th><th></th></tr></thead><tbody>' +
-          current.scenarios
-            .map(
-              (s) =>
-                "<tr><td><strong>" +
-                esc(s.name) +
-                "</strong>" +
-                (s.baseline ? ' <span class="plan-tag">Baseline</span>' : "") +
-                '<br><span class="muted">' +
-                date(s.savedAt.slice(0, 10)) +
-                "</span></td><td>" +
-                s.project.openingBeds +
-                " beds · " +
-                s.project.departments.length +
-                " services</td><td>" +
-                date(s.project.targetDate) +
-                "</td><td>" +
-                date(s.forecastDate) +
-                "</td><td>" +
-                button(
-                  "Apply to current plan",
-                  "restore",
-                  'data-scenario="' + s.id + '"',
-                ) +
-                "</td></tr>",
-            )
-            .join("") +
-          "</tbody></table></div>"
-        : '<p class="card-intro">No saved scenarios. Save the current plan before exploring another opening scope.</p>') +
-      "</section>"
-    );
+  let activityScope = null, scopeDepth = 0;
+  function withPlanScope(workstreamId, fn, syncNavigation = false) {
+    const previous = {current,result,route,ui};
+    scopeDepth++;
+    try {
+      current = S.get(); result = E.schedule(T,current);
+      route = {section:"planner",page:workstreamId?"workstreams":"connections",id:current.id,workstream:workstreamId};
+      if (!workstreamId) ui = {...ui,domain:"",query:"",criticalOnly:false};
+      window.CCWorkstreamTags.setContext(current,result,today());window.CCWorkstreamTags.setActive(current.id);
+      return fn();
+    } finally {
+      current=previous.current;result=previous.result;route=previous.route;ui=previous.ui;scopeDepth--;
+      window.CCWorkstreamTags.setActive(route.section === "planner" ? current?.id : "");
+      if(syncNavigation){if(route.section === "planner")render();else renderNav();}
+    }
   }
-
+  function connectionWorkstreamsHTML(product, view = "timeline") {
+    const links = [...new Map((product.workstreamLinks||[]).map(w=>[w.id,w])).values()];
+    if(!links.length)return '<p class="scope-note">No workstream connections are mapped.</p>';
+    if(view === "timeline")return ganttHTML({workstreamIds:links.map(w=>w.id),groupsOnly:true});
+    return '<div class="planner-table-scroll"><table class="planner-table connection-workstream-table"><thead><tr><th>Workstream</th><th>Connection</th><th>Activities</th><th>Start</th><th>Finish</th></tr></thead><tbody>'+links.map(link=>{
+      const tasks=result.tasks.filter(t=>t.workstream===link.id),starts=tasks.map(t=>t.startDate).sort(),ends=tasks.map(t=>t.finishDate).sort();
+      return '<tr data-connection-workstream="'+link.id+'"><td><button class="text-button" data-plan-action="open-workstream" data-workstream="'+link.id+'">'+window.CCWorkstreamTags.html(link.id,current.id)+'</button></td><td>'+esc(link.role)+'</td><td>'+tasks.length+'</td><td>'+date(starts[0])+'</td><td>'+date(ends.at(-1))+'</td></tr>';
+    }).join('')+'</tbody></table></div>';
+  }
+  window.CCPlannerViews = {
+    body:id=>withPlanScope(id,()=>workstreamPageHTML(ws(id),true)),
+    content:id=>withPlanScope(id,()=>workstreamContentHTML(ws(id))),
+    connections:(product,view)=>withPlanScope(null,()=>connectionWorkstreamsHTML(product,view)),
+    setView(id,view){ui.workstreamViews=ui.workstreamViews||{};ui.workstreamViews[id]=view;saveUI();},
+    setQuery(id,value){ui.activityQueries=ui.activityQueries||{};ui.activityQueries[S.get().id+id]=value;saveUI();},
+    toggle(id){ui.workstreamTimelineExpanded=ui.workstreamTimelineExpanded||{};ui.workstreamTimelineExpanded[id]=ui.workstreamTimelineExpanded[id]===false;saveUI();},
+    activity(id,workstreamId){activityScope=workstreamId;return withPlanScope(workstreamId,()=>openActivity(id));},
+    export:id=>withPlanScope(id,()=>exportCSV())
+  };
   // Dialogs use native modal focus handling; the existing product and package panels are retained.
   const dialog = document.createElement("dialog");
   dialog.className = "activity-dialog";
@@ -1870,7 +1840,8 @@
     }
     const task = ev.target.closest("[data-task]");
     if (task) {
-      openActivity(task.dataset.task);
+      if(activityScope && dialog.contains(task))withPlanScope(activityScope,()=>openActivity(task.dataset.task));
+      else {activityScope=null;openActivity(task.dataset.task);}
       return;
     }
     const toggle = ev.target.closest("[data-nav-toggle]");
@@ -1887,10 +1858,8 @@
     switch (action.dataset.planAction) {
       case "open-workstream": {
         const p = S.get();
-        window.CCApp.close();
-        if (p)
-          location.hash =
-            workstreamURL(action.dataset.workstream, p.id);
+        if(window.CCWorkstreamProfiles)window.CCWorkstreamProfiles.open(action.dataset.workstream,action);
+        else if(p) location.hash=workstreamURL(action.dataset.workstream,p.id);
         break;
       }
       case "select-extra": {
@@ -2026,41 +1995,9 @@
       case "import":
         importPicker();
         break;
-      case "snapshot":
-      case "baseline":
-        saveScenario(action.dataset.planAction === "baseline");
-        break;
-      case "restore": {
-        const s = current.scenarios.find(
-          (s) => s.id === action.dataset.scenario,
-        );
-        if (!s) return;
-        S.restore(s.project, "restore");
-        current = S.get(); projects = [current];
-        location.hash = projectURL("overview");
-        toast("Snapshot applied to your current plan. The previous state was saved as a comparison.");
-        break;
-      }
+
     }
   });
-  function saveScenario(baseline) {
-    const p = clone(current);
-    delete p.scenarios;
-    const n = current.scenarios.length + 1;
-    current.scenarios.push({
-      id: uid(),
-      name: (baseline ? "Baseline" : "Scenario") + " " + n,
-      baseline: baseline,
-      savedAt: new Date().toISOString(),
-      forecastDate: result.forecastDate,
-      project: p,
-    });
-    persist();
-    $("#plannerContent").innerHTML = scenariosHTML();
-    toast(
-      "Current plan saved as " + (baseline ? "a baseline." : "a scenario."),
-    );
-  }
   function importPicker() {
     const input = document.createElement("input");
     input.type = "file";
@@ -2112,7 +2049,8 @@
     });
     input.click();
   }
-  document.addEventListener("submit", (ev) => {
+  document.addEventListener("submit", function submitWorkspace(ev) {
+    if(ev.target.id === "activityForm" && activityScope && !scopeDepth)return withPlanScope(activityScope,()=>submitWorkspace(ev),true);
     if (ev.target.id === "projectForm") {
       ev.preventDefault();
       const p = projectFromForm(ev.target);
@@ -2189,7 +2127,8 @@
       current.taskStates[activeTask] = state;
       persist();
       dialog.close();
-      render();
+      if(activityScope)window.CCWorkstreamProfiles?.refresh();else render();
+      activityScope=null;
       toast("Activity saved. Dependent dates recalculated.");
     }
   });
