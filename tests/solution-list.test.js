@@ -27,7 +27,7 @@ test('Selected Solutions lists the complete catalog; Package has exactly the sel
   assert.equal(Object.keys(full).length,63);assert.deepEqual(Object.keys(cart).sort(),c.state.cart.slice().sort());
   for(const id of c.state.cart)assert.equal(cart[id],withoutHospitalFit(full[id]),id+' row layout matches except omitted Package fit markers');
   assert.equal(panel.body.scrollTop,140);
-  for(const p of C){const links=[...new Set(p.workstreamLinks.map(w=>w.id))].sort();const rendered=[...full[p.id].matchAll(/data-plan-action="open-workstream" data-workstream="([^"]+)"/g)].map(m=>m[1]).sort();assert.deepEqual(rendered,links,p.code);assert.match(full[p.id],/workstream-tag ws-/);}
+  for(const p of C){const links=[...new Set(p.workstreamLinks.map(w=>w.id))].sort();const rendered=[...full[p.id].matchAll(/data-plan-action="open-workstream" data-workstream="([^"]+)"/g)].map(m=>m[1]).sort();assert.deepEqual(rendered,links,p.code);assert.match(full[p.id],/workstream-tag ws-/);assert.doesNotMatch(full[p.id],/workstream-mention/,'solution rows use code-only workstream links');}
 });
 test('Add and Remove update the one package and both shared table views',()=>{
   const {c,panel}=setup(),id=C[8].id;
@@ -75,8 +75,17 @@ test('domains group every solution once, collapse independently and remember exp
 });
 test('domain selection and clearing affect all solutions in that domain and preserve other domains',()=>{
   const {c}=setup(),domain=C[8].domain,ids=C.filter(p=>p.domain===domain).map(p=>p.id),outside=c.state.cart.filter(id=>!ids.includes(id));
-  c.setSolutionDomain(domain,true);assert.equal(c.solutionDomainSelection(domain).status,'all');assert.ok(ids.every(id=>c.S.get().selectedProducts.includes(id)));assert.ok(outside.every(id=>c.S.get().selectedProducts.includes(id)));
+  c.setSolutionDomain(domain,true);assert.equal(c.solutionDomainSelection(domain).status,'all');
+  assert.match(c.solutionSelectionTableHTML(C),/class="btn btn-secondary btn-small domain-select-all" aria-pressed="true"[^>]*>− Remove domain<\/button>/);assert.ok(ids.every(id=>c.S.get().selectedProducts.includes(id)));assert.ok(outside.every(id=>c.S.get().selectedProducts.includes(id)));
   c.removeFromCart(ids[0]);assert.equal(c.solutionDomainSelection(domain).status,ids.length>1?'partial':'none');
+  const controls={'.domain-selection-count':{},'.domain-select-all':{setAttribute(k,v){this[k]=v;}},'.domain-clear':{}};
+  const group={dataset:{solutionDomain:domain},querySelector:s=>controls[s]};
+  c.$all=s=>s==='[data-solution-domain]'?[group]:[];c.refreshSolutionActions({});
+  assert.equal(controls['.domain-select-all'].textContent,'+ Add domain');
+  assert.equal(controls['.domain-select-all']['aria-pressed'],ids.length>1?'mixed':'false');
+  c.setSolutionDomain(domain,true);c.refreshSolutionActions({});
+  assert.equal(controls['.domain-select-all'].textContent,'− Remove domain');
+  assert.equal(controls['.domain-select-all']['aria-pressed'],'true');
   c.setSolutionDomain(domain,false);assert.equal(c.solutionDomainSelection(domain).status,'none');assert.deepEqual(c.S.get().selectedProducts.sort(),outside.sort());
 });
 test('rows and action labels clearly distinguish selected and unselected states',()=>{
@@ -96,6 +105,10 @@ test('domain previews contain every related workstream once using standard color
     const products=C.filter(p=>p.domain===d.id),html=c.solutionDomainWorkstreamsHTML(products);
     const expected=[...new Set(products.flatMap(p=>p.workstreamLinks.map(w=>w.id)))].sort();
     assert.deepEqual([...html.matchAll(/data-workstream="([^"]+)"/g)].map(m=>m[1]).sort(),expected);
-    for(const id of expected)assert.ok(html.includes(c.window.CCWorkstreamTags.html(id)));
+    for(const id of expected){
+      const w=T.workstreams.find(w=>w.id===id);assert.ok(html.includes(c.window.CCWorkstreamTags.code(id)));
+      assert.ok(html.includes('title="'+c.esc(w.name)+' · '),'full name is available on hover');
+      assert.doesNotMatch(html,/workstream-mention/,'previews show codes without visible workstream names');
+    }
   }
 });

@@ -82,7 +82,7 @@
     var links = Array.from(new Map((p.workstreamLinks || []).map(function(w) { return [w.id, w]; })).values());
     return '<div class="row-workstreams '+(extraClass || '')+'" data-tag-context="workstream" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
       (links.length ? '<ul>' + links.map(function(w) {
-        return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button>'+window.CCWorkstreamTags.heatmap(w.id)+'</li>';
+        return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + (extraClass === 'selection-workstreams' ? window.CCWorkstreamTags.code(w.id) : window.CCWorkstreamTags.html(w.id)) + '</button>'+window.CCWorkstreamTags.heatmap(w.id)+'</li>';
       }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
   }
   function loadSolutionDomains() {
@@ -112,14 +112,14 @@
   }
   function solutionDomainWorkstreamsHTML(products) {
     var ids=Array.from(new Set(products.reduce(function(all,p){return all.concat((p.workstreamLinks||[]).map(function(w){return w.id;}));},[])));
-    return '<div class="domain-workstream-preview" data-tag-context="workstream" aria-label="Related workstreams">'+ids.map(function(id){return '<button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+id+'">'+window.CCWorkstreamTags.html(id)+'</button>';}).join('')+'</div>';
+    return '<div class="domain-workstream-preview" data-tag-context="workstream" aria-label="Related workstreams">'+ids.map(function(id){return '<button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+id+'">'+window.CCWorkstreamTags.code(id)+'</button>';}).join('')+'</div>';
   }
   function solutionSelectionTableHTML(items,context) {
     context=context||'solutions';
     return '<div class="solution-list-surface">'+DOMAINS.map(function(d){
       var products=items.filter(function(p){return p.domain===d.id;}).sort(function(a,b){return a.number-b.number;});if(!products.length)return '';
       var selection=solutionDomainSelection(d.id),open=solutionDomainOpen(d.id,context),prefix='solution-group-'+context+'-'+d.id;
-      return '<section class="solution-domain" data-solution-domain="'+d.id+'" data-solution-context="'+context+'" data-selection-state="'+selection.status+'" aria-labelledby="'+prefix+'-title"><div class="solution-domain-header"><h2 class="solution-domain-heading"><button type="button" class="solution-domain-toggle" id="'+prefix+'-title" data-action="toggle-solution-domain" aria-expanded="'+open+'" aria-controls="'+prefix+'-body"><span class="domain-collapse-arrow" aria-hidden="true">›</span>'+window.CCDomainTags.domain(d.id)+'</button></h2><div class="solution-domain-controls"><span class="domain-selection-count">'+selection.count+' of '+selection.total+' in package</span><button type="button" class="domain-select-all" role="checkbox" aria-checked="'+(selection.status==='partial'?'mixed':String(selection.status==='all'))+'" data-action="toggle-domain-selection" data-domain="'+d.id+'" aria-label="Select or deselect all '+esc(d.name)+' solutions"><span class="domain-checkbox-icon" aria-hidden="true">'+(selection.status==='all'?'✓':selection.status==='partial'?'−':'')+'</span><span>Select domain</span></button><button type="button" class="domain-clear" data-action="clear-domain-selection" data-domain="'+d.id+'"'+(!selection.count?' disabled':'')+' aria-label="Deselect all '+esc(d.name)+' solutions">Clear</button></div></div>'+solutionDomainWorkstreamsHTML(products)+'<div class="solution-domain-body" id="'+prefix+'-body"'+(open?'':' hidden')+'><div class="solution-selection-table" role="table" aria-label="'+esc(d.name)+' solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Package</span></div>'+products.map(function(p){return solutionSelectionRowHTML(p,context);}).join('')+'</div></div></section>';
+      return '<section class="solution-domain" data-solution-domain="'+d.id+'" data-solution-context="'+context+'" data-selection-state="'+selection.status+'" aria-labelledby="'+prefix+'-title"><div class="solution-domain-header"><h2 class="solution-domain-heading"><button type="button" class="solution-domain-toggle" id="'+prefix+'-title" data-action="toggle-solution-domain" aria-expanded="'+open+'" aria-controls="'+prefix+'-body"><span class="domain-collapse-arrow" aria-hidden="true">›</span>'+window.CCDomainTags.domain(d.id)+'</button></h2><div class="solution-domain-controls"><span class="domain-selection-count">'+selection.count+' of '+selection.total+' in package</span><button type="button" class="btn btn-secondary btn-small domain-select-all" aria-pressed="'+(selection.status==='partial'?'mixed':String(selection.status==='all'))+'" data-action="toggle-domain-selection" data-domain="'+d.id+'" aria-label="'+(selection.status==='all'?'Remove all ':'Add all ')+esc(d.name)+' solutions '+(selection.status==='all'?'from':'to')+' package">'+(selection.status==='all'?'− Remove domain':'+ Add domain')+'</button><button type="button" class="btn btn-secondary btn-small domain-clear" data-action="clear-domain-selection" data-domain="'+d.id+'"'+(!selection.count?' disabled':'')+' aria-label="Deselect all '+esc(d.name)+' solutions">Clear</button></div></div>'+solutionDomainWorkstreamsHTML(products)+'<div class="solution-domain-body" id="'+prefix+'-body"'+(open?'':' hidden')+'><div class="solution-selection-table" role="table" aria-label="'+esc(d.name)+' solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Package</span></div>'+products.map(function(p){return solutionSelectionRowHTML(p,context);}).join('')+'</div></div></section>';
     }).join('')+'</div>';
   }
   function refreshSolutionActions(root) {
@@ -132,8 +132,10 @@
     $all('[data-solution-domain]',root).forEach(function(group){
       var selection=solutionDomainSelection(group.dataset.solutionDomain);group.dataset.selectionState=selection.status;
       group.querySelector('.domain-selection-count').textContent=selection.count+' of '+selection.total+' in package';
-      group.querySelector('.domain-select-all').setAttribute('aria-checked',selection.status==='partial'?'mixed':String(selection.status==='all'));
-      group.querySelector('.domain-checkbox-icon').textContent=selection.status==='all'?'✓':selection.status==='partial'?'−':'';
+      var button=group.querySelector('.domain-select-all'),domain=DOMAINS.find(function(d){return d.id===group.dataset.solutionDomain;});
+      button.setAttribute('aria-pressed',selection.status==='partial'?'mixed':String(selection.status==='all'));
+      button.textContent=selection.status==='all'?'− Remove domain':'+ Add domain';
+      button.setAttribute('aria-label',(selection.status==='all'?'Remove all ':'Add all ')+domain.name+' solutions '+(selection.status==='all'?'from':'to')+' package');
       group.querySelector('.domain-clear').disabled=!selection.count;
     });
   }

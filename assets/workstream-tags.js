@@ -25,7 +25,7 @@
   function tag(item,projectId){
     if(!item)return '';
     const s=status(item.id,projectId);
-    return '<span class="workstream-tag ws-'+s.color+'" data-domain-tagged="true" title="'+esc(item.name+' · '+s.label)+'" aria-label="'+esc(item.code+' · '+s.label)+'">'+item.code+'</span>';
+    return '<span class="workstream-tag ws-'+s.color+'" data-domain-tagged="true" title="'+esc(item.name+' · '+s.label)+'" aria-label="'+esc(item.code+' · '+item.name+' · '+s.label)+'">'+item.code+'</span>';
   }
   function code(id,projectId){return tag(T.workstreams.find(w=>w.id===id),projectId);}
   function html(id,projectId){const w=T.workstreams.find(w=>w.id===id);return w?'<span class="workstream-mention" data-domain-tagged="true">'+code(id,projectId)+' <span>'+esc(w.name)+'</span></span>':'';}
