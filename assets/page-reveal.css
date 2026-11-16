@@ -1,0 +1,20 @@
+.enter-pending { opacity: 0; }
+.enter-item { animation: content-enter 380ms cubic-bezier(.2,.7,.2,1) var(--enter-delay, 0ms) both; }
+.gantt-bar.enter-bar { transform-origin: left center; animation: timeline-grow 620ms cubic-bezier(.2,.7,.2,1) var(--enter-delay, 0ms) both; }
+.enter-pending:focus-within, .enter-item:focus-within { opacity: 1; animation: none; }
+@keyframes content-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes timeline-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enter-pending { opacity: 1; }
+  .enter-item, .gantt-bar.enter-bar { animation: none; }
+}
+@media print {
+  .enter-pending { opacity: 1 !important; }
+  .enter-item, .gantt-bar.enter-bar { animation: none !important; }
+}

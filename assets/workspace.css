@@ -2088,6 +2088,28 @@ main#top {
   scrollbar-color: #6ca2c1 #0b304f;
 }
 .model-panel { min-height: 100%; padding: 24px 20px; }
+.model-workstream-timeline { margin: 24px 0; padding-top: 20px; border-top: 1px solid #ffffff29; min-width: 0; grid-column: 1 / -1; }
+.model-workstream-timeline h3 { color: #fff; font-size: 17px; margin-bottom: 8px; }
+.model-timeline-note { font-size: 11px; color: #c4deee; line-height: 1.6; margin: 10px 0; }
+.model-timeline-dates { display: grid; gap: 8px; font-size: 11px; margin: 14px 0; }
+.model-timeline-dates > div { display: flex; justify-content: space-between; gap: 8px; }
+.model-timeline-dates dt { color: #b8d2e5; }
+.model-timeline-dates dd { margin: 0; color: #fff; }
+.model-workstream-timeline .plan-notice { margin: 14px 0; padding: 10px; font-size: 11px; line-height: 1.6; }
+#top .model-workstream-timeline .gantt-scroll { max-height: none; overflow: hidden; border-radius: 6px; }
+.model-workstream-timeline .gantt { min-width: 0; }
+.model-workstream-timeline :is(.gantt-header, .gantt-row) { grid-template-columns: minmax(0, 1fr); }
+.model-workstream-timeline .gantt-header .gantt-label { display: none; }
+.model-workstream-timeline .gantt-label { position: static; padding: 10px 9px 4px; border-right: 0; }
+.model-workstream-timeline .gantt-label button { white-space: normal; text-align: left; background: transparent; border: 0; padding: 0; font-size: 11px; }
+.model-workstream-timeline .gantt-label > small { display: none; }
+.model-workstream-timeline .gantt-range { display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 6px 0 2px; font-size: 9px; font-weight: 400; color: #c4deee; }
+.model-workstream-timeline .gantt-range time { color: #fff; font-variant-numeric: tabular-nums; }
+.model-workstream-timeline .gantt-track { min-height: 25px; margin: 0 9px 8px; }
+#top .model-workstream-timeline .gantt-bar { top: 8px; height: 7px; border: 0; border-radius: 2px; }
+.model-workstream-timeline .gantt-axis { font-size: 8px; padding: 10px 5px; }
+.model-workstream-timeline .gantt-axis span:not(:first-child):not(:last-child) { display: none; }
+.model-workstream-timeline .gantt-no-scope { font-size: 10px; padding: 6px 0; color: #bed3e7; }
 .model-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .model-header h2 { font-size: 20px; font-weight: 500; margin: 5px 0 0; color: #fff; }
 .model-header .page-kicker { color: #aad9ef; font-size: 10px; letter-spacing: .12em; }

@@ -13,7 +13,7 @@ function declaration(name){
   const constant=source.indexOf('  const '+name+' =');assert.ok(constant>=0,name+' exists');
   return source.slice(constant,source.indexOf(';',constant)+1);
 }
-function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:['overview','setup','workstreams','timeline','readiness'].map(k=>[k,k]),scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','hospitalOverviewHTML','advisoryHTML','additionalSolutionsHTML','solutionMatrixHTML','notice','stat','workstreamTable','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
+function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:['overview','setup','workstreams','timeline','readiness'].map(k=>[k,k]),scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','workstreamRange','setupTimelineHTML','renderSetupTimeline','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','hospitalOverviewHTML','advisoryHTML','additionalSolutionsHTML','solutionMatrixHTML','notice','stat','workstreamTable','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
 const ids=html=>[...new Set([...html.matchAll(/data-task="([^"]+)"/g)].map(m=>m[1]))].sort();
 test('Table and Timeline render exactly the same scoped activity IDs for all 18 workstreams',()=>{const c=context();for(const w of T.workstreams){c.route.workstream=w.id;c.ui.workstreamViews[w.id]='table';const table=c.workstreamContentHTML(w);c.ui.workstreamViews[w.id]='timeline';const timeline=c.workstreamContentHTML(w);const expected=result.tasks.filter(t=>t.workstream===w.id).map(t=>t.id).sort();assert.deepEqual(ids(table),expected,w.code+' table');assert.deepEqual(ids(timeline),expected,w.code+' timeline');assert.ok(timeline.includes('gantt-scroll'));}});
 test('search filtering and no-match results remain identical across both views',()=>{const c=context(),w=T.workstreams.find(w=>w.code==='NURS');c.route.workstream=w.id;for(const query of ['NURS-01','competency','nonexistent activity']){c.ui.activityQueries[project.id+w.id]=query;c.ui.workstreamViews[w.id]='table';const table=ids(c.workstreamContentHTML(w));c.ui.workstreamViews[w.id]='timeline';assert.deepEqual(ids(c.workstreamContentHTML(w)),table,query);if(query==='NURS-01')assert.equal(table.length,1);if(query==='nonexistent activity')assert.equal(table.length,0);}});
@@ -60,6 +60,88 @@ test('catalog profiles use the shared plan and restore the main route after scop
   const chart=c.withPlanScope(null,()=>c.connectionWorkstreamsHTML(p));
   assert.equal(new Set([...chart.matchAll(/data-workstream="([^"]+)"/g)].map(m=>m[1])).size,new Set(p.workstreamLinks.map(w=>w.id)).size);
   assert.equal(c.current,null);assert.equal(c.route,originalRoute);assert.equal(c.ui,originalUI);assert.equal(c.scopeDepth,0);
+});
+test('catalog and RHS tags share status on direct load, after profile rendering and on saved edits',()=>{
+  const c=context(),listeners={},storage=new Map();
+  const saved={...project,startDate:'2027-01-04',targetDate:'2027-01-05',finder:{answers:{},order:[]}};
+  storage.set('iem-advisory-project-v1',JSON.stringify(saved));
+  c.window.CCWorkstreamTags=createTags(T);
+  Object.assign(c.window,{CC_GREENFIELD:T,CC_CATALOG:C,HospitalEngine:E,
+    localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},
+    CCExampleProject:{create:()=>saved},
+    addEventListener:(type,fn)=>(listeners[type]??=[]).push(fn),
+    dispatchEvent:ev=>(listeners[ev.type]||[]).forEach(fn=>fn(ev))});
+  c.location.hash='#catalog';c.CustomEvent=class{constructor(type,options){this.type=type;this.detail=options.detail;}};
+  c.Intl={DateTimeFormat:function(){return {format:()=> '2026-11-16'};}};
+  vm.runInContext(fs.readFileSync('assets/single-project.js','utf8'),c);
+  c.S=c.window.CCProject;c.route={section:'catalog'};c.current=null;
+  const app=fs.readFileSync('assets/app.js','utf8'),start=app.indexOf('  function solutionWorkstreamsHTML(');
+  vm.runInContext(app.slice(start,app.indexOf('\n  }',start)+4),c);
+  const w=T.workstreams[0],p={workstreamLinks:[{id:w.id,role:'Primary'}]};
+  let catalog=c.solutionWorkstreamsHTML(p),refreshes=0;
+  assert.doesNotMatch(catalog,/<small>|Primary|Supporting scope/,'catalog workstream links contain no scope subtitle');
+  const assertColor=color=>{
+    assert.match(catalog,new RegExp('ws-'+color));
+    assert.ok(catalog.includes(c.window.CCWorkstreamTags.html(w.id,saved.id)),'catalog and explicit RHS markup are identical');
+  };
+  assertColor('orange');
+  c.withPlanScope(w.id,()=>c.workstreamPageHTML(w,true));
+  assert.ok(catalog.includes(c.window.CCWorkstreamTags.html(w.id)),'closing the profile retains the saved-plan context');
+  c.state={cart:[],answers:{},order:[]};c.$=()=>({hidden:true});
+  c.renderCatalog=()=>{refreshes++;catalog=c.solutionWorkstreamsHTML(p);};c.refreshCartUI=c.renderCatalog;
+  const eventStart=app.indexOf('  window.addEventListener("advisory-project-change"');
+  vm.runInContext(app.slice(eventStart,app.indexOf('  /* ---------------- Start',eventStart)),c);
+  const task=result.tasks.find(t=>t.workstream===w.id);
+  c.S.save({taskStates:{[task.id]:{status:'blocked'}}},'workspace');assertColor('red');
+  c.S.save({taskStates:{},targetDate:'2035-01-01'},'config');assertColor('yellow');
+  const changed={...c.S.get(),taskStates:{[task.id]:{status:'blocked'}}};
+  storage.set('iem-advisory-project-v1',JSON.stringify(changed));
+  c.window.dispatchEvent({type:'storage',key:c.S.key});assertColor('red');
+  assert.equal(refreshes,3,'activity, configuration and other-tab edits refresh the catalog');
+  const setupHost={innerHTML:''};c.route={section:'planner',page:'setup'};c.current=c.S.get();c.projects=[c.current];
+  c.$=selector=>selector==='#setupWorkstreamTimeline'?setupHost:{hidden:true};c.renderNav=()=>{};
+  const workspaceStart=source.indexOf('  window.addEventListener("advisory-project-change"');
+  vm.runInContext(source.slice(workspaceStart,source.indexOf('  window.addEventListener("hashchange"',workspaceStart)),c);
+  c.S.save({startDate:'2027-04-01'},'config');
+  assert.match(setupHost.innerHTML,/Planning start/);assert.match(setupHost.innerHTML,/2027-04-01/);
+  assert.equal((setupHost.innerHTML.match(/data-workstream-row=/g)||[]).length,18,'a valid setup save redraws the mounted model timeline');
+});
+test('RHS Timeline override leaves the saved full-page Table choice unchanged',()=>{
+  const c=context(),w=T.workstreams[0];c.ui.workstreamViews[w.id]='table';
+  const html=c.withPlanScope(w.id,()=>c.workstreamPageHTML(w,true),false,'timeline');
+  assert.match(html,/data-view="timeline" aria-pressed="true"/);assert.match(html,/gantt-scroll/);
+  assert.equal(c.ui.workstreamViews[w.id],'table');
+});
+test('the setup model and dashboard share all 18 date ranges as Dates & Delivery changes',()=>{
+  const c=context();c.route={section:'planner',page:'connections'};c.ui.query='';
+  const ranges=html=>Object.fromEntries([...html.matchAll(/data-workstream-row="([^"]+)" data-start-date="([^"]+)" data-finish-date="([^"]+)"/g)].map(m=>[m[1],[m[2],m[3]]]));
+  const snapshots=[];
+  for(const edit of [{},{startDate:'2027-02-01'},{targetDate:'2026-12-01'},{handoverDate:'2030-01-01'},{teams:4},{systems:'new'},{internationalHires:true}]){
+    c.current={...project,...edit};c.result=E.schedule(T,c.current);
+    const setup=c.setupTimelineHTML(),dashboard=c.ganttHTML({groupsOnly:true,workstreamIds:T.workstreams.map(w=>w.id)});
+    const setupRanges=ranges(setup);assert.deepEqual(setupRanges,ranges(dashboard));
+    assert.equal((setup.match(/data-workstream-row=/g)||[]).length,18);
+    for(const w of T.workstreams){
+      const tasks=c.result.tasks.filter(t=>t.workstream===w.id);if(!tasks.length)continue;
+      const expected=[tasks.map(t=>t.startDate).sort()[0],tasks.map(t=>t.finishDate).sort().at(-1)];
+      assert.deepEqual(setupRanges[w.id],expected,w.code+' '+JSON.stringify(edit));
+      expected.forEach(d=>assert.ok(setup.includes('datetime="'+d+'"'),'each range has visible date labels'));
+      c.route={section:'planner',page:'workstreams',workstream:w.id};
+      assert.deepEqual(ranges(c.ganttHTML())[w.id],expected,w.code+' child matches setup');
+    }
+    snapshots.push(JSON.stringify(setupRanges));c.route={section:'planner',page:'connections'};
+    if(edit.targetDate)assert.ok(c.result.gapDays>0,'an urgent target displays the dependency gap instead of shortening fixed durations');
+  }
+  assert.ok(snapshots[0]!==snapshots[1],'planning start moves workstream dates');
+  assert.ok(snapshots[0]!==snapshots[2],'requested opening updates launch activities');
+  assert.ok(snapshots[0]!==snapshots[3],'handover constraints update dependent dates');
+  assert.ok(snapshots[0]!==snapshots[4],'parallel teams update workload dates');
+});
+test('timeline search changes visible activities while keeping full workstream summary dates',()=>{
+  const c=context(),w=T.workstreams[0],range=c.workstreamRange(w.id);
+  c.ui.activityQueries[project.id+w.id]=range.tasks[0].code;
+  const html=c.ganttHTML();assert.match(html,new RegExp('data-start-date="'+range.startDate+'" data-finish-date="'+range.finishDate+'"'));
+  assert.equal(ids(html).length,1);
 });
 test('merged overview contains the hospital, solution selectors and backups under one page title',()=>{
   const c=context();c.domain=id=>c.D.find(d=>d.id===id);

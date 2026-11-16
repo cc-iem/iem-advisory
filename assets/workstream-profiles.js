@@ -5,14 +5,16 @@
   const panel = document.getElementById('detailPanel');
   const products = new Map(window.CC_CATALOG.map(p => [p.id, p]));
   const connectionViews = new Map();
+  let profileView = 'timeline';
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const workstream = id => T.workstreams.find(w => w.id === id || w.code === id);
   function bodyHTML(id) {
-    return views.body(id).replace(/id="planSearch"/g, 'id="profilePlanSearch"').replace(/id="workstreamResults"/g, 'id="profileWorkstreamResults"');
+    return views.body(id, profileView).replace(/id="planSearch"/g, 'id="profilePlanSearch"').replace(/id="workstreamResults"/g, 'id="profileWorkstreamResults"');
   }
   function open(id, opener) {
     const w = workstream(id);
     if (!w) return;
+    profileView = 'timeline';
     window.CCApp.profile(
       '<div class="panel-head on-navy"><div class="panel-top"><span class="ref">Hospital workstream</span><button type="button" class="close-btn" data-action="close-panel" aria-label="Close">×</button></div>' +
       '<h2 class="panel-title" id="detailTitle">' + window.CCWorkstreamTags.html(w.id, window.CCProject.get().id) + '</h2><p class="panel-sub">Activities, deliverables and advisory support for this workstream.</p></div>' +
@@ -30,7 +32,7 @@
     panel.querySelector('#detailTitle').innerHTML = window.CCWorkstreamTags.html(id, window.CCProject.get().id);
   }
   function refreshActivities(id) {
-    panel.querySelector('#profileWorkstreamResults').innerHTML = views.content(id);
+    panel.querySelector('#profileWorkstreamResults').innerHTML = views.content(id, profileView);
   }
   function renderConnections(host) {
     const product = products.get(host.dataset.productConnections);
@@ -73,7 +75,7 @@
     if (!['workstream-view','toggle-gantt','export','export-csv'].includes(kind)) return;
     ev.preventDefault(); ev.stopPropagation();
     if (kind === 'workstream-view') {
-      views.setView(id, action.dataset.view);
+      profileView = action.dataset.view;
       panel.querySelectorAll('.workstream-view-toggle button').forEach(b => {
         b.setAttribute('aria-pressed', String(b.dataset.view === action.dataset.view));
         b.setAttribute('aria-checked', String(b.dataset.view === action.dataset.view));

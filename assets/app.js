@@ -80,7 +80,7 @@
     var links = Array.from(new Map((p.workstreamLinks || []).map(function(w) { return [w.id, w]; })).values());
     return '<div class="row-workstreams" data-tag-context="workstream" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
       (links.length ? '<ul>' + links.map(function(w) {
-        return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button><small>' + esc(w.role) + '</small></li>';
+        return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button></li>';
       }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
   }
 
@@ -1276,6 +1276,7 @@
       state.order = plan.finder.order || [];
     }
     if (changed && event.detail.source !== 'package') refreshCartUI();
+    else renderCatalog();
     if (!$('#finder').hidden && event.detail.source !== 'finder') renderFinder();
   });
   /* ---------------- Start ---------------- */

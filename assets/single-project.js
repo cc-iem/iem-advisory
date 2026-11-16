@@ -8,6 +8,15 @@
       legacyProjectId:location.hash.split('/')[1],
       forecast:p=>root.HospitalEngine.schedule(root.CC_GREENFIELD,p).forecastDate,
       notify:detail=>root.dispatchEvent(new CustomEvent('advisory-project-change',{detail}))});
+    function refreshWorkstreamStatus(){
+      const project=root.CCProject.get();
+      const today=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      root.CCWorkstreamTags.setContext(project,root.HospitalEngine.schedule(root.CC_GREENFIELD,project),today);
+      root.CCWorkstreamTags.setActive(project.id);
+    }
+    // Register before view listeners so every surface renders the same saved status.
+    refreshWorkstreamStatus();
+    root.addEventListener('advisory-project-change',refreshWorkstreamStatus);
     root.addEventListener('storage',event=>{if(event.key===root.CCProject.key)root.CCProject.reload();});
   }
 })(typeof window==='undefined'?globalThis:window,function(options){

@@ -294,7 +294,6 @@
       route.section === "planner" &&
         (route.page === "new" || (current && route.page === "setup")),
     );
-    if (route.section !== "planner") window.CCWorkstreamTags.setActive("");
     if (route.section === "catalog")
       window.CCApp.catalog(domain(route.domain) ? route.domain : null);
     if (route.section === "finder")
@@ -319,6 +318,8 @@
               },
             },
           );
+          $(".model-statistics", $("#hospitalModel")).insertAdjacentHTML("afterend", '<section id="setupWorkstreamTimeline" class="model-workstream-timeline" aria-label="Live workstream timeline"></section>');
+          renderSetupTimeline();
         }
       } catch (e) {
         $("#plannerContent").innerHTML =
@@ -1176,6 +1177,18 @@
       '</div><p class="muted" style="margin-top:12px">Durations use working days. The chart uses calendar dates. Use the activity panel to change duration or earliest start; dependent activities recalculate. Resource levelling is not included.</p>'
     );
   }
+  function workstreamRange(id) {
+    const tasks = result.tasks.filter(t => t.workstream === id);
+    return {tasks,startDate:tasks.map(t=>t.startDate).sort()[0],finishDate:tasks.map(t=>t.finishDate).sort().at(-1)};
+  }
+  function setupTimelineHTML() {
+    return '<h3>Workstream timeline</h3><p class="model-timeline-note" id="setupTimelineState">18 workstreams · Live dates from your saved hospital setup.</p><dl class="model-timeline-dates"><div><dt>Planning start</dt><dd>' + date(current.startDate) + '</dd></div><div><dt>Target opening</dt><dd>' + date(current.targetDate) + '</dd></div><div><dt>Forecast opening</dt><dd>' + date(result.forecastDate) + '</dd></div></dl>' + notice() + '<p class="model-timeline-note">Bars follow dependencies and delivery assumptions. Select a workstream to inspect its activities.</p>' + ganttHTML({workstreamIds:T.workstreams.map(w=>w.id),groupsOnly:true,showDates:true});
+  }
+  function renderSetupTimeline() {
+    const host = $("#setupWorkstreamTimeline");
+    if (!host || route.section !== "planner" || route.page !== "setup") return;
+    host.innerHTML = withPlanScope(null, setupTimelineHTML);
+  }
   function ganttHTML(options = {}) {
     const visible = matchingTasks().filter(t => (!route.workstream || t.workstream === route.workstream) && (!options.workstreamIds || options.workstreamIds.includes(t.workstream))),
       origin = Date.parse(current.startDate),
@@ -1229,29 +1242,28 @@
     T.workstreams.forEach((w) => {
       const ts = visible.filter((t) => t.workstream === w.id);
       if (!ts.length) {
-        if (options.groupsOnly && options.workstreamIds?.includes(w.id)) rows += '<div class="gantt-row group"><div class="gantt-label"><button class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id,current.id) + '</button></div><div class="gantt-track"><span class="gantt-no-scope">Not in the current service scope</span></div></div>';
+        if (options.groupsOnly && options.workstreamIds?.includes(w.id)) rows += '<div class="gantt-row group" data-workstream-row="' + w.id + '"><div class="gantt-label"><button class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id,current.id) + '</button></div><div class="gantt-track"><span class="gantt-no-scope">Not in the current service scope</span></div></div>';
         return;
       }
       const expanded = !options.groupsOnly && (route.workstream ? ui.workstreamTimelineExpanded?.[w.id] !== false : ui.allExpanded || ui.timelineWS?.[w.id]);
-      const starts = ts.map((t) => t.startDate).sort(),
-        finishes = ts.map((t) => t.finishDate).sort();
+      const range = workstreamRange(w.id);
       const group = {
         ...ts[0],
         name: w.name,
         code: w.code,
-        startDate: starts[0],
-        finishDate: finishes.at(-1),
+        startDate: range.startDate,
+        finishDate: range.finishDate,
         milestone: false,
       };
       rows +=
-        '<div class="gantt-row group"><div class="gantt-label"><button class="text-button" ' + (options.groupsOnly ? 'data-plan-action="open-workstream" data-workstream="' : 'data-plan-action="toggle-gantt" data-ws="') +
+        '<div class="gantt-row group" data-workstream-row="' + w.id + '" data-start-date="' + group.startDate + '" data-finish-date="' + group.finishDate + '"><div class="gantt-label"><button class="text-button" ' + (options.groupsOnly ? 'data-plan-action="open-workstream" data-workstream="' : 'data-plan-action="toggle-gantt" data-ws="') +
         w.id +
         (options.groupsOnly ? '">' : '" aria-expanded="' + !!expanded + '">') +
         (options.groupsOnly ? "" : (expanded ? "▾ " : "▸ ")) +
         window.CCWorkstreamTags.html(w.id, current?.id) +
         "</button><small>" +
         ts.length +
-        '</small></div><div class="gantt-track">' +
+        '</small>' + (options.showDates ? '<span class="gantt-range"><span>Start <time datetime="' + group.startDate + '">' + date(group.startDate) + '</time></span><span>Complete <time datetime="' + group.finishDate + '">' + date(group.finishDate) + '</time></span></span>' : '') + '</div><div class="gantt-track">' +
         lines() +
         bar(group, true) +
         "</div></div>";
@@ -1500,18 +1512,19 @@
     );
   }
   let activityScope = null, scopeDepth = 0;
-  function withPlanScope(workstreamId, fn, syncNavigation = false) {
+  function withPlanScope(workstreamId, fn, syncNavigation = false, view) {
     const previous = {current,result,route,ui};
     scopeDepth++;
     try {
       current = S.get(); result = E.schedule(T,current);
       route = {section:"planner",page:workstreamId?"workstreams":"connections",id:current.id,workstream:workstreamId};
+      if (workstreamId && view) ui = {...ui,workstreamViews:{...ui.workstreamViews,[workstreamId]:view}};
       if (!workstreamId) ui = {...ui,domain:"",query:"",criticalOnly:false};
       window.CCWorkstreamTags.setContext(current,result,today());window.CCWorkstreamTags.setActive(current.id);
       return fn();
     } finally {
       current=previous.current;result=previous.result;route=previous.route;ui=previous.ui;scopeDepth--;
-      window.CCWorkstreamTags.setActive(route.section === "planner" ? current?.id : "");
+      window.CCWorkstreamTags.setActive(S.get().id);
       if(syncNavigation){if(route.section === "planner")render();else renderNav();}
     }
   }
@@ -1520,13 +1533,13 @@
     if(!links.length)return '<p class="scope-note">No workstream connections are mapped.</p>';
     if(view === "timeline")return ganttHTML({workstreamIds:links.map(w=>w.id),groupsOnly:true});
     return '<div class="planner-table-scroll"><table class="planner-table connection-workstream-table"><thead><tr><th>Workstream</th><th>Connection</th><th>Activities</th><th>Start</th><th>Finish</th></tr></thead><tbody>'+links.map(link=>{
-      const tasks=result.tasks.filter(t=>t.workstream===link.id),starts=tasks.map(t=>t.startDate).sort(),ends=tasks.map(t=>t.finishDate).sort();
-      return '<tr data-connection-workstream="'+link.id+'"><td><button class="text-button" data-plan-action="open-workstream" data-workstream="'+link.id+'">'+window.CCWorkstreamTags.html(link.id,current.id)+'</button></td><td>'+esc(link.role)+'</td><td>'+tasks.length+'</td><td>'+date(starts[0])+'</td><td>'+date(ends.at(-1))+'</td></tr>';
+      const range=workstreamRange(link.id);
+      return '<tr data-connection-workstream="'+link.id+'"><td><button class="text-button" data-plan-action="open-workstream" data-workstream="'+link.id+'">'+window.CCWorkstreamTags.html(link.id,current.id)+'</button></td><td>'+esc(link.role)+'</td><td>'+range.tasks.length+'</td><td>'+date(range.startDate)+'</td><td>'+date(range.finishDate)+'</td></tr>';
     }).join('')+'</tbody></table></div>';
   }
   window.CCPlannerViews = {
-    body:id=>withPlanScope(id,()=>workstreamPageHTML(ws(id),true)),
-    content:id=>withPlanScope(id,()=>workstreamContentHTML(ws(id))),
+    body:(id,view)=>withPlanScope(id,()=>workstreamPageHTML(ws(id),true),false,view),
+    content:(id,view)=>withPlanScope(id,()=>workstreamContentHTML(ws(id)),false,view),
     connections:(product,view)=>withPlanScope(null,()=>connectionWorkstreamsHTML(product,view)),
     setView(id,view){ui.workstreamViews=ui.workstreamViews||{};ui.workstreamViews[id]=view;saveUI();},
     setQuery(id,value){ui.activityQueries=ui.activityQueries||{};ui.activityQueries[S.get().id+id]=value;saveUI();},
@@ -2165,7 +2178,10 @@
         current = draft; projects = [draft];
         const saved = S.save(draft, "config");
         if ($("#setupSaveState")) $("#setupSaveState").textContent = saved ? "Saved automatically to your advisory plan" : "Export a backup before leaving: browser storage is unavailable";
-      } else if ($("#setupSaveState")) $("#setupSaveState").textContent = "Complete the required fields to save these changes";
+      } else {
+        if ($("#setupSaveState")) $("#setupSaveState").textContent = "Complete the required fields to save these changes";
+        if ($("#setupTimelineState")) $("#setupTimelineState").textContent = "Showing the last saved schedule. Complete valid setup values to update the timeline.";
+      }
       renderSetupNavigation(f);
       if ($("#setupPreview"))
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(f));
@@ -2273,6 +2289,7 @@
     if (!event.detail.persisted) toast("Browser storage is unavailable. Export a backup to keep this plan.");
     projects = [S.get()];
     if (route.section === "planner") current = projects[0];
+    renderSetupTimeline();
     if (["workspace", "config"].includes(event.detail.source)) {
       if (current) { try { result = E.schedule(T, current); } catch (e) {} }
       renderNav(); return;
