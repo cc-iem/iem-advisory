@@ -57,7 +57,7 @@
     setupCursor = "name";
   if (!Array.isArray(projects)) projects = [];
   const pages = [
-    ["overview", "Overview"],
+    ["overview", "Selected Solutions"],
     ["setup", "Hospital Setup"],
     ["workstreams", "Workstreams"],
     ["timeline", "Timeline"],
@@ -164,7 +164,7 @@
   function renderNav() {
     const p = S.get(), selected = new Set(S.selectedWorkstreams());
     window.CCWorkstreamTags.setContext(p, current?.id === p.id && result ? result : E.schedule(T, p), today());
-    let nav = '<div class="nav-section">' + link("#finder", "Guided Finder", "finder", route.section === "finder") + link(projectURL("overview"), "Hospital Planner", "planner", route.section === "planner" && route.page === "overview");
+    let nav = '<div class="nav-section">' + link("#finder", "Guided Finder", "finder", route.section === "finder") + link(projectURL("overview"), "Selected Solutions", "planner", route.section === "planner" && route.page === "overview");
     let planNav = "";
     for (const [key, label] of pages.filter(([key]) => key !== "overview")) {
       const item = link(projectURL(key), label, key === "timeline" ? "timeline" : key === "readiness" ? "check" : "page", route.section === "planner" && route.page === key && !route.workstream);
@@ -190,7 +190,7 @@
         "</div>",
     );
     nav +=
-      '<div class="nav-foot">One saved plan for Guided Finder, Hospital Planner and Package.<br>Export backups to move between devices.<br><button class="text-button" data-plan-action="method" style="margin-top:8px">Template ' +
+      '<div class="nav-foot">One saved plan for Guided Finder, Selected Solutions and Package.<br><button class="text-button" data-plan-action="method" style="margin-top:8px">Template ' +
       esc(T.version) +
       " · Planning assumptions</button></div>";
     $("#navContent").innerHTML = nav;
@@ -214,17 +214,10 @@
     } else if (route.section === "finder") {
       crumbs = [["Guided Finder", "#finder"]];
     } else {
-      crumbs = [["Hospital Planner", "#planner"]];
-      if (current) {
-        crumbs.push(["My Advisory Plan", projectURL("overview")]);
-        crumbs.push([
-          pages.find((p) => p[0] === route.page)[1],
-          projectURL(route.page),
-        ]);
-        if (route.workstream) {
-          const w = ws(route.workstream);
-          crumbs.push([w.name, workstreamURL(w.id), window.CCWorkstreamTags.html(w.id, current.id)]);
-        }
+      crumbs = [[pages.find(p=>p[0]===route.page)[1], projectURL(route.page)]];
+      if (route.workstream) {
+        const w = ws(route.workstream);
+        crumbs.push([w.name, workstreamURL(w.id), window.CCWorkstreamTags.html(w.id, current.id)]);
       }
     }
     $("#pageBreadcrumb").innerHTML =
@@ -336,7 +329,7 @@
       $("#navToggle").setAttribute("aria-expanded", "false");
     }
   }
-  function head(title, subtitle, actions = "", kicker = "Hospital Planner", titleHTML = "") {
+  function head(title, subtitle, actions = "", kicker = "Advisory Plan", titleHTML = "") {
     return (
       '<div class="page-head"><div><p class="page-kicker">' +
       esc(kicker) +
@@ -359,14 +352,6 @@
     ">" +
     label +
     "</button>";
-  const stat = (label, value, note) =>
-    '<div class="planner-stat"><small>' +
-    esc(label) +
-    "</small><strong>" +
-    esc(value) +
-    "</strong><span>" +
-    esc(note) +
-    "</span></div>";
   function notice() {
     if (result.calendarShiftDays)
       return (
@@ -729,7 +714,7 @@
       '<div class="setup-shell"><button type="button" class="setup-nav-toggle" data-plan-action="toggle-setup-nav" aria-controls="setupSidebar" aria-expanded="false">Setup navigation <span aria-hidden="true">⌄</span></button>' +
       sidebarHTML +
       '<div class="setup-main">' +
-      formHTML +
+      formHTML + backupToolsHTML() +
       '</div><aside class="hospital-model-pane" id="hospitalModel" aria-label="Hospital 3D preview"></aside></div>'
     );
   }
@@ -952,127 +937,19 @@
     }
   }
   function overviewHTML() {
-    return hospitalOverviewHTML() + advisoryHTML() + '<details class="planner-card plan-downloads"><summary>Backups & downloads</summary><div class="page-actions">' +
-      button("Plan backup (JSON)", "export-json") + button("Import backup", "import") + button("Activity schedule (CSV)", "export-csv") + button("MS Project XML", "export-xml") + button("Review report (HTML)", "export-report") + '</div></details>';
+    return '<section id="selectedSolutions"><h1 class="page-title">Selected Solutions</h1><div id="solutionSelectionList">' + window.CCApp.solutionTable(C) + '</div></section>';
   }
-  function hospitalOverviewHTML() {
-    const critical = result.tasks
-        .filter((t) => t.critical && t.id !== "GF-016")
-        .slice(0, 6),
-      gates = result.tasks.filter((t) => t.gate);
-    return (
-      head(
-        current.name,
-        "A connected opening plan for " +
-          current.openingBeds +
-          " beds, " +
-          (current.departmentCount || current.departments.length) +
-          " departments across " +
-          current.departments.length +
-          " service families and eventual capacity of " +
-          current.totalBeds +
-          " beds.",
-        '<a class="btn btn-secondary" href="' +
-          projectURL("setup") +
-          '">Edit setup</a><a class="btn btn-primary" href="' +
-          projectURL("timeline") +
-          '">Open timeline →</a>',
-      ) +
-      notice() +
-      '<div class="stat-grid">' +
-      stat("Requested opening", date(current.targetDate), "Client target") +
-      stat(
-        "Forecast opening",
-        date(result.forecastDate),
-        "Dependency-based planning estimate",
-      ) +
-      stat(
-        "Opening scope",
-        current.openingBeds + " beds",
-        (current.departmentCount || current.departments.length) +
-          " departments · " +
-          current.departments.length +
-          " service families · " +
-          current.totalBeds +
-          " eventual beds",
-      ) +
-      stat(
-        "Verified activities",
-        result.verifiedCount + " / " + result.tasks.length,
-        result.criticalCount +
-          " critical activities · " +
-          result.omitted +
-          " omitted by scope",
-      ) +
-      "</div>" +
-      '<div class="planner-grid"><section class="planner-card"><h3>Activities on the critical path</h3><p class="card-intro">Changes here can move the earliest opening forecast.</p><ul class="activity-list">' +
-      critical
-        .map(
-          (t) =>
-            '<li><div><button class="text-button" data-task="' +
-            t.id +
-            '">' +
-            (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
-            "</button><small>" +
-            window.CCWorkstreamTags.html(t.workstream, current?.id) +
-            " · " +
-            t.duration +
-            ' working days</small></div><span class="plan-tag critical">Critical</span></li>',
-        )
-        .join("") +
-      '</ul><a class="domain-link" href="' +
-      projectURL("timeline") +
-      '">Explore dependencies →</a></section><section class="planner-card"><h3>Opening decisions & gates</h3><p class="card-intro">Dates are planned; sign-offs require evidence and accountable owners.</p><ul class="activity-list">' +
-      gates
-        .slice(0, 6)
-        .map(
-          (t) =>
-            '<li><div><button class="text-button" data-task="' +
-            t.id +
-            '">' +
-            (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
-            "</button><small>" +
-            date(t.startDate) +
-            '</small></div><span class="plan-tag ' +
-            (t.verified ? "verified" : "") +
-            '">' +
-            (t.verified ? "Verified" : "Needs evidence") +
-            "</span></li>",
-        )
-        .join("") +
-      '</ul><a class="domain-link" href="' +
-      projectURL("readiness") +
-      '">Review all gates →</a></section></div>' +
-      '<section class="planner-card" style="margin-top:18px"><h3>18 workstreams. One opening plan.</h3><p class="card-intro">Each workstream has a primary domain, delivery owner and connected advisory support.</p>' +
-      workstreamTable() +
-      "</section>"
-    );
+  function backupToolsHTML() {
+    return '<details class="planner-card plan-downloads"><summary>Backups & downloads</summary><div class="page-actions">'+button("Plan backup (JSON)","export-json")+button("Import backup","import")+button("Activity schedule (CSV)","export-csv")+button("MS Project XML","export-xml")+button("Review report (HTML)","export-report")+'</div></details>';
   }
-  function workstreamTable() {
-    return (
-      '<div style="overflow:auto"><table class="planner-table"><thead><tr><th>Workstream</th><th>Primary domain</th><th>Activities</th><th>Verified</th></tr></thead><tbody>' +
-      T.workstreams
-        .map((w) => {
-          const ts = result.tasks.filter((t) => t.workstream === w.id);
-          return (
-            '<tr><td><a href="' +
-            workstreamURL(w.id) +
-            '">' +
-            window.CCWorkstreamTags.html(w.id, current?.id) +
-            '</a></td><td><a href="#catalog/' +
-            w.domain +
-            '">' +
-            esc(domain(w.domain).name) +
-            "</a></td><td>" +
-            ts.length +
-            "</td><td>" +
-            ts.filter((t) => t.verified).length +
-            "</td></tr>"
-          );
-        })
-        .join("") +
-      "</tbody></table></div>"
-    );
+  function refreshSolutionList(selectionsOnly = false) {
+    const host=$("#solutionSelectionList");
+    if(!host)return;
+    if(selectionsOnly){window.CCApp.refreshSolutionActions(host);return;}
+    const scroll=$("#top").scrollTop,active=document.activeElement?.closest('[data-solution-row]')?.dataset.solutionRow;
+    host.innerHTML=window.CCApp.solutionTable(C);
+    if(active)host.querySelector('[data-solution-row="'+active+'"] .solution-package-action')?.focus({preventScroll:true});
+    $("#top").scrollTop=scroll;
   }
   function filtersHTML(timeline = false) {
     if (route.page === "workstreams" && route.workstream)
@@ -1144,7 +1021,7 @@
     const tasks = result.tasks.filter(t => t.workstream === w.id), verified = tasks.filter(t => t.verified).length;
     const index = T.workstreams.findIndex(x => x.id === w.id);
     const neighbor = (item, label) => item ? '<a class="btn btn-secondary" href="' + workstreamURL(item.id) + '">' + label + ' ' + window.CCWorkstreamTags.html(item.id, current.id) + '</a>' : '<span></span>';
-    return (bodyOnly ? "" : head(w.name, "Activities, deliverables and advisory support for this workstream.", '<a class="btn btn-secondary" href="' + projectURL("workstreams") + '">← All workstreams</a>' + button("Export workstream activities", "export-csv"), "Hospital Planner · Workstreams", window.CCWorkstreamTags.html(w.id, current.id))) +
+    return (bodyOnly ? "" : head(w.name, "Activities, deliverables and advisory support for this workstream.", '<a class="btn btn-secondary" href="' + projectURL("workstreams") + '">← All workstreams</a>' + button("Export workstream activities", "export-csv"), "Advisory Plan · Workstreams", window.CCWorkstreamTags.html(w.id, current.id))) +
       '<section class="planner-card ws-page-summary"><div class="ws-meta"><span>Accountable role: ' + esc(w.owner) + '</span><a href="#catalog/' + w.domain + '">' + window.CCDomainTags.domain(w.domain) + '</a></div><p>' + tasks.length + ' activities · ' + verified + ' verified · ' + tasks.filter(t => t.critical).length + ' on the critical path</p><p class="muted">' + esc(w.coverage) + '</p></section>' +
       workstreamSolutionsHTML(w) + '<section class="planner-card ws-page-activities" aria-label="Workstream activities"><h2>Activities & deliverables</h2>' + workstreamViewToggle(w) + filtersHTML() + window.CCWorkstreamTags.legend + '<div id="workstreamResults">' + workstreamContentHTML(w) + '</div></section><nav class="ws-page-neighbors" aria-label="Other workstreams">' + neighbor(T.workstreams[index - 1], '← Previous:') + neighbor(T.workstreams[index + 1], 'Next:') + '</nav>';
   }
@@ -1385,131 +1262,6 @@
         .map((p) => productButton(p))
         .join("") +
       '</div></details><p class="muted">Hospital and vendor teams retain execution and approval responsibilities.</p></div>'
-    );
-  }
-  function solutionMatrixHTML() {
-    return (
-      '<section class="planner-card"><h3>All 18 workstreams mapped</h3><p class="card-intro">Each workstream has a primary advisory home. Supporting, conditional and post-opening scopes are shown in the product profiles; a connection does not transfer delivery responsibility.</p><div class="planner-table-scroll"><table class="planner-table solution-matrix"><thead><tr><th>Workstream</th><th>Primary advisory solution</th><th>Owner</th></tr></thead><tbody>' +
-      T.workstreams
-        .map((w) => {
-          const p = C.find((p) => p.id === w.leadProduct);
-          return (
-            '<tr><td><a href="' +
-            workstreamURL(w.id) +
-            '">' +
-            window.CCWorkstreamTags.html(w.id, current?.id) +
-            "</a></td><td>" +
-            productButton(p) +
-            (p.proposed ? "<br><small>Proposed scope</small>" : "") +
-            "</td><td>" +
-            esc(w.owner) +
-            "</td></tr>"
-          );
-        })
-        .join("") +
-      "</tbody></table></div></section>"
-    );
-  }
-  function additionalSolutionsHTML(recs) {
-    const shown = new Set(recs.map((r) => r.product.id)),
-      extras = (current.selectedProducts || [])
-        .filter((id) => !shown.has(id))
-        .map((id) => C.find((p) => p.id === id))
-        .filter(Boolean);
-    return (
-      '<section class="planner-card"><h3>Choose any catalog solution</h3><p class="card-intro">Add a conditional, post-opening or additional scope to this project. This does not confirm eligibility or delivery terms.</p><label class="form-field">Additional solution<select id="extraSolution">' +
-      D.map(
-        (d) =>
-          '<optgroup label="' +
-          esc(d.name) +
-          '">' +
-          C.filter((p) => p.domain === d.id)
-            .map(
-              (p) =>
-                '<option value="' +
-                p.id +
-                '">' +
-                esc(
-                  p.code +
-                    " · " +
-                    p.title +
-                    (p.lifecycle === "Post-opening"
-                      ? " · Post-opening"
-                      : p.proposed
-                        ? " · Proposed"
-                        : ""),
-                ) +
-                "</option>",
-            )
-            .join("") +
-          "</optgroup>",
-      ).join("") +
-      "</select></label>" +
-      button("Add to this advisory plan", "select-extra", "", true) +
-      extras
-        .map(
-          (p) =>
-            '<div class="offering-row" data-tag-context="solution" data-tag-id="' + p.id + '"><span class="ref">' +
-            esc(p.code) +
-            "</span><div>" +
-            productButton(p, false) +
-            "<p>" +
-            esc(p.conditionLabel || p.lifecycle) +
-            '</p></div><label class="service-option"><input type="checkbox" data-product-select="' +
-            p.id +
-            '" checked>Select</label></div>',
-        )
-        .join("") +
-      "</section>"
-    );
-  }
-  function advisoryHTML() {
-    const recs = E.recommendations(T, current, result, C),
-      selected = new Set(current.selectedProducts || []);
-    return (
-      '<section id="selectedSolutions"><div class="page-head"><div><h2 class="section-heading">Selected solutions</h2><p class="page-sub">The same advisory selections used in Guided Finder and Package.</p></div><div class="page-actions">' + button("Open package", "cart", "", true) + '</div></div>' +
-      '<div class="plan-notice">Selections here are the same selections shown in Package and Guided Finder. <span id="advisorySelectionCount">' +
-      selected.size +
-      '</span> services selected. New offerings are proposed advisory scopes; specialist capability, delivery roles and terms are confirmed at proposal. Existing brochures retain their original scope.</div><section class="planner-card"><h3>Support matched to your hospital plan</h3><p class="card-intro">Ordered by unresolved activity coverage, with extra weight on the critical path. These are potential connections, not confirmed delivery commitments.</p>' +
-      recs
-        .map(
-          (r) =>
-            '<div class="offering-row" data-tag-context="solution" data-tag-id="' + r.product.id + '"><span class="ref">' +
-            esc(r.product.code) +
-            '</span><div><button class="text-button" data-plan-action="product" data-product="' +
-            r.product.id +
-            '">' +
-            window.CCDomainTags.solutionTitle(r.product) +
-            "</button>" +
-            (r.product.proposed
-              ? '<span class="offering-status">Proposed scope</span>'
-              : "") +
-            "<p>" +
-            esc(domain(r.product.domain).name) +
-            " · " +
-            r.tasks.length +
-            " related activities across " +
-            r.workstreams.length +
-            ' workstreams</p><details><summary class="domain-link">View connected activities</summary><div class="dependency-links">' +
-            r.tasks
-              .slice(0, 8)
-              .map((id) => {
-                const t = result.tasks.find((t) => t.id === id);
-                return (
-                  '<button data-task="' + id + '">' + (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) + "</button>"
-                );
-              })
-              .join("") +
-            '</div></details></div><label class="service-option"><input type="checkbox" data-product-select="' +
-            r.product.id +
-            '"' +
-            (selected.has(r.product.id) ? " checked" : "") +
-            ">Select</label></div>",
-        )
-        .join("") +
-      "</section>" +
-      additionalSolutionsHTML(recs) +
-      solutionMatrixHTML() + "</section>"
     );
   }
   let activityScope = null, scopeDepth = 0;
@@ -1877,16 +1629,6 @@
         else if(p) location.hash=workstreamURL(action.dataset.workstream,p.id);
         break;
       }
-      case "select-extra": {
-        const id = $("#extraSolution").value;
-        current.selectedProducts = Array.from(
-          new Set([...(current.selectedProducts || []), id]),
-        );
-        persist();
-        render();
-        toast("Solution added to this advisory plan.");
-        break;
-      }
       case "goto-setup":
         goSetupQuestion(action.dataset.question);
         break;
@@ -2030,7 +1772,7 @@
           data.templateVersion !== T.version
         )
           throw new Error(
-            "Choose a compatible Hospital Planner project backup (template " +
+            "Choose a compatible advisory plan backup (template " +
               T.version +
               ").",
           );
@@ -2208,20 +1950,7 @@
         $("#timelineResults").innerHTML = ganttHTML();
       else $("#workstreamResults").innerHTML = workstreamResultsHTML();
     }
-    if (ev.target.dataset.productSelect) {
-      const id = ev.target.dataset.productSelect;
-      current.selectedProducts = current.selectedProducts || [];
-      if (ev.target.checked && !current.selectedProducts.includes(id))
-        current.selectedProducts.push(id);
-      else if (!ev.target.checked)
-        current.selectedProducts = current.selectedProducts.filter(
-          (x) => x !== id,
-        );
-      persist();
-      if ($("#advisorySelectionCount"))
-        $("#advisorySelectionCount").textContent =
-          current.selectedProducts.length;
-    }
+
   });
   $("#navToggle").addEventListener("click", () => {
     const collapsed = document.body.classList.toggle("nav-collapsed");
@@ -2292,6 +2021,9 @@
     projects = [S.get()];
     if (route.section === "planner") current = projects[0];
     renderSetupTimeline();
+    if(route.section === "planner" && route.page === "overview"){
+      result=E.schedule(T,current);refreshSolutionList(event.detail.source === "package");renderNav();return;
+    }
     if (["workspace", "config"].includes(event.detail.source)) {
       if (current) { try { result = E.schedule(T, current); } catch (e) {} }
       renderNav(); return;

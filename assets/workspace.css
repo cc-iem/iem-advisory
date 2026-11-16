@@ -816,7 +816,31 @@ main#top {
 .plan-downloads { margin-top: 24px; }
 .plan-downloads summary { cursor: pointer; font-weight: 600; }
 .plan-downloads .page-actions { margin-top: 16px; }
-#selectedSolutions { margin-top: 32px; scroll-margin-top: 20px; }
+#selectedSolutions { margin-top: 0; scroll-margin-top: 20px; }
+#selectedSolutions > .page-title { margin-bottom: 24px; }
+.panel-cart { width: min(720px, 100%); }
+.solution-list-surface { container-type: inline-size; }
+.selection-table-header, .selection-table-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 90px; gap: 20px; }
+.selection-table-header { font-size: 11px; font-weight: 600; color: var(--slate); border-bottom: 1px solid var(--rule); padding: 16px 0 12px; }
+.selection-table-row { align-items: start; padding: 20px 0; border-bottom: 1px solid var(--rule); }
+.selection-solution { min-width: 0; }
+.selection-solution-title { display: block; margin: 9px 0 8px; padding: 0; background: transparent; border: 0; color: inherit; text-align: left; font-family: var(--serif); font-size: 19px; line-height: 1.35; cursor: pointer; }
+.selection-solution-title:hover { text-decoration: underline; }
+.selection-solution .markers { display: flex; flex-wrap: wrap; gap: 5px 12px; }
+.selection-solution .marker { font-size: 10px; color: inherit; }
+.selection-solution .offering-status { margin: 3px 0 0; }
+.selection-duration { display: block; margin-top: 8px; font-size: 11px; color: var(--slate); }
+.selection-workstreams { display: grid; gap: 10px; min-width: 0; }
+.selection-workstreams .text-button { color: inherit; font-size: 11px; text-align: left; line-height: 1.6; }
+.selection-actions { display: flex; justify-content: flex-end; }
+.solution-package-action { min-width: 78px; justify-content: center; }
+@container (max-width: 520px) {
+  .selection-table-header { display: none; }
+  .selection-table-row { grid-template-columns: minmax(0, 1fr) 80px; gap: 14px; }
+  .selection-solution { grid-column: 1; grid-row: 1; }
+  .selection-actions { grid-column: 2; grid-row: 1; }
+  .selection-workstreams { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 14px; }
+}
 .section-heading { font-family: var(--serif); font-size: 30px; line-height: 1.2; margin: 0 0 10px; }
 .gantt-header,
 .gantt-row {

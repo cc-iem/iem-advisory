@@ -84,6 +84,21 @@
         return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button>'+window.CCWorkstreamTags.heatmap(w.id)+'</li>';
       }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
   }
+  function solutionSelectionTableHTML(items) {
+    var order=DOMAINS.map(function(d){return d.id;});
+    var products=items.slice().sort(function(a,b){return order.indexOf(a.domain)-order.indexOf(b.domain)||a.number-b.number;});
+    return '<div class="solution-list-surface"><div class="solution-selection-table" role="table" aria-label="Advisory solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Package</span></div>'+products.map(function(p){
+      var selected=inCart(p.id),links=Array.from(new Map((p.workstreamLinks||[]).map(function(w){return [w.id,w];})).values());
+      return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p)+'<small class="selection-duration">'+rich(p.durationShort)+'</small></div><div class="selection-workstreams" role="cell" data-tag-context="workstream">'+links.map(function(w){return '<button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+window.CCWorkstreamTags.html(w.id)+'</button>';}).join('')+'</div><div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'Remove':'Add')+'</button></div></div>';
+    }).join('')+'</div></div>';
+  }
+  function refreshSolutionActions(root) {
+    $all('.solution-package-action',root).forEach(function(button){
+      var p=BY_ID[button.dataset.id],selected=inCart(p.id);
+      button.dataset.action=selected?'remove':'add';button.textContent=selected?'Remove':'Add';
+      button.setAttribute('aria-pressed',String(selected));button.setAttribute('aria-label',(selected?'Remove from package: ':'Add to package: ')+p.title);
+    });
+  }
 
   var ICON = {
     back: '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -632,7 +647,7 @@
           packetLinkHTML(d, true, "Download packet (PDF)") + "</div>";
       }
       if (!list.length) {
-        html += '<div class="empty-domain"><p>Dedicated specialist scope to be agreed. Explore the related hospital workstreams and cross-domain support in Hospital Planner.</p><a class="btn btn-secondary btn-small" href="#planner">Explore Hospital Planner</a></div>';
+        html += '<div class="empty-domain"><p>Dedicated specialist scope to be agreed. Explore the related hospital workstreams and cross-domain support in Selected Solutions.</p><a class="btn btn-secondary btn-small" href="#planner">Explore Selected Solutions</a></div>';
       }
       if (list.length) html += '<div class="catalog-solutions" role="table" aria-label="' + esc(d.name) + ' solutions"><div class="catalog-column-heads" role="row"><span role="columnheader">Code</span><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Hospital fit & duration</span><span role="columnheader">Actions</span></div>';
       list.forEach(function (p) {
@@ -924,6 +939,7 @@
     var panel = $("#cartPanel");
     if (state.cartView === "form") { renderForm(panel); return; }
     if (state.cartView === "done") { renderDone(panel); return; }
+    var previousBody=$(".panel-body",panel),scroll=previousBody?previousBody.scrollTop:0;
     var items = state.cart.map(function (id) { return BY_ID[id]; });
     var html = cartHead("Your advisory service package", S.get().name + " · " + plural(items.length, "solution", "solutions"));
     html += '<div class="panel-body">';
@@ -931,12 +947,7 @@
       html += '<div class="cart-empty"><h3>Your advisory service package is empty</h3><p>Use the product navigator or browse all solutions, then add the ones you would like to discuss with our team.</p>' +
         '<button type="button" class="btn btn-primary" data-action="go-finder">Open the product navigator</button></div>';
     } else {
-      html += '<ul class="cart-list">' + items.map(function (p) {
-        return '<li class="cart-item" data-tag-context="solution" data-tag-id="' + p.id + '"><span class="ref">' + window.CCDomainTags.solution(p) + " &nbsp;&nbsp;<span data-domain-plain>" + esc(DOMAIN_BY_ID[p.domain].name) + "</span>" + "</span>" +
-          '<button type="button" class="cart-item-title" data-domain-plain="true" data-tag-context="solution" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
-          markersHTML(p) + '<span class="cart-dur">Typical duration: ' + rich(p.durationShort) + "</span>" +
-          '<button type="button" class="remove" data-action="remove" data-id="' + p.id + '" aria-label="Remove ' + esc(p.title) + '">Remove</button></li>';
-      }).join("") + "</ul>";
+      html += solutionSelectionTableHTML(items);
       html += '<p class="cart-summary">There is no charge to request a proposal. Our team confirms scope, timing and fees with you before any engagement begins.</p>' +
         '<p><button type="button" class="remove" data-action="clear-cart">Clear package</button></p>';
     }
@@ -946,6 +957,7 @@
         '<button type="button" class="btn btn-quiet" data-action="close-panel">Keep browsing</button></div>';
     }
     panel.innerHTML = html;
+    $(".panel-body",panel).scrollTop=scroll;
   }
 
   function renderForm(panel) {
@@ -1303,6 +1315,8 @@
     profile: function(html,opener) { var panel=$('#detailPanel');delete panel.dataset.domainProduct;delete panel.dataset.tagId;panel.dataset.tagContext='workstream';panel.innerHTML=html;showPanel(panel,opener);try{history.replaceState(null,'',location.hash.split('?')[0]);}catch(e){} },
     detail: openDetail, add: addToCart, cart: function () { state.cartView='list'; openCart(document.activeElement); },
     selected: function () { return state.cart.slice(); },
+    solutionTable: solutionSelectionTableHTML,
+    refreshSolutionActions: refreshSolutionActions,
     catalog: function (domain) { if(state.domainFilter!==(domain||'')){state.query='';$('#catalogSearch').value='';} state.domainFilter=domain || ''; if(domain)state.open[domain]=true; renderCatalog(); },
     close: function () { var p=openPanel(); if(p)hidePanel(p); },
     refresh: function () { renderFinder(); renderCatalog(); },
