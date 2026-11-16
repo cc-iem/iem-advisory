@@ -32,8 +32,19 @@
   function findTask(id,projectId=active){return contexts.get(projectId)?.result.tasks.find(t=>t.id===id)||T.tasks.find(t=>t.id===id);}
   function activityCode(id,projectId){return tag(findTask(id,projectId),projectId);}
   function activity(id,projectId){const t=findTask(id,projectId);return t?'<span class="activity-mention" data-domain-tagged="true">'+tag(t,projectId)+' <span>'+esc(t.name)+'</span></span>':'';}
+  function heatmap(id,projectId=active){
+    const context=contexts.get(projectId),scheduled=context?.result.tasks||[],included=new Set(scheduled.map(t=>t.id));
+    const tasks=new Map(T.tasks.filter(t=>t.workstream===id).map(t=>[t.id,t]));
+    scheduled.filter(t=>t.workstream===id).forEach(t=>tasks.set(t.id,t));
+    return '<div class="workstream-heatmap" role="group" aria-label="Sub-workstreams" data-domain-tagged="true">'+[...tasks.values()].map(t=>{
+      const s=status(t.id,projectId),label=t.code+' · '+t.name+' · '+s.label;
+      const attrs=' class="workstream-tag workstream-heatmap-cell ws-'+s.color+'" title="'+esc(label)+'" aria-label="'+esc(label)+'"';
+      const number=esc(t.code.split('-').at(-1));
+      return included.has(t.id)?'<button type="button"'+attrs+' data-plan-action="activity-profile" data-task-id="'+t.id+'" data-workstream="'+id+'">'+number+'</button>':'<span'+attrs+'>'+number+'</span>';
+    }).join('')+'</div>';
+  }
   function setContext(project,result,today){contexts.set(project.id,{result,today});}
   function setActive(id){active=id||'';}
   const legend='<p class="workstream-status-legend"><span><i class="ws-yellow"></i>On track / not started / verified</span><span><i class="ws-orange"></i>At risk</span><span><i class="ws-red"></i>Blocked / overdue</span></p>';
-  return {code,html,activity,activityCode,status,taskStatus,setContext,setActive,legend};
+  return {code,html,activity,activityCode,heatmap,status,taskStatus,setContext,setActive,legend};
 });

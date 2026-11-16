@@ -2,7 +2,6 @@
 .advisory-tag, select.advisory-select { background: var(--tag-bg, #176393); color: #fff; }
 .tag-existing { --tag-bg: #176393; }
 .tag-new { --tag-bg: #287744; }
-.tag-both { --tag-bg: linear-gradient(135deg, #176393 0%, #176393 49.6%, #287744 50.4%, #287744 100%); }
 /* Keep tag labels light even inside components with broad span color rules. */
 .advisory-tag { color: #fff !important; display: inline-block; vertical-align: baseline; width: max-content; height: max-content; white-space: nowrap; border: 1px solid #ffffff24; border-radius: 0; padding: 3px 7px; font-family: var(--mono, monospace); font-size: 11.5px; font-weight: 600; letter-spacing: .03em; line-height: 1.3; text-transform: none; }
 .domain-mention { display: inline; line-height: 1.7; }

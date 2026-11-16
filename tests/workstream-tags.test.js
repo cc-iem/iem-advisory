@@ -31,3 +31,16 @@ test('future prerequisites alone do not classify an entire workstream as blocked
   const tags=createTags(T);tags.setContext({id:'test'},{tasks:[{id:'x',workstream:'WS-01',startDate:'2027-01-01',finishDate:'2027-01-02',targetSlack:2,blocked:true,state:{}}]},'2026-11-13');
   assert.equal(tags.status('WS-01','test').color,'yellow');
 });
+test('heatmaps contain all reference activities plus current capacity gates, numbered and colored like their codes',()=>{
+  const E=require('../assets/planner-engine.js'),tags=createTags(T),p={id:'plan',name:'Hospital',openingBeds:100,totalBeds:300,departmentCount:8,departments:['inpatient'],startDate:'2026-11-16',targetDate:'2028-11-16',teams:1,systems:'enterprise',internationalHires:false,holidays:[],taskStates:{}};
+  const result=E.schedule(T,p);tags.setContext(p,result,'2026-11-16');tags.setActive(p.id);
+  for(const w of T.workstreams){
+    const tasks=new Map([...T.tasks,...result.tasks].filter(t=>t.workstream===w.id).map(t=>[t.id,t]));
+    const html=tags.heatmap(w.id),cells=[...html.matchAll(/class="workstream-tag workstream-heatmap-cell ws-(\w+)" title="([^"]+)"[^>]*>(\d+)<\/(?:button|span)>/g)];
+    assert.equal(cells.length,tasks.size,w.code);
+    for(const [i,t] of [...tasks.values()].entries()){
+      assert.equal(cells[i][1],tags.status(t.id).color,t.code);assert.equal(cells[i][3],t.code.split('-').at(-1));assert.ok(cells[i][2].startsWith(t.code+' · '));
+      if(result.tasks.some(task=>task.id===t.id))assert.ok(html.includes('data-task-id="'+t.id+'"'));else assert.ok(!html.includes('data-task-id="'+t.id+'"'),'out-of-scope references do not open a missing profile');
+    }
+  }
+});

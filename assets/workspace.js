@@ -1555,7 +1555,23 @@
   dialog.id = "activityDialog";
   dialog.setAttribute("aria-labelledby", "activityTitle");
   document.body.append(dialog);
+  dismissDialogOutside(dialog);
   dialog.addEventListener("close",()=>window.dispatchEvent(new CustomEvent("advisory-activity-close")));
+  function dismissDialogOutside(pane) {
+    let startedOutside=false;
+    const outside=event=>{
+      const rect=pane.getBoundingClientRect();
+      return event.target===pane && (event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom);
+    };
+    pane.addEventListener("pointerdown",event=>{startedOutside=pane.open && outside(event);});
+    pane.addEventListener("pointercancel",()=>{startedOutside=false;});
+    pane.addEventListener("close",()=>{startedOutside=false;});
+    pane.addEventListener("click",event=>{
+      const dismiss=startedOutside && pane.open && outside(event);
+      startedOutside=false;
+      if(dismiss){event.preventDefault();event.stopPropagation();pane.close();}
+    });
+  }
   function activityRelationshipsHTML(id) {
     const graph=window.CCActivityGraph,links=graph.relations(result.tasks,id);
     const section=(title,edges,incoming)=>'<section class="detail-section activity-relationships"><h3>'+title+'</h3><p class="muted">'+(incoming?'Direct activities this sub-workstream requires.':'Direct activities that depend on this sub-workstream.')+'</p>'+(edges.length?'<ul class="relationship-list">'+edges.map(edge=>{
@@ -1852,6 +1868,9 @@
     const action = ev.target.closest("[data-plan-action]");
     if (!action) return;
     switch (action.dataset.planAction) {
+      case "activity-profile":
+        window.CCPlannerViews.activity(action.dataset.taskId,action.dataset.workstream);
+        break;
       case "open-workstream": {
         const p = S.get();
         if(window.CCWorkstreamProfiles)window.CCWorkstreamProfiles.open(action.dataset.workstream,action);

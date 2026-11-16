@@ -3,11 +3,16 @@ const createTags=require('../assets/domain-tags.js');
 const domains=[{id:'finance',code:'FIN',name:'Finance'},{id:'regulatory',code:'REG',name:'Regulatory'}];
 const catalog=[{id:'a',code:'FIN-01',domain:'finance',fit:['new']},{id:'b',code:'FIN-02',domain:'finance',fit:['existing']},{id:'c',code:'REG-01',domain:'regulatory',fit:['new','existing']}];
 const tags=createTags(domains,catalog);
-test('tags classify actual solution eligibility independent of current filters',()=>{
-  assert.match(tags.solution(catalog[0]),/tag-new/);assert.match(tags.solution(catalog[1]),/tag-existing/);assert.match(tags.solution(catalog[2]),/tag-both/);
+test('all tags follow the selected hospital type while retaining actual eligibility metadata',()=>{
+  for(const type of ['new','existing']){
+    tags.setHospitalType(type);
+    catalog.forEach(p=>{assert.match(tags.solution(p),new RegExp('tag-'+type));assert.match(tags.solution(p),new RegExp('data-hospital-fit="'+tags.fits(p.fit)+'"'));});
+    assert.equal(tags.background(catalog[2].fit),type==='new'?'#287744':'#176393');
+  }
 });
-test('generic domain tags aggregate eligibility, contextual tags use the solution fit',()=>{
-  assert.match(tags.domain('finance'),/tag-both/);assert.match(tags.domain('finance',catalog[0]),/tag-new/);
+test('generic and solution-specific domain tags share the selected project color',()=>{
+  tags.setHospitalType('new');assert.match(tags.domain('finance'),/tag-new/);assert.match(tags.domain('finance',catalog[0]),/tag-new/);
+  tags.setHospitalType('existing');assert.match(tags.domain('finance'),/tag-existing/);assert.match(tags.domain('finance',catalog[0]),/tag-existing/);
   assert.match(tags.code('FIN'),/>FIN</);assert.match(tags.domain('regulatory'),/REG/);
 });
 test('tag labels escape text and explain eligibility without relying on color',()=>{
@@ -39,4 +44,12 @@ test('a suppressed contextual mention leaves its text node untouched for observe
     tags.decorate({nodeType:3,isConnected:true,parentElement:parent,nodeValue:'Finance',replaceWith(){replacements++;}});
     assert.equal(replacements,0,'MutationObserver must not repeatedly replace identical text');
   } finally {global.document=prior;}
+});
+test('changing hospital type recolors existing tags, tiles and selectors without changing eligibility',()=>{
+  const tagged=createTags(domains,catalog);
+  function node(classes=[]){const values=new Set(classes);return {values,classList:{remove:(...items)=>items.forEach(c=>values.delete(c)),add:(...items)=>items.forEach(c=>values.add(c))},dataset:{hospitalFit:'both'},style:{}};}
+  const tag=node(['advisory-tag','tag-new']),tile=node(),select=Object.assign(node(),{value:'a',options:[],querySelectorAll:()=>[]});
+  const scope={querySelectorAll:s=>s==='.advisory-tag'?[tag]:s==='.tile'?[tile]:[select]};
+  tagged.setHospitalType('existing',scope);assert.ok(tag.values.has('tag-existing'));assert.ok(!tag.values.has('tag-new'));assert.equal(tile.style.background,'#176393');assert.ok(select.values.has('tag-existing'));assert.match(tag.title,/Existing hospital plan/);assert.match(tag.title,/New and existing hospitals/);
+  tagged.setHospitalType('new',scope);assert.ok(tag.values.has('tag-new'));assert.equal(tile.style.background,'#287744');assert.ok(select.values.has('tag-new'));
 });

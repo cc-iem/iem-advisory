@@ -55,6 +55,34 @@
     return null;
   }
 
+  /* Complete a valid branch before navigation, preserving eligible saved choices. */
+  function prepareFinder(finder, hospitalType, saved) {
+    saved = saved || {};
+    var prior = saved.answers || {};
+    var status = ["new", "existing"].indexOf(prior.status) !== -1 ? prior.status : hospitalType === "existing" ? "existing" : "new";
+    var domain = finder.domains.some(function (d) { return d.id === prior.domain; }) ? prior.domain : finder.domains[0].id;
+    var answers = {status: status, domain: domain};
+    var limit = (finder.questions[domain] || []).length + 1;
+    for (var pass = 0; pass < limit; pass++) {
+      var changed = false;
+      questionsFor(finder, status, domain, answers).forEach(function (q) {
+        var options = optionsFor(q, status);
+        var chosen = options.filter(function (o) { return o.id === prior[q.id]; })[0] || options[0];
+        if (chosen && answers[q.id] !== chosen.id) { answers[q.id] = chosen.id; changed = true; }
+      });
+      if (!changed) break;
+    }
+    var questions = questionsFor(finder, status, domain, answers);
+    var order = ["status", "domain"].concat(questions.filter(function (q) { return answers[q.id] !== undefined; }).map(function (q) { return q.id; }));
+    var cursor = saved.cursor;
+    if (order.concat(["result"]).indexOf(cursor) === -1) {
+      var pending = nextQuestion(finder, status, domain, prior);
+      cursor = !prior.domain ? "status" : pending ? pending.id : "result";
+      if (order.concat(["result"]).indexOf(cursor) === -1) cursor = questions[0] ? questions[0].id : "result";
+    }
+    return {answers: answers, order: order, cursor: cursor};
+  }
+
   function fits(product, status) {
     return !status || product.fit.indexOf(status) !== -1;
   }
@@ -107,6 +135,7 @@
     questionsFor: questionsFor,
     nextQuestion: nextQuestion,
     chosenOption: chosenOption,
+    prepareFinder: prepareFinder,
     fits: fits,
     rank: rank,
     recommend: recommend,

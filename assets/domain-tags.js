@@ -9,16 +9,19 @@
   const byId=new Map(catalog.map(p=>[p.id,p]));
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fits=fit=>fit.includes('new')&&fit.includes('existing')?'both':fit.includes('new')?'new':'existing';
-  const background=fit=>({existing:'#176393',new:'#287744',both:'linear-gradient(135deg, #176393 0%, #176393 49.6%, #287744 50.4%, #287744 100%)'}[fits(fit)]);
+  let hospitalType='new';
+  const background=()=>hospitalType==='new'?'#287744':'#176393';
   const labels={both:'New and existing hospitals',new:'New hospitals',existing:'Existing hospitals'};
+  const tagTitle=fit=>(hospitalType==='new'?'New':'Existing')+' hospital plan · Eligible: '+labels[fit];
   function domainFit(id){return [...new Set(catalog.filter(p=>p.domain===id||p.secondaryDomains?.includes(id)).flatMap(p=>p.fit))];}
-  function tag(text,fit,extra=''){
+  function tag(text,fit,extra='',description=''){
     const type=fits(fit);
-    return '<span class="advisory-tag tag-'+type+' '+extra+'" title="'+labels[type]+'" data-domain-tagged="true">'+esc(text)+'</span>';
+    return '<span class="advisory-tag tag-'+hospitalType+' '+extra+'" title="'+esc(description+tagTitle(type))+'" data-hospital-fit="'+type+'" data-tag-description="'+esc(description)+'" data-domain-tagged="true">'+esc(text)+'</span>';
   }
   function code(id,product){const d=domains.find(d=>d.id===id||d.code===id);return d?tag(d.code,product?.fit||domainFit(d.id),'domain-code'):'';}
   function domain(id,product){const d=domains.find(d=>d.id===id);return d?'<span class="domain-mention" data-domain-tagged="true">'+code(id,product)+' <span>'+esc(d.name)+'</span></span>':'';}
   function solution(product){return tag(product.code,product.fit,'solution-code');}
+  function solutionSquare(product){return tag(product.number||Number(product.code.split('-').at(-1)),product.fit,'solution-square',product.code+' · '+product.title+' · ');}
   function solutionTitle(product){return '<span data-tag-context="solution" data-domain-plain="true">'+esc(product.title)+'</span>';}
   function solutionLabel(product){return '<span class="solution-mention" data-tag-context="solution" data-domain-tagged="true">'+solution(product)+' '+solutionTitle(product)+'</span>';}
   function resolveMention(token,context={}){
@@ -80,7 +83,17 @@
     }
     const d=domains.find(d=>d.id===select.value),p=byId.get(select.value);
     select.classList.remove('tag-new','tag-existing','tag-both','advisory-select');
-    if(d||p)select.classList.add('advisory-select','tag-'+fits(p?p.fit:domainFit(d.id)));
+    if(d||p)select.classList.add('advisory-select','tag-'+hospitalType);
+  }
+  function setHospitalType(type,scope=typeof document==='undefined'?null:document){
+    hospitalType=type==='existing'?'existing':'new';
+    if(!scope)return;
+    scope.querySelectorAll('.advisory-tag').forEach(el=>{
+      el.classList.remove('tag-new','tag-existing','tag-both');el.classList.add('tag-'+hospitalType);
+      el.title=(el.dataset.tagDescription||'')+tagTitle(el.dataset.hospitalFit||'both');
+    });
+    scope.querySelectorAll('.tile').forEach(el=>{el.style.background=background();});
+    scope.querySelectorAll('select').forEach(decorateSelect);
   }
   function start(){
     decorate(document.body);
@@ -92,5 +105,5 @@
     }).observe(document.body,{subtree:true,childList:true,characterData:true});
     document.addEventListener('change',ev=>{if(ev.target.matches('select'))decorateSelect(ev.target);});
   }
-  return {code,domain,solution,solutionTitle,solutionLabel,resolveMention,fits,background,domainFit,start,decorate};
+  return {code,domain,solution,solutionSquare,solutionTitle,solutionLabel,resolveMention,fits,background,domainFit,setHospitalType,start,decorate};
 });

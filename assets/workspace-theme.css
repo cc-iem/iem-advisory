@@ -111,3 +111,4 @@ main#top, .planner-blue main#top, .finder-active main#top {
 #top .option[aria-pressed="true"] .option-detail { color: #50677e; }
 #top .option[aria-pressed="true"] .option-meta { color: #006a9b; }
 #top .result-more a { color: #b6e6ff; }
+#finder #fieldTip { --ink: #102a43; --navy: #0f2a4a; --slate: #526579; background: #fff; color: #102a43; border: 1px solid #c5d6e6; }

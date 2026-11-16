@@ -10,6 +10,7 @@
       notify:detail=>root.dispatchEvent(new CustomEvent('advisory-project-change',{detail}))});
     function refreshWorkstreamStatus(){
       const project=root.CCProject.get();
+      root.CCDomainTags?.setHospitalType(project.hospitalType);
       const today=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
       root.CCWorkstreamTags.setContext(project,root.HospitalEngine.schedule(root.CC_GREENFIELD,project),today);
       root.CCWorkstreamTags.setActive(project.id);
@@ -54,7 +55,7 @@
     const previous=project,next={...project,...clone(changes),id:project.id,singleProjectVersion:1};
     next.selectedProducts=unique(next.selectedProducts);
     next.hospitalType=next.hospitalType==='existing'?'existing':'new';
-    if(next.hospitalType!==previous.hospitalType)next.finder={answers:{status:next.hospitalType},order:['status']};
+    if(next.hospitalType!==previous.hospitalType && source!=='finder')next.finder={answers:{status:next.hospitalType},order:['status']};
     if(next.name==='Example Hospital')next.name='My Hospital';
     delete next.archived;delete next.exampleSeed;
     next.updatedAt=new Date().toISOString();

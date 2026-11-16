@@ -21,10 +21,11 @@
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------------- State ---------------- */
+  var initialFinder = E.prepareFinder(FINDER, savedPlan.hospitalType, savedPlan.finder);
   var state = {
-    answers: savedPlan.finder.answers || {},        // status, domain and every domain question id -> option id
-    order: savedPlan.finder.order || [],          // answered keys in the order they were answered
-    recall: null,       // { key, value } shown as selected after going back
+    answers: initialFinder.answers,
+    order: initialFinder.order,
+    finderCursor: initialFinder.cursor,
     cart: loadCart(),
     fit: "all",
     query: "",
@@ -61,7 +62,7 @@
   function storageSet(key, val) { try { window.localStorage.setItem(key, val); } catch (e) { /* storage unavailable */ } }
   function loadCart() { return window.CCProject.get().selectedProducts.slice(); }
   function saveCart() { S.setSelections(state.cart, "package"); }
-  function saveFinder() { S.setFinder({answers:state.answers,order:state.order}); }
+  function saveFinder() { S.setFinder({answers:state.answers,order:state.order,cursor:state.finderCursor}); }
   function inCart(id) { return state.cart.indexOf(id) !== -1; }
 
   function markersHTML(p) {
@@ -80,7 +81,7 @@
     var links = Array.from(new Map((p.workstreamLinks || []).map(function(w) { return [w.id, w]; })).values());
     return '<div class="row-workstreams" data-tag-context="workstream" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
       (links.length ? '<ul>' + links.map(function(w) {
-        return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button></li>';
+        return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button>'+window.CCWorkstreamTags.heatmap(w.id)+'</li>';
       }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
   }
 
@@ -105,11 +106,16 @@
 
   function currentStep() {
     var a = state.answers;
-    if (!a.status) return { type: "status", q: FINDER.status };
-    if (!a.domain) return { type: "domain", q: FINDER.domain };
-    var q = E.nextQuestion(FINDER, a.status, a.domain, domainAnswers());
+    if (state.finderCursor === "status") return { type: "status", q: FINDER.status };
+    if (state.finderCursor === "domain") return { type: "domain", q: FINDER.domain };
+    var q = state.finderCursor !== "result" && E.questionsFor(FINDER,a.status,a.domain,a).filter(function(q){return q.id===state.finderCursor;})[0];
     if (q) return { type: "question", q: q };
     return { type: "result" };
+  }
+
+  function normalizeFinder(cursor) {
+    var ready=E.prepareFinder(FINDER,S.get().hospitalType,{answers:state.answers,cursor:cursor || state.finderCursor});
+    state.answers=ready.answers;state.order=ready.order;state.finderCursor=ready.cursor;
   }
 
   function domainAnswers() {
@@ -123,6 +129,9 @@
       var n = CATALOG.filter(function (p) { return p.domain === d.id && E.fits(p, status); }).length;
       return { id: d.id, label: d.name, detail: d.blurb, meta: n ? plural(n, "solution", "solutions") + " for " + STATUS_PLURAL[status] : "Explore the workstream and discuss specialist scope" };
     });
+  }
+  function domainSolutionSquares(id,status) {
+    return '<span class="domain-solution-squares" aria-hidden="true">'+CATALOG.filter(function(p){return p.domain===id&&E.fits(p,status);}).map(function(p){return window.CCDomainTags.solutionSquare(p);}).join('')+'</span>';
   }
 
   function questionShort(key) {
@@ -149,6 +158,7 @@
 
   function renderFinder(opts) {
     opts = opts || {};
+    normalizeFinder();
     var step = currentStep();
     var grid = $(".finder-grid");
     grid.classList.toggle("is-result", step.type === "result");
@@ -158,8 +168,8 @@
     finderMain.insertAdjacentHTML('afterbegin', '<div class="finder-project-context"><div><strong>' + esc(plan.name) + '</strong><span>' + (plan.hospitalType === 'existing' ? 'Existing hospital' : 'New hospital') + ' · ' + plan.openingBeds + ' opening beds · ' + plan.departmentCount + ' departments · ' + plan.selectedProducts.length + ' selected solutions</span></div><div class="finder-context-links"><a href="#planner/setup">Configure hospital →</a><a href="#planner/overview?section=solutions">View selected solutions →</a></div></div>');
     renderMap(step);
     renderAnswers();
-    $("#finderBack").disabled = state.order.length === 0;
-    $("#finderRestart").disabled = state.order.length === 0;
+    $("#finderBack").disabled = state.finderCursor === "status";
+    $("#finderRestart").disabled = false;
     $("#finderAnother").hidden = step.type !== "result";
     if (opts.focus) {
       var target = $(".q-title", finderMain) || $(".result-title", finderMain);
@@ -176,7 +186,7 @@
       li.classList.toggle("is-current", i === idx);
       if (i === idx) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
       var button = $("button", li);
-      button.disabled = i > idx || (i === 2 && idx === 3 && !state.order[2]);
+      button.disabled = false;
       if (i === idx) button.setAttribute("aria-current", "step"); else button.removeAttribute("aria-current");
     });
   }
@@ -187,10 +197,10 @@
   }
 
   function goToFinderStep(target) {
-    var type = currentStep().type;
-    if (target === "status" && type !== "status") change("status");
-    else if (target === "domain" && (type === "question" || type === "result")) change("domain");
-    else if (target === "needs" && type === "result" && state.order[2]) change(state.order[2]);
+    normalizeFinder();
+    if (["status","domain","needs","result"].indexOf(target)===-1) return;
+    state.finderCursor=target==="needs" ? state.order[2] || "result" : target;
+    saveFinder();renderFinder({focus:true});
   }
 
   function renderQuestion(step) {
@@ -201,7 +211,7 @@
       options = E.optionsFor(q, status);
       kicker = DOMAIN_BY_ID[state.answers.domain].name;
     }
-    var recall = state.recall && state.recall.key === q.id ? state.recall.value : null;
+    var recall = state.answers[q.id];
     var html = '<div class="q-enter">';
     if (kicker) html += '<p class="q-kicker">' + esc(kicker) + "</p>";
     html += '<h2 class="q-title" id="qTitle">' + esc(q.title) + "</h2>";
@@ -213,6 +223,7 @@
         "<span>" +
         '<span class="option-label">' + (BY_ID[o.id] ? window.CCDomainTags.solutionLabel(BY_ID[o.id]) : step.type === 'domain' ? window.CCDomainTags.domain(o.id) : esc(o.label)) + "</span>" +
         (o.detail ? '<span class="option-detail">' + esc(o.detail) + "</span>" : "") +
+        (step.type === 'domain' ? domainSolutionSquares(o.id,status) : '') +
         (o.meta ? '<span class="option-meta">' + esc(o.meta) + "</span>" : "") +
         "</span></button>";
     });
@@ -339,8 +350,8 @@
      ending with the best match and two alternatives. */
   function fieldIds(step) {
     var a = state.answers;
-    if (!a.status) return ORDERED.map(function (p) { return p.id; });
-    if (!a.domain) return ORDERED.filter(function (p) { return E.fits(p, a.status); }).map(function (p) { return p.id; });
+    if (step.type === "status") return ORDERED.map(function (p) { return p.id; });
+    if (step.type === "domain") return ORDERED.filter(function (p) { return E.fits(p, a.status); }).map(function (p) { return p.id; });
     if (step.type === "result") {
       var rec = recommendation();
       return rec ? [rec.top.id].concat(rec.alternatives.map(function (x) { return x.id; })) : [];
@@ -498,8 +509,8 @@
     if (instant) { void field.offsetWidth; field.classList.remove("no-anim"); }
 
     var n = ids.length, count;
-    if (!a.status) count = n + " solutions across " + DOMAINS.length + " domains";
-    else if (!a.domain) count = n + " offered to " + STATUS_PLURAL[a.status];
+    if (step.type === "status") count = n + " solutions across " + DOMAINS.length + " domains";
+    else if (step.type === "domain") count = n + " offered to " + STATUS_PLURAL[a.status];
     else if (isResult) count = rec ? "Your best match and " + plural(rec.alternatives.length, "alternative", "alternatives") : "Specialist scope to be agreed";
     else if (state.order.length <= 2) count = plural(n, DOMAIN_BY_ID[a.domain].short + " solution", DOMAIN_BY_ID[a.domain].short + " solutions") + " for " + STATUS_PLURAL[a.status];
     else count = n + " still in the running";
@@ -551,52 +562,37 @@
     if (button) {
       $all(".option", finderMain).forEach(function (b) { b.setAttribute("aria-pressed", b === button ? "true" : "false"); });
     }
-    // Answering again after going back replaces everything that came after.
-    var at = state.order.indexOf(key);
-    if (at !== -1) truncate(at);
     state.answers[key] = value;
-    state.order.push(key);
-    state.recall = null;
+    normalizeFinder(key);
+    state.finderCursor=state.order.concat(["result"])[state.order.indexOf(key)+1] || "result";
     saveFinder();
     setTimeout(function () { renderFinder({ focus: true }); }, reduceMotion ? 0 : 200);
   }
 
-  function truncate(index) {
-    state.order.slice(index).forEach(function (k) { delete state.answers[k]; });
-    state.order = state.order.slice(0, index);
-  }
-
   function back() {
-    if (!state.order.length) return;
-    var key = state.order[state.order.length - 1];
-    state.recall = { key: key, value: state.answers[key] };
-    truncate(state.order.length - 1);
+    var steps=state.order.concat(["result"]),at=steps.indexOf(state.finderCursor);
+    if(at<=0)return;
+    state.finderCursor=steps[at-1];
     saveFinder();
     renderFinder({ focus: true });
   }
 
   function change(key) {
-    var at = state.order.indexOf(key);
-    if (at === -1) return;
-    state.recall = { key: key, value: state.answers[key] };
-    truncate(at);
+    if (state.order.indexOf(key) === -1) return;
+    state.finderCursor=key;
     saveFinder();
     renderFinder({ focus: true });
   }
 
   function another() {
-    var keep = state.answers.status;
-    truncate(0);
-    state.answers.status = keep;
-    state.order = ["status"];
-    state.recall = null;
+    normalizeFinder("domain");
     saveFinder();
     renderFinder({ focus: true });
   }
 
   function restart() {
-    truncate(0);
-    state.recall = {key:"status",value:S.get().hospitalType};
+    state.answers={status:S.get().hospitalType};
+    normalizeFinder("status");
     saveFinder();
     renderFinder({ focus: true });
   }
@@ -1274,6 +1270,7 @@
     if (event.detail.source !== 'finder') {
       state.answers = plan.finder.answers || {};
       state.order = plan.finder.order || [];
+      state.finderCursor = plan.finder.cursor || state.finderCursor;
     }
     if (changed && event.detail.source !== 'package') refreshCartUI();
     else renderCatalog();

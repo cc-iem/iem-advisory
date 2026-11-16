@@ -66,7 +66,7 @@ Each of the 18 workstreams has a dedicated child page under Workstreams, reached
 
 ## Shared plan and downloads
 
-`assets/single-project.js` owns one shared plan under `iem-advisory-project-v1`. Guided Finder answers, hospital configuration, selected products, task evidence and scenario comparisons belong to that record. Package and planner selections are synchronized through project change events. Valid setup edits save automatically, while incomplete edits display a save-state message. Browser storage events keep other open tabs informed.
+`assets/single-project.js` owns one shared plan under `iem-advisory-project-v1`. Guided Finder answers, the current Finder step, hospital configuration, selected products, task evidence and scenario comparisons belong to that record. The Finder fills each active question with its first eligible choice when no valid saved choice exists. All four steps are available immediately, including a direct jump to Recommendation. Navigation and Back preserve answers; changing a parent answer drops incompatible choices and defaults the active branch. Explicit Finder hospital-type changes retain the newly validated Finder answers, while hospital-type changes in Hospital Setup reset stale Finder answers. Package and planner selections are synchronized through project change events. Valid setup edits save automatically, while incomplete edits display a save-state message. Browser storage events keep other open tabs informed.
 
 Migration adopts the active legacy project when it is identifiable, otherwise the most recently updated unarchived plan. It combines that plan's selected products with the old Package selections, preserves activity states, retains the untouched legacy records and writes `iem-advisory-single-project-migration-backup-v1`. Generic Example Hospital labels become My Hospital; user-defined names remain. The old seed utility remains available as the reference template/migration input, but is no longer called on startup to create a separate project or repopulate selections. Fresh shared plans start without demo selections or comparisons.
 
@@ -118,13 +118,15 @@ The old fixed twelve-product bundle is replaced in the UI by project-specific ad
 
 Every reference activity is numbered sequentially in its parent workstream's original template order, such as `PMO-01`. Codes do not change when optional activities are filtered out. Dynamic capacity-review gates continue after the final reference activity in their parent workstream. Activity titles use sentence capitalization while preserving acronyms such as PMO, ICU and EHR; editorial fixes remove duplicate words and errors inherited from generalization. CSV exports include display codes and internal IDs, and MS Project XML names include display codes while retaining predecessor relationships.
 
-Domain and solution tags use the same rectangular style. Blue means existing-hospital eligibility; green means new-hospital eligibility; a diagonal blue/green split means both. A generic domain tag aggregates eligibility across its catalog offerings; a domain mentioned within a solution profile uses that solution's eligibility. Native selectors retain code prefixes and color the selected value. The same rendering is applied to navigation, tables, prose, Finder, project pages and the standalone mapping report.
+Domain and solution tags use the same rectangular style, colored by the shared hospital type: green for a new hospital and blue for an existing hospital. The same selected color applies to navigation, tables, profiles, prose, selectors, Finder choices and Portfolio tiles. Changing hospital type updates existing rendered tags as well as future renders. Solution hospital-fit metadata and eligibility labels remain independent of this display color; colors do not widen eligibility. Numbered solution squares in advisory-area choices match the eligible Portfolio set and stable solution numbers.
 
 Workstream and activity tags use a separate status palette, with text descriptions in tooltips and accessible labels:
 
 - **Yellow:** on track/not started, in progress, or verified complete. Generic templates without a project are explicitly not assessed, and omitted workstreams are marked not in scope.
 - **Orange:** an unfinished activity has negative target float, or its scheduled start is past and it has not been marked in progress.
 - **Red:** an unfinished activity is past its scheduled finish, or an explicit blocked status is present.
+
+Catalogue workstream heatmaps include every reference activity in its original order plus generated capacity reviews. Cells show only the numeric suffix of the activity code, use the same activity status color, and retain the complete code/title/status in their tooltip and accessible label. In-scope cells open the activity profile; out-of-scope references are visible without a profile action.
 
 A workstream takes the most severe status of its unfinished activities. Future prerequisites alone do not make a workstream blocked. Verified completion still requires the existing evidence checks. Status is calculated separately for each project and uses the current local date.
 
