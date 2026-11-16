@@ -8,7 +8,7 @@ function setup(){
   const c={DOMAINS:D,BY_ID:Object.fromEntries(C.map(p=>[p.id,p])),FIT_LABEL:{new:'New hospital',existing:'Existing hospital'},state:{cart:selected.slice(),cartView:'list'},ICON:{close:'×'},window:{CCDomainTags:require('../assets/domain-tags.js')(D,C),CCWorkstreamTags:require('../assets/workstream-tags.js')(T)},esc:s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),plural:(n,s,p)=>n+' '+(n===1?s:p),S:{get:()=>({name:'Our hospital',selectedProducts:selected.slice()}),setSelections:ids=>{selected.splice(0,selected.length,...ids);}},$:s=>s==='#cartPanel'?panel:panel.body,toast(){}};
   c.rich=c.esc;c.saveCart=()=>c.S.setSelections(c.state.cart);c.refreshCartUI=()=>c.renderCart();
   vm.createContext(c);
-  for(const name of ['solutionSelectionTableHTML','refreshSolutionActions','markersHTML','cartHead','renderCart','addToCart','removeFromCart']){
+  for(const name of ['solutionWorkstreamsHTML','solutionSelectionTableHTML','refreshSolutionActions','markersHTML','cartHead','renderCart','addToCart','removeFromCart']){
     const start=source.indexOf('  function '+name+'(');vm.runInContext(source.slice(start,source.indexOf('\n  }',start)+4),c);
   }
   c.inCart=id=>c.state.cart.includes(id);return {c,panel};
@@ -26,7 +26,7 @@ test('Selected Solutions lists the complete catalog; Package has exactly the sel
   assert.equal(Object.keys(full).length,63);assert.deepEqual(Object.keys(cart).sort(),c.state.cart.slice().sort());
   for(const id of c.state.cart)assert.equal(cart[id],full[id],id+' row layout matches exactly');
   assert.equal(panel.body.scrollTop,140);
-  for(const p of C){const links=[...new Set(p.workstreamLinks.map(w=>w.id))].sort();const rendered=[...full[p.id].matchAll(/data-workstream="([^"]+)"/g)].map(m=>m[1]).sort();assert.deepEqual(rendered,links,p.code);assert.match(full[p.id],/workstream-tag ws-/);}
+  for(const p of C){const links=[...new Set(p.workstreamLinks.map(w=>w.id))].sort();const rendered=[...full[p.id].matchAll(/data-plan-action="open-workstream" data-workstream="([^"]+)"/g)].map(m=>m[1]).sort();assert.deepEqual(rendered,links,p.code);assert.match(full[p.id],/workstream-tag ws-/);}
 });
 test('Add and Remove update the one package and both shared table views',()=>{
   const {c,panel}=setup(),id=C[8].id;
@@ -47,4 +47,16 @@ test('package toggles update existing action buttons without rebuilding the solu
   c.$all=()=>[button];c.refreshSolutionActions({});assert.equal(button.dataset.action,'add');
   c.addToCart(id);c.refreshSolutionActions({});assert.equal(button.dataset.action,'remove');assert.equal(button['aria-pressed'],'true');
   c.removeFromCart(id);c.refreshSolutionActions({});assert.equal(button.dataset.action,'add');assert.equal(button['aria-pressed'],'false');
+});
+test('Selected Solutions and Package reuse the catalog heatmaps with identical activity numbers and status colors',()=>{
+  const {c,panel}=setup(),tags=c.window.CCWorkstreamTags,E=require('../assets/planner-engine.js');
+  const project={id:'plan',name:'Hospital',openingBeds:100,totalBeds:300,departmentCount:8,departments:['inpatient'],startDate:'2026-11-16',targetDate:'2026-12-01',teams:1,systems:'enterprise',internationalHires:false,holidays:[],taskStates:{}};
+  tags.setContext(project,E.schedule(T,project),'2026-11-16');tags.setActive(project.id);
+  const full=rows(c.solutionSelectionTableHTML(C));c.renderCart();const cart=rows(panel.innerHTML);
+  for(const p of C){
+    const links=[...new Set(p.workstreamLinks.map(w=>w.id))];
+    assert.equal((full[p.id].match(/class="workstream-heatmap"/g)||[]).length,links.length,p.code);
+    for(const id of links){const heatmap=tags.heatmap(id);assert.ok(full[p.id].includes(heatmap));assert.ok(c.solutionWorkstreamsHTML(p).includes(heatmap));if(cart[p.id])assert.ok(cart[p.id].includes(heatmap));}
+  }
+  for(const id of c.state.cart)assert.equal(cart[id],full[id]);
 });

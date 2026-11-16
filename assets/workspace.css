@@ -831,6 +831,8 @@ main#top {
 .selection-solution .offering-status { margin: 3px 0 0; }
 .selection-duration { display: block; margin-top: 8px; font-size: 11px; color: var(--slate); }
 .selection-workstreams { display: grid; gap: 10px; min-width: 0; }
+.solution-selection-table .selection-workstreams > ul { width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.solution-selection-table .selection-workstreams .row-workstreams-label { display: none; }
 .selection-workstreams .text-button { color: inherit; font-size: 11px; text-align: left; line-height: 1.6; }
 .selection-actions { display: flex; justify-content: flex-end; }
 .solution-package-action { min-width: 78px; justify-content: center; }

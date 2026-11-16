@@ -77,9 +77,9 @@
   function solutionConnectionsHTML(p) {
     return '<section class="dsec solution-connections"><h3>Why this solution matters</h3><p>'+esc(p.purchaseReason || p.outcomes[0])+'</p>'+(p.proposed?'<p class="scope-note">Proposed advisory scope. Specialist capability, resourcing, responsibilities and acceptance criteria are confirmed at proposal.</p>':'')+'<h3>Workstream connections</h3><p class="scope-note">Mapped workstreams in your current hospital plan. Select a workstream to view its profile.</p><div data-product-connections="'+p.id+'" data-tag-context="workstream"></div></section>';
   }
-  function solutionWorkstreamsHTML(p) {
+  function solutionWorkstreamsHTML(p, extraClass) {
     var links = Array.from(new Map((p.workstreamLinks || []).map(function(w) { return [w.id, w]; })).values());
-    return '<div class="row-workstreams" data-tag-context="workstream" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
+    return '<div class="row-workstreams '+(extraClass || '')+'" data-tag-context="workstream" role="cell"><span class="row-workstreams-label">Workstreams</span>' +
       (links.length ? '<ul>' + links.map(function(w) {
         return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button>'+window.CCWorkstreamTags.heatmap(w.id)+'</li>';
       }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
@@ -88,8 +88,8 @@
     var order=DOMAINS.map(function(d){return d.id;});
     var products=items.slice().sort(function(a,b){return order.indexOf(a.domain)-order.indexOf(b.domain)||a.number-b.number;});
     return '<div class="solution-list-surface"><div class="solution-selection-table" role="table" aria-label="Advisory solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Package</span></div>'+products.map(function(p){
-      var selected=inCart(p.id),links=Array.from(new Map((p.workstreamLinks||[]).map(function(w){return [w.id,w];})).values());
-      return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p)+'<small class="selection-duration">'+rich(p.durationShort)+'</small></div><div class="selection-workstreams" role="cell" data-tag-context="workstream">'+links.map(function(w){return '<button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+window.CCWorkstreamTags.html(w.id)+'</button>';}).join('')+'</div><div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'Remove':'Add')+'</button></div></div>';
+      var selected=inCart(p.id);
+      return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p)+'<small class="selection-duration">'+rich(p.durationShort)+'</small></div>'+solutionWorkstreamsHTML(p,'selection-workstreams')+'<div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'Remove':'Add')+'</button></div></div>';
     }).join('')+'</div></div>';
   }
   function refreshSolutionActions(root) {
