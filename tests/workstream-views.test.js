@@ -13,7 +13,7 @@ function declaration(name){
   const constant=source.indexOf('  const '+name+' =');assert.ok(constant>=0,name+' exists');
   return source.slice(constant,source.indexOf(';',constant)+1);
 }
-function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:['overview','setup','workstreams','timeline','readiness'].map(k=>[k,k]),scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','workstreamRange','setupTimelineHTML','renderSetupTimeline','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','hospitalOverviewHTML','advisoryHTML','additionalSolutionsHTML','solutionMatrixHTML','notice','stat','workstreamTable','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
+function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:['overview','setup','workstreams','timeline','readiness'].map(k=>[k,k]),scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCActivityGraph:require('../assets/activity-graph.js'),CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','activityTimelineRowHTML','activityTimelineBarHTML','activityRelationshipsHTML','readinessHTML','workstreamRange','setupTimelineHTML','renderSetupTimeline','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','hospitalOverviewHTML','advisoryHTML','additionalSolutionsHTML','solutionMatrixHTML','notice','stat','workstreamTable','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
 const ids=html=>[...new Set([...html.matchAll(/data-task="([^"]+)"/g)].map(m=>m[1]))].sort();
 test('Table and Timeline render exactly the same scoped activity IDs for all 18 workstreams',()=>{const c=context();for(const w of T.workstreams){c.route.workstream=w.id;c.ui.workstreamViews[w.id]='table';const table=c.workstreamContentHTML(w);c.ui.workstreamViews[w.id]='timeline';const timeline=c.workstreamContentHTML(w);const expected=result.tasks.filter(t=>t.workstream===w.id).map(t=>t.id).sort();assert.deepEqual(ids(table),expected,w.code+' table');assert.deepEqual(ids(timeline),expected,w.code+' timeline');assert.ok(timeline.includes('gantt-scroll'));}});
 test('search filtering and no-match results remain identical across both views',()=>{const c=context(),w=T.workstreams.find(w=>w.code==='NURS');c.route.workstream=w.id;for(const query of ['NURS-01','competency','nonexistent activity']){c.ui.activityQueries[project.id+w.id]=query;c.ui.workstreamViews[w.id]='table';const table=ids(c.workstreamContentHTML(w));c.ui.workstreamViews[w.id]='timeline';assert.deepEqual(ids(c.workstreamContentHTML(w)),table,query);if(query==='NURS-01')assert.equal(table.length,1);if(query==='nonexistent activity')assert.equal(table.length,0);}});
@@ -142,6 +142,27 @@ test('timeline search changes visible activities while keeping full workstream s
   c.ui.activityQueries[project.id+w.id]=range.tasks[0].code;
   const html=c.ganttHTML();assert.match(html,new RegExp('data-start-date="'+range.startDate+'" data-finish-date="'+range.finishDate+'"'));
   assert.equal(ids(html).length,1);
+});
+test('activity RHS profiles list every direct prerequisite and dependent used by Readiness',()=>{
+  const c=context();
+  for(const task of result.tasks){
+    const html=c.activityRelationshipsHTML(task.id);
+    assert.match(html,/<h3>Pre-requisite<\/h3>/);assert.match(html,/<h3>Dependency<\/h3>/);
+    const actual=[...html.matchAll(/data-relationship-from="([^"]+)" data-relationship-to="([^"]+)"/g)].map(m=>m[1]+'>'+m[2]).sort();
+    const expected=[...task.dependencies.map(d=>d.id+'>'+task.id),...result.tasks.flatMap(t=>t.dependencies.filter(d=>d.id===task.id).map(()=>task.id+'>'+t.id))].sort();
+    assert.deepEqual(actual,expected,task.code);
+  }
+  assert.match(c.readinessHTML(),/Review gate/);
+});
+test('all timeline activity tags select relationships separately from opening the profile',()=>{
+  const c=context();for(const w of T.workstreams){
+    c.route.workstream=w.id;
+    const html=c.ganttHTML(),selected=[...html.matchAll(/data-timeline-select="([^"]+)"/g)].map(m=>m[1]).sort();
+    assert.deepEqual(selected,result.tasks.filter(t=>t.workstream===w.id).map(t=>t.id).sort());
+    assert.deepEqual(ids(html),selected);
+  }
+  c.route={page:'connections'};const compact=c.ganttHTML({groupsOnly:true,workstreamIds:T.workstreams.map(w=>w.id)});
+  assert.match(compact,/data-timeline-expand=/,'summary charts allow activity expansion before selection');
 });
 test('merged overview contains the hospital, solution selectors and backups under one page title',()=>{
   const c=context();c.domain=id=>c.D.find(d=>d.id===id);

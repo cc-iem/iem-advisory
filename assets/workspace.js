@@ -1189,6 +1189,15 @@
     if (!host || route.section !== "planner" || route.page !== "setup") return;
     host.innerHTML = withPlanScope(null, setupTimelineHTML);
   }
+  function activityTimelineBarHTML(t, axis) {
+    const origin=Date.parse(axis.origin),span=Date.parse(axis.end)-origin;
+    const pos=d=>Math.max(0,Math.min(99.5,(Date.parse(d)-origin)/Math.max(1,span)*100));
+    const x=pos(t.startDate),width=Math.max(.3,pos(E.addDays(t.finishDate,1))-x);
+    return '<button class="gantt-bar '+(t.milestone?'milestone ':'')+(t.verified?'verified':t.critical?'critical':'')+'" data-task="'+t.id+'" style="left:'+x+'%;width:'+width+'%" aria-label="'+esc(t.code+' · '+t.name+': '+date(t.startDate)+' to '+date(t.finishDate))+'" title="'+esc(t.code+' · '+t.name)+'"></button>';
+  }
+  function activityTimelineRowHTML(t, barHTML, linesHTML = "", related = false) {
+    return '<div class="gantt-row" data-timeline-activity="'+t.id+'"><div class="gantt-label"><div class="gantt-activity-title"><button type="button" class="timeline-select" data-timeline-select="'+t.id+'" aria-pressed="false" aria-label="Select relationships for '+esc(t.code)+'">'+window.CCWorkstreamTags.activityCode(t.id,current.id)+'</button><button class="text-button" data-task="'+t.id+'" data-domain-plain>'+esc(t.name)+'</button></div>'+(related?'<small class="gantt-context-home">'+window.CCWorkstreamTags.html(t.workstream,current.id)+'</small>':'')+'</div><div class="gantt-track">'+linesHTML+barHTML+'</div></div>';
+  }
   function ganttHTML(options = {}) {
     const visible = matchingTasks().filter(t => (!route.workstream || t.workstream === route.workstream) && (!options.workstreamIds || options.workstreamIds.includes(t.workstream))),
       origin = Date.parse(current.startDate),
@@ -1208,6 +1217,7 @@
       pos(result.forecastDate) +
       '%"></span>';
     const bar = (t, group = false) => {
+      if (!group) return activityTimelineBarHTML(t,{origin:current.startDate,end:E.iso(end)});
       const x = pos(t.startDate),
         width = Math.max(0.3, pos(E.addDays(t.finishDate, 1)) - x);
       return (
@@ -1263,7 +1273,7 @@
         window.CCWorkstreamTags.html(w.id, current?.id) +
         "</button><small>" +
         ts.length +
-        '</small>' + (options.showDates ? '<span class="gantt-range"><span>Start <time datetime="' + group.startDate + '">' + date(group.startDate) + '</time></span><span>Complete <time datetime="' + group.finishDate + '">' + date(group.finishDate) + '</time></span></span>' : '') + '</div><div class="gantt-track">' +
+        '</small>' + (options.showDates ? '<span class="gantt-range"><span>Start <time datetime="' + group.startDate + '">' + date(group.startDate) + '</time></span><span>Complete <time datetime="' + group.finishDate + '">' + date(group.finishDate) + '</time></span></span>' : '') + (options.groupsOnly ? '<button type="button" class="timeline-expand" data-timeline-expand="'+w.id+'" aria-expanded="false" aria-label="Show activities for '+esc(w.code)+'">Show activities ('+range.tasks.length+')</button>' : '') + '</div><div class="gantt-track">' +
         lines() +
         bar(group, true) +
         "</div></div>";
@@ -1271,21 +1281,14 @@
         ts.forEach(
           (t) =>
             (rows +=
-              '<div class="gantt-row"><div class="gantt-label"><button class="text-button" data-task="' +
-              t.id +
-              '">' +
-              (window.CCWorkstreamTags.activity(t.id, current?.id) || esc(t.name)) +
-              '</button></div><div class="gantt-track">' +
-              lines() +
-              bar(t) +
-              "</div></div>"),
+              activityTimelineRowHTML(t,bar(t),lines())),
         );
     });
     const ticks = Array.from({ length: 6 }, (_, i) =>
       date(E.iso(origin + (span * i) / 5)).replace(/\d{1,2} /, ""),
     );
     return rows
-      ? '<div class="gantt-scroll" aria-label="Interactive hospital workstream Gantt"><div class="gantt"><div class="gantt-header"><div class="gantt-label">Workstream / activity</div><div class="gantt-axis">' +
+      ? '<div class="gantt-scroll" aria-label="Interactive hospital workstream Gantt"><div class="gantt" data-timeline-origin="'+current.startDate+'" data-timeline-end="'+E.iso(end)+'"><div class="gantt-header"><div class="gantt-label">Workstream / activity</div><div class="gantt-axis">' +
           ticks.map((t) => "<span>" + t + "</span>").join("") +
           "</div></div>" +
           rows +
@@ -1307,9 +1310,7 @@
       ' activities have an owner, completion evidence and an actual finish date. Dates and purchased services do not mark activities complete.</div><div class="planner-grid">' +
       gates
         .map((t) => {
-          const deps = t.dependencies.map((d) =>
-              result.tasks.find((x) => x.id === d.id),
-            ),
+          const deps = window.CCActivityGraph.relations(result.tasks,t.id).prerequisites.map(edge=>edge.predecessor),
             done = deps.filter((t) => t.verified).length;
           return (
             '<section class="planner-card gate-card ' +
@@ -1541,6 +1542,7 @@
     body:(id,view)=>withPlanScope(id,()=>workstreamPageHTML(ws(id),true),false,view),
     content:(id,view)=>withPlanScope(id,()=>workstreamContentHTML(ws(id)),false,view),
     connections:(product,view)=>withPlanScope(null,()=>connectionWorkstreamsHTML(product,view)),
+    timelineRows:(ids,axis,related=true)=>withPlanScope(null,()=>ids.map(id=>result.tasks.find(t=>t.id===id)).filter(Boolean).map(t=>activityTimelineRowHTML(t,activityTimelineBarHTML(t,axis),"",related)).join("")),
     setView(id,view){ui.workstreamViews=ui.workstreamViews||{};ui.workstreamViews[id]=view;saveUI();},
     setQuery(id,value){ui.activityQueries=ui.activityQueries||{};ui.activityQueries[S.get().id+id]=value;saveUI();},
     toggle(id){ui.workstreamTimelineExpanded=ui.workstreamTimelineExpanded||{};ui.workstreamTimelineExpanded[id]=ui.workstreamTimelineExpanded[id]===false;saveUI();},
@@ -1553,15 +1555,21 @@
   dialog.id = "activityDialog";
   dialog.setAttribute("aria-labelledby", "activityTitle");
   document.body.append(dialog);
+  dialog.addEventListener("close",()=>window.dispatchEvent(new CustomEvent("advisory-activity-close")));
+  function activityRelationshipsHTML(id) {
+    const graph=window.CCActivityGraph,links=graph.relations(result.tasks,id);
+    const section=(title,edges,incoming)=>'<section class="detail-section activity-relationships"><h3>'+title+'</h3><p class="muted">'+(incoming?'Direct activities this sub-workstream requires.':'Direct activities that depend on this sub-workstream.')+'</p>'+(edges.length?'<ul class="relationship-list">'+edges.map(edge=>{
+      const other=incoming?edge.predecessor:edge.successor;
+      return '<li data-relationship-from="'+edge.from+'" data-relationship-to="'+edge.to+'"><button class="text-button" data-task="'+other.id+'">'+window.CCWorkstreamTags.activity(other.id,current.id)+'</button><p>'+esc(graph.describe(edge))+'</p><small>'+esc(graph.provenance(edge))+(edge.predecessor.sourceId&&edge.successor.sourceId?' · Source tasks '+esc(edge.predecessor.sourceId)+' → '+esc(edge.successor.sourceId):'')+'</small></li>';
+    }).join('')+'</ul>':'<p>No direct '+(incoming?'pre-requisites':'dependencies')+' in the current hospital scope.</p>')+'</section>';
+    return '<p class="relationship-basis">Relationships use the same MS Project-derived schedule as Readiness, including marked generalization checks and the current service scope. Finish → start and start → start links retain their meaning.</p>'+section('Pre-requisite',links.prerequisites,true)+section('Dependency',links.dependents,false);
+  }
   function openActivity(id) {
     const t = result?.tasks.find((t) => t.id === id);
     if (!t) return;
     activeTask = id;
     dialog.dataset.activity = id;
-    const successors = result.tasks.filter((x) =>
-        x.dependencies.some((d) => d.id === id),
-      ),
-      state = t.state;
+    const state = t.state;
     dialog.innerHTML =
       '<header><div class="dialog-top"><small>' +
       window.CCWorkstreamTags.activityCode(t.id, current?.id) +
@@ -1581,35 +1589,7 @@
       esc(t.deliverable) +
       "</p>" +
       (t.notes ? '<p style="margin-top:8px">' + esc(t.notes) + "</p>" : "") +
-      '</section><section class="detail-section"><h3>Prerequisites</h3><div class="dependency-links">' +
-      (t.dependencies.length
-        ? t.dependencies
-            .map((d) => {
-              const p = result.tasks.find((x) => x.id === d.id);
-              return (
-                '<button data-task="' +
-                d.id +
-                '">' +
-                (p.verified ? "✓ " : "") +
-                (window.CCWorkstreamTags.activity(p.id, current?.id) || esc(p.name)) +
-                " (" +
-                d.type +
-                (d.lag ? ", +" + d.lag + " wd" : "") +
-                ")</button>"
-              );
-            })
-            .join("")
-        : "<p>No retained prerequisites. Confirm the activity can begin.</p>") +
-      '</div></section><section class="detail-section"><h3>Activities that depend on this</h3><div class="dependency-links">' +
-      (successors.length
-        ? successors
-            .map(
-              (p) =>
-                '<button data-task="' + p.id + '">' + (window.CCWorkstreamTags.activity(p.id, current?.id) || esc(p.name)) + "</button>",
-            )
-            .join("")
-        : "<p>No direct successors.</p>") +
-      '</div></section><form id="activityForm"><div id="activityError" class="form-error" role="alert" hidden></div><section class="detail-section"><h3>Plan & ownership</h3><div class="form-grid">' +
+      '</section>' + activityRelationshipsHTML(t.id) + '<form id="activityForm"><div id="activityError" class="form-error" role="alert" hidden></div><section class="detail-section"><h3>Plan & ownership</h3><div class="form-grid">' +
       field(
         "Accountable person / owner",
         "owner",
@@ -1673,9 +1653,12 @@
       button("Close", "close-dialog") +
       '<button class="btn btn-primary" type="submit" form="activityForm">Save & recalculate</button></footer>';
     if (!dialog.open) dialog.showModal();
+    window.dispatchEvent(new CustomEvent("advisory-activity-open",{detail:{id:t.id}}));
   }
   function methodDialog() {
     activeTask = null;
+    delete dialog.dataset.activity;
+    window.dispatchEvent(new CustomEvent("advisory-activity-close"));
     dialog.innerHTML =
       '<header><div class="dialog-top"><small>Reference template ' +
       T.version +

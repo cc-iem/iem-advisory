@@ -44,6 +44,7 @@
     if (!queued) { queued = true; requestAnimationFrame(scan); }
   }
   new MutationObserver((records = []) => {
+    if(records.length && records.every(record=>record.type==='attributes'&&record.target.closest('.model-stage')))return;
     if (viewport) records.forEach(record => record.removedNodes?.forEach(node => {
       if (node.nodeType !== 1) return;
       if (node.matches('.enter-pending')) viewport.unobserve(node);

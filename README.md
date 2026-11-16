@@ -22,6 +22,8 @@ Every dashboard page uses the Guided Finder blue canvas, with a dark navy left n
 
 Page content and table rows reveal in a short stagger as they appear; timeline bars grow from their start dates to their scheduled widths. Reduced-motion settings show content immediately.
 
+Activity RHS profiles include **Pre-requisite** and **Dependency** lists from the same scheduled graph as Readiness, with relationship type, working-day lag and source/generalization provenance. In every timeline, click an activity code to select its relationships; click the name or bar to open its profile. Incoming arrows flow from prerequisites into the focused activity; outgoing arrows flow to its dependents. They remain hidden without a selection or open activity profile. Summary timelines support Show activities, and a labeled relationship context includes any endpoints outside the current workstream or filter. Clear the selection or close the profile to hide the arrows; reduced motion keeps the arrows static.
+
 The plan overview and Hospital Setup use the full blue workspace style. Hospital setup starts with prefilled dates, name, capacity and service choices; quantities use sliders with common-value presets. Radio cards show the selected default for stage, planning scale, digital foundation, teams and international hiring. A confirmed building-handover date is optional. Capacity and service-count limits keep the form consistent, and the live preview recalculates as choices change.
 
 Project setup includes a blue left-hand navigation panel with every question, Back, reset-to-opened-values and a live Your answers summary. Hospital Setup is the configuration page for the shared plan.
