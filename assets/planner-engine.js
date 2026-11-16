@@ -466,7 +466,7 @@
           var p = catalog.find(function (x) {
             return x.id === id;
           });
-          if (!p || !p.fit.includes("new")) return;
+          if (!p || !p.fit.includes(project.hospitalType || "new")) return;
           if (p.conditionFlag && !project[p.conditionFlag]) return;
           var item = candidates.get(id) || {
             product: p,

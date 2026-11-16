@@ -1,0 +1,23 @@
+{
+  "checked_on": "2026-11-16",
+  "delivery": "Static index.html; no server started",
+  "automated_tests": 66,
+  "local_scripts_syntax_checked": 19,
+  "workstream_view_data": {
+    "workstreams_checked": 18,
+    "table_and_timeline_ids_match": true,
+    "shared_search_checked": true
+  },
+  "shared_state_checks": [
+    "Legacy migration retains progress and backup",
+    "Package and planner use one selected-product list",
+    "Finder answers survive reload",
+    "Configuration preserves Package selections",
+    "Cleared selections stay cleared",
+    "Imports and snapshots retain one project identity"
+  ],
+  "visual_browser_check": {
+    "status": "blocked",
+    "reason": "Automated browser security policy disallows file:// URLs"
+  }
+}

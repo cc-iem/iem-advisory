@@ -46,7 +46,8 @@
       return fallback;
     }
   }
-  let projects = read("iem-hospital-projects-v1", []),
+  const S = window.CCProject;
+  let projects = [S.get()],
     ui = read("iem-workspace-ui-v1", {}),
     route = {},
     current = null,
@@ -57,11 +58,11 @@
   if (!Array.isArray(projects)) projects = [];
   const pages = [
     ["overview", "Overview"],
-    ["setup", "Setup"],
+    ["setup", "Hospital Setup"],
     ["workstreams", "Workstreams"],
     ["timeline", "Timeline"],
     ["readiness", "Readiness"],
-    ["advisory", "Advisory Plan"],
+    ["advisory", "Selected Solutions"],
     ["scenarios", "Scenarios & Exports"],
   ];
   const services = [
@@ -110,19 +111,13 @@
       toast("Navigation preferences could not be saved in this browser.");
     }
   }
-  function saveProjects() {
-    try {
-      localStorage.setItem(
-        "iem-hospital-projects-v1",
-        JSON.stringify(projects),
-      );
-    } catch (e) {
-      toast(
-        "Browser storage is full or unavailable. Export a project backup before leaving.",
-      );
-      return false;
-    }
-    return true;
+  function saveProjects(source = "workspace") {
+    const p = current || projects[0];
+    const saved = S.save(p, source);
+    projects = [S.get()];
+    if (route.section === "planner") current = projects[0];
+    if (!saved) toast("Changes are available in this tab. Browser storage is unavailable; export a backup before leaving.");
+    return saved;
   }
   function toast(message) {
     let el = $("#plannerToast");
@@ -138,38 +133,13 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => (el.hidden = true), 4500);
   }
-  function newProject() {
-    return {
-      id: uid(),
-      templateVersion: T.version,
-      name: "New hospital",
-      openingBeds: 100,
-      totalBeds: 300,
-      startDate: today(),
-      targetDate: E.addDays(today(), 540),
-      departments: services.map((s) => s[0]),
-      departmentCount: 8,
-      teams: 1,
-      systems: "enterprise",
-      internationalHires: false,
-      location: "",
-      stage: "planning",
-      holidays: [],
-      handoverDate: "",
-      taskStates: {},
-      scenarios: [],
-      selectedProducts: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  }
   function persist() {
     current.updatedAt = new Date().toISOString();
     saveProjects();
     renderNav();
   }
   function projectURL(page, id = current?.id) {
-    return "#planner/" + encodeURIComponent(id) + "/" + page;
+    return "#planner/" + page;
   }
   function workstreamURL(id, projectId = current?.id) {
     const w = ws(id);
@@ -194,90 +164,18 @@
     );
   }
   function renderNav() {
-    let nav =
-      '<div class="nav-section">' +
-      link("#finder", "Guided Finder", "finder", route.section === "finder") +
-      link(
-        "#planner",
-        "Hospital Planner",
-        "planner",
-        route.section === "planner" && !current,
-      ) +
-      "</div>";
-    let projectNav =
-      link(
-        "#planner",
-        "My Projects",
-        "project",
-        route.section === "planner" && !current && route.page !== "new",
-      ) + link("#planner/new", "New Project", "plus", route.page === "new");
-    projects
-      .filter((p) => !p.archived)
-      .forEach((p) => {
-        const open = ui.expanded?.[p.id] !== false;
-        if (ui.expanded?.["ws-" + p.id]) {
-          try { window.CCWorkstreamTags.setContext(p, p.id === current?.id && result ? result : E.schedule(T, p), today()); } catch (e) {}
-        }
-        projectNav +=
-          '<div class="nav-link-row"><button class="nav-expand" type="button" data-nav-toggle="' +
-          esc(p.id) +
-          '" aria-label="Expand ' +
-          esc(p.name) +
-          '" aria-expanded="' +
-          open +
-          '">›</button><a class="nav-item nav-project-name" href="' +
-          projectURL("overview", p.id) +
-          '"' +
-          (current?.id === p.id ? ' aria-current="page"' : "") +
-          ">" +
-          esc(p.name) +
-          "</a></div>";
-        if (open)
-          projectNav +=
-            '<div class="nav-children">' +
-            pages
-              .map(([key, label]) => {
-                const item = link(
-                  projectURL(key, p.id),
-                  label,
-                  key === "timeline"
-                    ? "timeline"
-                    : key === "readiness"
-                      ? "check"
-                      : "page",
-                  current?.id === p.id && route.page === key && !route.workstream,
-                );
-                if (key !== "workstreams") return item;
-                const expanded = ui.expanded?.["ws-" + p.id] === true;
-                return (
-                  '<div class="nav-link-row">' +
-                  item +
-                  '<button class="nav-expand" data-nav-toggle="ws-' +
-                  p.id +
-                  '" type="button" aria-label="Expand hospital workstreams" aria-expanded="' +
-                  expanded +
-                  '">›</button></div>' +
-                  (expanded
-                    ? '<div class="nav-children">' +
-                      T.workstreams
-                        .map((w) =>
-                          link(
-                            workstreamURL(w.id, p.id),
-                            w.name,
-                            "",
-                            current?.id === p.id && route.workstream === w.id,
-                            "", w.id, p.id,
-                          ),
-                        )
-                        .join("") +
-                      "</div>"
-                    : "")
-                );
-              })
-              .join("") +
-            "</div>";
-      });
-    nav += navSection("projects", "Hospital projects", projectNav);
+    const p = S.get(), selected = new Set(S.selectedWorkstreams());
+    window.CCWorkstreamTags.setContext(p, current?.id === p.id && result ? result : E.schedule(T, p), today());
+    let nav = '<div class="nav-section">' + link("#finder", "Guided Finder", "finder", route.section === "finder") + link(projectURL("overview"), "Hospital Planner", "planner", route.section === "planner" && route.page === "overview") + '</div>';
+    let planNav = '<p class="nav-plan-name">' + esc(p.name) + '</p>';
+    for (const [key, label] of pages.filter(([key]) => key !== "overview")) {
+      const item = link(projectURL(key), label, key === "timeline" ? "timeline" : key === "readiness" ? "check" : "page", route.section === "planner" && route.page === key && !route.workstream);
+      if (key !== "workstreams") { planNav += item; continue; }
+      const expanded = ui.expanded?.["ws-" + p.id] !== false;
+      planNav += '<div class="nav-link-row">' + item + '<button class="nav-expand" data-nav-toggle="ws-' + p.id + '" type="button" aria-label="Expand hospital workstreams" aria-expanded="' + expanded + '">›</button></div>';
+      if (expanded) planNav += '<div class="nav-children">' + T.workstreams.map(w => link(workstreamURL(w.id), w.name + (selected.has(w.id) ? " · Selected" : ""), "", route.workstream === w.id, "", w.id, p.id)).join('') + '</div>';
+    }
+    nav += navSection("plan", "My Advisory Plan", planNav);
     nav += navSection(
       "catalog",
       "Advisory catalog",
@@ -294,7 +192,7 @@
         "</div>",
     );
     nav +=
-      '<div class="nav-foot">Plans are saved in this browser.<br>Export backups to move between devices.<br><button class="text-button" data-plan-action="method" style="margin-top:8px">Template ' +
+      '<div class="nav-foot">One saved plan for Guided Finder, Hospital Planner and Package.<br>Export backups to move between devices.<br><button class="text-button" data-plan-action="method" style="margin-top:8px">Template ' +
       esc(T.version) +
       " · Planning assumptions</button></div>";
     $("#navContent").innerHTML = nav;
@@ -302,25 +200,11 @@
   function parseRoute() {
     const parts = location.hash.replace(/^#/, "").split("?")[0].split("/");
     if (parts[0] === "portfolio") parts[0] = "catalog";
-    return {
-      section: ["finder", "catalog", "planner"].includes(parts[0])
-        ? parts[0]
-        : "planner",
-      id: parts[0] === "planner" && parts[1] !== "new" ? parts[1] : null,
-      page:
-        parts[0] === "planner"
-          ? parts[1] === "new"
-            ? "new"
-            : parts[2] || "projects"
-          : "",
-      domain: parts[0] === "catalog" ? parts[1] : null,
-      workstream: parts[0] === "planner" && parts[2] === "workstreams"
-        ? (() => {
-            const key = parts[3] || new URLSearchParams(location.hash.split("?")[1] || "").get("ws");
-            return T.workstreams.find(w => w.id === key || w.code === key)?.id || key || null;
-          })()
-        : null,
-    };
+    const planner = !["finder", "catalog"].includes(parts[0]);
+    const legacy = parts[1] && !pages.some(p => p[0] === parts[1]) && parts[1] !== "new";
+    const page = parts[1] === "new" ? "setup" : (legacy ? parts[2] : parts[1]) || "overview";
+    const token = (legacy ? parts[3] : parts[2]) || new URLSearchParams(location.hash.split("?")[1] || "").get("ws");
+    return {section: planner ? "planner" : parts[0], id: planner ? S.get().id : null, page: planner ? page : "", domain: parts[0] === "catalog" ? parts[1] : null, workstream: planner && page === "workstreams" ? T.workstreams.find(w => w.id === token || w.code === token)?.id || token || null : null};
   }
   function renderBreadcrumb() {
     let crumbs;
@@ -333,7 +217,7 @@
     } else {
       crumbs = [["Hospital Planner", "#planner"]];
       if (current) {
-        crumbs.push([current.name, projectURL("overview")]);
+        crumbs.push(["My Advisory Plan", projectURL("overview")]);
         crumbs.push([
           pages.find((p) => p[0] === route.page)[1],
           projectURL(route.page),
@@ -342,12 +226,6 @@
           const w = ws(route.workstream);
           crumbs.push([w.name, workstreamURL(w.id), window.CCWorkstreamTags.html(w.id, current.id)]);
         }
-      } else {
-        crumbs.push(
-          route.page === "new"
-            ? ["New Project", "#planner/new"]
-            : ["My Projects", "#planner"],
-        );
       }
     }
     $("#pageBreadcrumb").innerHTML =
@@ -374,7 +252,8 @@
     hospitalModel = null;
     const previousWorkstream = route.workstream;
     route = parseRoute();
-    current = projects.find((p) => p.id === route.id) || null;
+    projects = [S.get()];
+    current = route.section === "planner" ? projects[0] : null;
     if (route.id && !current) {
       location.hash = "planner";
       toast(
@@ -386,6 +265,8 @@
       location.hash = projectURL("overview");
       return;
     }
+    if (current && !route.workstream && !location.hash.includes("?solution=") && location.hash !== projectURL(route.page))
+      history.replaceState(null, "", projectURL(route.page));
     if (current && route.workstream) {
       if (!ws(route.workstream)) {
         location.hash = projectURL("workstreams");
@@ -424,11 +305,7 @@
         result = current ? E.schedule(T, current) : null;
         window.CCWorkstreamTags.setActive(current?.id);
         if (current) window.CCWorkstreamTags.setContext(current, result, today());
-        $("#plannerContent").innerHTML = current
-          ? renderProject()
-          : route.page === "new"
-            ? setupHTML(newProject(), true)
-            : landingHTML();
+        $("#plannerContent").innerHTML = renderProject();
         if ($("#projectForm")) {
           setupCursor = "name";
           renderSetupNavigation($("#projectForm"));
@@ -446,8 +323,8 @@
         }
       } catch (e) {
         $("#plannerContent").innerHTML =
-          head("Project needs attention", e.message) +
-          '<a class="btn btn-primary" href="#planner">Back to projects</a>';
+          head("Plan needs attention", e.message) +
+          '<a class="btn btn-primary" href="#planner">Back to your plan</a>';
       }
     }
     renderBreadcrumb();
@@ -505,53 +382,6 @@
       : '<div class="plan-notice success"><strong>' +
           result.bufferDays +
           " calendar days of modelled buffer before the target.</strong> This dependency forecast still needs local, duration and resource confirmation.</div>";
-  }
-  function landingHTML() {
-    const shown = projects.filter((p) => !!p.archived === !!ui.showArchived);
-    return (
-      '<div class="planner-hero"><p class="page-kicker">Hospital Planner</p><h1>From opening ambition<br>to an actionable plan.</h1><p>Shape a new hospital around its services, people and opening date. Connect every workstream to the decisions and advisory support it needs.</p><a class="btn btn-light" href="#planner/new">Create a hospital plan&nbsp; →</a><div class="hero-stats"><div><strong>18</strong><span>connected workstreams</span></div><div><strong>' +
-      T.tasks.length +
-      '</strong><span>reference activities</span></div><div><strong>10</strong><span>advisory domains</span></div></div></div><div class="page-head"><h2 class="section-heading">Your hospital projects</h2><div class="page-actions">' +
-      button(
-        ui.showArchived ? "Hide archived" : "Show archived",
-        "toggle-archived",
-      ) +
-      button("Import project", "import") +
-      "</div></div>" +
-      (shown.length
-        ? '<div class="hospital-projects">' +
-          shown
-            .map(
-              (p) =>
-                '<article class="hospital-project-card"><p class="page-kicker">' +
-                (p.archived ? "Archived plan" : "Hospital plan") +
-                '</p><h3><a href="' +
-                projectURL("overview", p.id) +
-                '">' +
-                esc(p.name) +
-                '</a></h3><p class="project-location">' +
-                esc(p.location || "Location to be confirmed") +
-                '</p><div class="project-metrics"><div><strong>' +
-                p.openingBeds +
-                "</strong><span>opening beds</span></div><div><strong>" +
-                p.departments.length +
-                '</strong><span>service families</span></div></div><p class="project-target">Target opening · ' +
-                date(p.targetDate) +
-                '</p><div class="project-card-actions"><a class="btn btn-light" href="' +
-                projectURL("overview", p.id) +
-                '">Open plan →</a>' +
-                button(
-                  p.archived ? "Restore" : "Archive",
-                  p.archived ? "unarchive-project" : "archive-project",
-                  'data-project="' + p.id + '"',
-                ) +
-                "</div></article>",
-            )
-            .join("") +
-          "</div>"
-        : '<div class="empty-state"><h3>Your first hospital plan starts here</h3><p>Start with the defaults, then tailor capacity, services and opening date.</p><a class="btn btn-light" href="#planner/new">Create project</a></div>') +
-      '<div class="plan-notice" style="margin-top:22px">Generalized from a detailed MS Project activation reference. Reference estimates are a starting point for specialist review. Projects stay in this browser until you export or share them.</div>'
-    );
   }
   function field(label, name, value, type = "text", note = "", attrs = "") {
     return (
@@ -692,10 +522,10 @@
       scale = Math.max(inferredScale, [1000, 3000, 10000].includes(+p.capacityScale) ? +p.capacityScale : 1000);
     const formHTML =
       head(
-        isNew ? "Plan a new hospital" : "Project setup",
-        "Start with a complete plan. Choose the closest options, then adjust the sliders to match your hospital.",
+        "Configure your hospital",
+        "These settings belong to your single advisory plan. Changes are shared with Guided Finder, workstreams and Package.",
         isNew
-          ? '<a class="btn btn-secondary" href="#planner">Cancel</a>'
+          ? '<a class="btn btn-secondary" href="#planner">Back to plan</a>'
           : button("Export backup", "export-json"),
       ) +
       '<form id="projectForm" data-project-id="' +
@@ -703,7 +533,7 @@
       '"><div id="projectError" class="form-error" role="alert" hidden></div>' +
       '<section class="planner-card setup-section"><p class="page-kicker">01 · Your hospital</p><h2>What are you planning?</h2><p class="card-intro">Everything has a starting value. Rename your project whenever you are ready.</p><div class="form-grid">' +
       field(
-        "Project name",
+        "Hospital name",
         "name",
         p.name,
         "text",
@@ -719,6 +549,7 @@
         'maxlength="120"',
       ) +
       "</div>" +
+      choiceCards("Hospital type", "hospitalType", p.hospitalType || "new", [["new", "New hospital", "Planning, building or opening"], ["existing", "Existing hospital", "Already treating patients"]]) +
       choiceCards(
         "Current stage",
         "stage",
@@ -789,7 +620,7 @@
         "startDate",
         p.startDate,
         "date",
-        "Defaults to today for a new project.",
+        "The start date for this shared hospital plan.",
         "required",
       ) +
       field(
@@ -886,10 +717,10 @@
       "</ul></details>" +
       '<div id="setupPreview" class="plan-notice setup-preview" aria-live="polite">' +
       previewHTML(p) +
-      '</div><div class="form-actions"><span class="muted">Saved in this browser · Template ' +
+      '</div><div class="form-actions"><span class="muted" id="setupSaveState">Changes save automatically · Template ' +
       T.version +
       '</span><button class="btn btn-primary" type="submit">' +
-      (isNew ? "Generate hospital plan" : "Save & recalculate") +
+      ("View your plan") +
       "</button></div></form>";
     const sidebarHTML =
       '<aside class="setup-side" id="setupSidebar" aria-label="Project setup navigation"><div class="setup-nav-controls"><button type="button" class="link-btn" id="setupBack" data-plan-action="setup-back">← Back</button><button type="button" class="link-btn" data-plan-action="reset-setup" title="Restore the values from when you opened this form">Reset answers</button></div><nav aria-label="Setup progress"><p class="finder-nav-title">Your hospital plan</p><p class="setup-nav-note">Every question has a starting answer. Select any question to review it.</p><ol class="setup-steps" id="setupSteps"></ol></nav><section class="setup-answers" id="setupAnswers" aria-label="Your answers"></section></aside>';
@@ -902,7 +733,8 @@
     );
   }
   const setupQuestions = [
-    ["name", "Project name"],
+    ["name", "Hospital name"],
+    ["hospitalType", "Hospital type"],
     ["location", "Country / location"],
     ["stage", "Current stage"],
     ["capacityScale", "Planning scale"],
@@ -929,6 +761,7 @@
   }
   function setupAnswer(key, f) {
     const value = f.get(key);
+    if (key === "hospitalType") return value === "existing" ? "Existing hospital" : "New hospital";
     if (key === "departments")
       return f
         .getAll(key)
@@ -1057,14 +890,14 @@
   }
   function projectFromForm(form) {
     const f = new FormData(form),
-      p = current ? clone(current) : newProject();
+      p = S.get();
     p.id = form.dataset.projectId;
     p.name = String(f.get("name")).trim();
     p.location = String(f.get("location")).trim();
     ["openingBeds", "totalBeds", "departmentCount", "teams", "capacityScale"].forEach(
       (k) => (p[k] = +f.get(k)),
     );
-    ["startDate", "targetDate", "handoverDate", "systems", "stage"].forEach(
+    ["startDate", "targetDate", "handoverDate", "systems", "stage", "hospitalType"].forEach(
       (k) => (p[k] = String(f.get(k) || "")),
     );
     if (f.get("handoverMode") === "none") p.handoverDate = "";
@@ -1094,7 +927,7 @@
             date(r.forecastDate) +
             " for the working calendar"
           : "") +
-        ". Save to apply this draft to the project."
+        ". Your valid changes save automatically to this plan."
       );
     } catch (e) {
       return (
@@ -1106,7 +939,7 @@
   function renderProject() {
     switch (route.page) {
       case "setup":
-        return setupHTML(current);
+        return setupHTML(current, true);
       case "workstreams":
         return workstreamsHTML();
       case "timeline":
@@ -1293,17 +1126,17 @@
   }
   function workstreamsHTML() {
     if (route.workstream) return workstreamPageHTML(ws(route.workstream));
-    return head("Workstreams", "Choose a workstream to open its dedicated page, activities and advisory support.", button("Export all activities", "export-csv")) +
+    return head("Workstreams", S.selectedWorkstreams().length + " of 18 workstreams are connected to your " + S.get().selectedProducts.length + " selected solutions. All reference workstreams remain available in this plan.", button("Export all activities", "export-csv")) +
       filtersHTML() + window.CCWorkstreamTags.legend + '<div id="workstreamResults">' + workstreamResultsHTML() + '</div>';
   }
   function workstreamResultsHTML() {
-    if (route.workstream) return workstreamActivitiesHTML(ws(route.workstream));
+    if (route.workstream) return workstreamContentHTML(ws(route.workstream));
     const visible = matchingTasks();
     const streams = T.workstreams.filter(w => visible.some(t => t.workstream === w.id) || (!ui.domain && !ui.query));
     if (!streams.length) return '<div class="empty-state"><h3>No workstreams match</h3><p>Adjust the domain or search to see more workstreams.</p></div>';
     return '<div class="ws-overview-grid">' + streams.map(w => {
       const tasks = result.tasks.filter(t => t.workstream === w.id), verified = tasks.filter(t => t.verified).length;
-      return '<a class="ws-overview-card" href="' + workstreamURL(w.id) + '"><h2>' + window.CCWorkstreamTags.html(w.id, current.id) + '</h2><p class="ws-card-domain">' + window.CCDomainTags.domain(w.domain) + '</p><p class="muted">Accountable role: ' + esc(w.owner) + '</p><div class="ws-card-progress"><span>' + tasks.length + ' activities</span><span>' + verified + ' verified</span></div><div class="progress-track" aria-label="' + verified + ' of ' + tasks.length + ' activities verified"><span style="width:' + (tasks.length ? verified / tasks.length * 100 : 0) + '%"></span></div><span class="ws-open-link">Open workstream →</span></a>';
+      return '<a class="ws-overview-card" href="' + workstreamURL(w.id) + '"><h2>' + window.CCWorkstreamTags.html(w.id, current.id) + '</h2><p class="workstream-selection-state">' + (S.selectedWorkstreams().includes(w.id) ? 'Connected to your selected solutions' : 'Available template · no selected solution') + '</p><p class="ws-card-domain">' + window.CCDomainTags.domain(w.domain) + '</p><p class="muted">Accountable role: ' + esc(w.owner) + '</p><div class="ws-card-progress"><span>' + tasks.length + ' activities</span><span>' + verified + ' verified</span></div><div class="progress-track" aria-label="' + verified + ' of ' + tasks.length + ' activities verified"><span style="width:' + (tasks.length ? verified / tasks.length * 100 : 0) + '%"></span></div><span class="ws-open-link">Open workstream →</span></a>';
     }).join('') + '</div>';
   }
   function workstreamPageHTML(w) {
@@ -1312,13 +1145,20 @@
     const neighbor = (item, label) => item ? '<a class="btn btn-secondary" href="' + workstreamURL(item.id) + '">' + label + ' ' + window.CCWorkstreamTags.html(item.id, current.id) + '</a>' : '<span></span>';
     return head(w.name, "Activities, deliverables and advisory support for this workstream.", '<a class="btn btn-secondary" href="' + projectURL("workstreams") + '">← All workstreams</a>' + button("Export workstream activities", "export-csv"), "Hospital Planner · Workstreams", window.CCWorkstreamTags.html(w.id, current.id)) +
       '<section class="planner-card ws-page-summary"><div class="ws-meta"><span>Accountable role: ' + esc(w.owner) + '</span><a href="#catalog/' + w.domain + '">' + window.CCDomainTags.domain(w.domain) + '</a></div><p>' + tasks.length + ' activities · ' + verified + ' verified · ' + tasks.filter(t => t.critical).length + ' on the critical path</p><p class="muted">' + esc(w.coverage) + '</p></section>' +
-      workstreamSolutionsHTML(w) + '<section class="planner-card ws-page-activities" aria-label="Workstream activities"><h2>Activities & deliverables</h2>' + filtersHTML() + window.CCWorkstreamTags.legend + '<div id="workstreamResults">' + workstreamActivitiesHTML(w) + '</div></section><nav class="ws-page-neighbors" aria-label="Other workstreams">' + neighbor(T.workstreams[index - 1], '← Previous:') + neighbor(T.workstreams[index + 1], 'Next:') + '</nav>';
+      workstreamSolutionsHTML(w) + '<section class="planner-card ws-page-activities" aria-label="Workstream activities"><h2>Activities & deliverables</h2>' + workstreamViewToggle(w) + filtersHTML() + window.CCWorkstreamTags.legend + '<div id="workstreamResults">' + workstreamContentHTML(w) + '</div></section><nav class="ws-page-neighbors" aria-label="Other workstreams">' + neighbor(T.workstreams[index - 1], '← Previous:') + neighbor(T.workstreams[index + 1], 'Next:') + '</nav>';
+  }
+  function workstreamViewToggle(w) {
+    const view = ui.workstreamViews?.[w.id] || "table";
+    return '<div class="segmented workstream-view-toggle" role="group" aria-label="Workstream view">' + ["table", "timeline"].map(v => '<button type="button" data-plan-action="workstream-view" data-view="' + v + '" aria-pressed="' + (view === v) + '" aria-checked="' + (view === v) + '">' + (v === "table" ? "Table" : "Timeline") + '</button>').join('') + '</div>';
+  }
+  function workstreamContentHTML(w) {
+    return ui.workstreamViews?.[w.id] === "timeline" ? '<div class="gantt-legend"><span>Activity bars follow the same dates and IDs as Table view.</span><span>◆ Milestone</span><span>Critical path highlighted</span></div>' + ganttHTML() : workstreamActivitiesHTML(w);
   }
   function workstreamActivitiesHTML(w) {
     const all = result.tasks.filter(t => t.workstream === w.id);
     const tasks = matchingTasks().filter(t => t.workstream === w.id);
-    if (!tasks.length) return '<div class="empty-state"><h3>' + (all.length ? 'No activities match' : 'No activities in this project scope') + '</h3><p>' + (all.length ? 'Try another activity code, name or role.' : 'This workstream remains available for coordination. Update the project setup to include the relevant services.') + '</p></div>';
-    return '<ul class="activity-list">' + tasks.map(t => '<li><div><button class="text-button" data-task="' + t.id + '">' + window.CCWorkstreamTags.activity(t.id, current.id) + '</button><small>' + esc(t.deliverable) + ' · ' + date(t.startDate) + ' – ' + date(t.finishDate) + '</small></div><span class="plan-tag ' + (t.verified ? 'verified' : t.critical ? 'critical' : '') + '">' + (t.verified ? 'Verified' : t.milestone ? 'Milestone' : t.duration + ' wd') + '</span></li>').join('') + '</ul>';
+    if (!tasks.length) return '<div class="empty-state"><h3>' + (all.length ? 'No activities match' : 'No activities in this project scope') + '</h3><p>' + (all.length ? 'Try another activity code, name or role.' : 'This workstream remains available for coordination. Update the hospital setup to include the relevant services.') + '</p></div>';
+    return '<div class="planner-table-scroll"><table class="planner-table workstream-activity-table"><thead><tr><th>Activity</th><th>Deliverable</th><th>Start</th><th>Finish</th><th>Working days</th><th>Status</th></tr></thead><tbody>' + tasks.map(t => '<tr data-activity-id="' + t.id + '"><td><button class="text-button" data-task="' + t.id + '">' + window.CCWorkstreamTags.activity(t.id, current.id) + '</button></td><td>' + esc(t.deliverable) + '</td><td>' + date(t.startDate) + '</td><td>' + date(t.finishDate) + '</td><td>' + (t.milestone ? 'Milestone' : t.duration) + '</td><td>' + esc(window.CCWorkstreamTags.taskStatus(t,today()).label) + '</td></tr>').join('') + '</tbody></table></div>';
   }
   function timelineHTML() {
     return (
@@ -1337,7 +1177,7 @@
     );
   }
   function ganttHTML() {
-    const visible = matchingTasks(),
+    const visible = matchingTasks().filter(t => !route.workstream || t.workstream === route.workstream),
       origin = Date.parse(current.startDate),
       end =
         Math.max(
@@ -1389,7 +1229,7 @@
     T.workstreams.forEach((w) => {
       const ts = visible.filter((t) => t.workstream === w.id);
       if (!ts.length) return;
-      const expanded = ui.allExpanded || ui.timelineWS?.[w.id];
+      const expanded = route.workstream ? ui.workstreamTimelineExpanded?.[w.id] !== false : ui.allExpanded || ui.timelineWS?.[w.id];
       const starts = ts.map((t) => t.startDate).sort(),
         finishes = ts.map((t) => t.finishDate).sort();
       const group = {
@@ -1519,7 +1359,7 @@
         .filter((id) => id !== w.leadProduct)
         .map((id) => C.find((p) => p.id === id));
     return (
-      '<div class="ws-solutions"><p class="muted">Primary advisory home</p>' +
+      '<div class="ws-solutions"><p class="muted">Primary advisory home · ' + (S.get().selectedProducts.includes(primary.id) ? 'Selected in your package' : 'Available to add to your package') + '</p>' +
       productButton(primary) +
       (primary.proposed
         ? ' <span class="offering-status">Proposed scope</span>'
@@ -1615,14 +1455,13 @@
       selected = new Set(current.selectedProducts || []);
     return (
       head(
-        "Advisory Plan",
+        "Selected Solutions",
         "Connect selected services to actual work. Engagement scope and delivery roles are agreed separately.",
-        button("Review package", "cart") +
-          button("Add selected to package", "add-selected", "", true),
+        button("Open package", "cart", "", true),
       ) +
-      '<div class="plan-notice">Select support for this hospital, then add it to the global package. <span id="advisorySelectionCount">' +
+      '<div class="plan-notice">Selections here are the same selections shown in Package and Guided Finder. <span id="advisorySelectionCount">' +
       selected.size +
-      '</span> services selected. New offerings are proposed advisory scopes; specialist capability, delivery roles and terms are confirmed at proposal. Existing brochures retain their original scope.</div><section class="planner-card"><h3>Support matched to the opening plan</h3><p class="card-intro">Ordered by unresolved activity coverage, with extra weight on the critical path. These are potential connections, not confirmed delivery commitments.</p>' +
+      '</span> services selected. New offerings are proposed advisory scopes; specialist capability, delivery roles and terms are confirmed at proposal. Existing brochures retain their original scope.</div><section class="planner-card"><h3>Support matched to your hospital plan</h3><p class="card-intro">Ordered by unresolved activity coverage, with extra weight on the critical path. These are potential connections, not confirmed delivery commitments.</p>' +
       recs
         .map(
           (r) =>
@@ -1712,7 +1551,7 @@
                 date(s.forecastDate) +
                 "</td><td>" +
                 button(
-                  "Restore as new project",
+                  "Apply to current plan",
                   "restore",
                   'data-scenario="' + s.id + '"',
                 ) +
@@ -2047,11 +1886,7 @@
     if (!action) return;
     switch (action.dataset.planAction) {
       case "open-workstream": {
-        const p =
-          current ||
-          projects.find((p) => p.exampleSeed && !p.archived) ||
-          projects.find((p) => !p.archived) ||
-          projects[0];
+        const p = S.get();
         window.CCApp.close();
         if (p)
           location.hash =
@@ -2088,7 +1923,8 @@
         setupCursor = "name";
         renderSetupNavigation(form);
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(form));
-        hospitalModel?.update(projectFromForm(form), {name: "reset"});
+        current = projectFromForm(form); projects = [current]; S.save(current, "config");
+        hospitalModel?.update(current, {name: "reset"});
         $(".setup-main").scrollTop = 0;
         break;
       }
@@ -2131,20 +1967,29 @@
       case "cart":
         window.CCApp.cart();
         break;
-      case "add-selected":
-        (current.selectedProducts || []).forEach((id) => window.CCApp.add(id));
-        toast(
-          (current.selectedProducts || []).length
-            ? "Selected services added to your package."
-            : "Select at least one advisory service first.",
-        );
-        break;
       case "expand-all":
         ui.allExpanded = !ui.allExpanded;
         saveUI();
         $("#plannerContent").innerHTML = timelineHTML();
         break;
+      case "workstream-view":
+        ui.workstreamViews = ui.workstreamViews || {};
+        ui.workstreamViews[route.workstream] = action.dataset.view;
+        saveUI();
+        $$('.workstream-view-toggle button').forEach(b => {
+          b.setAttribute("aria-pressed", String(b.dataset.view === action.dataset.view));
+          b.setAttribute("aria-checked", String(b.dataset.view === action.dataset.view));
+        });
+        $("#workstreamResults").innerHTML = workstreamContentHTML(ws(route.workstream));
+        break;
       case "toggle-gantt":
+        if (route.workstream) {
+          ui.workstreamTimelineExpanded = ui.workstreamTimelineExpanded || {};
+          ui.workstreamTimelineExpanded[route.workstream] = ui.workstreamTimelineExpanded[route.workstream] === false;
+          saveUI();
+          $("#workstreamResults").innerHTML = workstreamContentHTML(ws(route.workstream));
+          break;
+        }
         ui.timelineWS = ui.timelineWS || {};
         ui.timelineWS[action.dataset.ws] = !ui.timelineWS[action.dataset.ws];
         saveUI();
@@ -2181,26 +2026,6 @@
       case "import":
         importPicker();
         break;
-      case "toggle-archived":
-        ui.showArchived = !ui.showArchived;
-        saveUI();
-        render();
-        break;
-      case "archive-project":
-      case "unarchive-project": {
-        const p = projects.find((p) => p.id === action.dataset.project);
-        if (p) {
-          p.archived = action.dataset.planAction === "archive-project";
-          saveProjects();
-          render();
-          toast(
-            p.archived
-              ? "Project archived. Use Show archived to restore it."
-              : "Project restored.",
-          );
-        }
-        break;
-      }
       case "snapshot":
       case "baseline":
         saveScenario(action.dataset.planAction === "baseline");
@@ -2210,16 +2035,10 @@
           (s) => s.id === action.dataset.scenario,
         );
         if (!s) return;
-        const p = clone(s.project);
-        p.id = uid();
-        p.name = s.name + " — restored";
-        p.scenarios = [];
-        p.createdAt = new Date().toISOString();
-        p.updatedAt = p.createdAt;
-        projects.push(p);
-        saveProjects();
-        location.hash = projectURL("overview", p.id);
-        toast("Scenario restored as a separate project.");
+        S.restore(s.project, "restore");
+        current = S.get(); projects = [current];
+        location.hash = projectURL("overview");
+        toast("Snapshot applied to your current plan. The previous state was saved as a comparison.");
         break;
       }
     }
@@ -2283,13 +2102,10 @@
         if (p.departments.some((d) => !services.some((s) => s[0] === d)))
           throw new Error("Unknown service in project backup.");
         E.schedule(T, p);
-        p.id = uid();
-        p.name = String(p.name).slice(0, 85) + " — imported";
-        p.updatedAt = new Date().toISOString();
-        projects.push(p);
-        saveProjects();
-        location.hash = projectURL("overview", p.id);
-        toast("Project imported as a separate copy.");
+        S.restore(p, "import");
+        current = S.get(); projects = [current];
+        location.hash = projectURL("overview");
+        toast("Backup applied to your current plan. The previous state was saved as a comparison.");
       } catch (e) {
         toast("Import failed: " + e.message);
       }
@@ -2315,16 +2131,14 @@
         return;
       }
       p.updatedAt = new Date().toISOString();
-      const i = projects.findIndex((x) => x.id === p.id);
-      if (i < 0) projects.push(p);
-      else projects[i] = p;
+      current = p; projects = [p];
       if (!saveProjects()) return;
       ui.domain = "";
       ui.query = "";
       ui.criticalOnly = false;
       saveUI();
-      location.hash = projectURL("overview", p.id);
-      toast("Hospital plan saved and recalculated.");
+      location.hash = projectURL("overview");
+      toast("Your advisory plan is saved and recalculated.");
     }
     if (ev.target.id === "activityForm") {
       ev.preventDefault();
@@ -2406,7 +2220,13 @@
         if (Number.isFinite(n)) f.elements.targetDays.value = Math.round(n);
       }
       syncSetupControls(f, ev.target);
-      hospitalModel?.update(projectFromForm(f), {name: ev.target.name});
+      const draft = projectFromForm(f);
+      hospitalModel?.update(draft, {name: ev.target.name});
+      if (!E.validate(draft).length) {
+        current = draft; projects = [draft];
+        const saved = S.save(draft, "config");
+        if ($("#setupSaveState")) $("#setupSaveState").textContent = saved ? "Saved automatically to your advisory plan" : "Export a backup before leaving: browser storage is unavailable";
+      } else if ($("#setupSaveState")) $("#setupSaveState").textContent = "Complete the required fields to save these changes";
       renderSetupNavigation(f);
       if ($("#setupPreview"))
         $("#setupPreview").innerHTML = previewHTML(projectFromForm(f));
@@ -2510,9 +2330,17 @@
       wasMobile = mobile;
     }
   });
-  const seeded = window.CCExampleProject.ensure(projects, T, E);
-  projects = seeded.projects;
-  if (seeded.changed) saveProjects();
+  window.addEventListener("advisory-project-change", event => {
+    if (!event.detail.persisted) toast("Browser storage is unavailable. Export a backup to keep this plan.");
+    projects = [S.get()];
+    if (route.section === "planner") current = projects[0];
+    if (["workspace", "config"].includes(event.detail.source)) {
+      if (current) { try { result = E.schedule(T, current); } catch (e) {} }
+      renderNav(); return;
+    }
+    if (route.section === "planner" && route.page !== "setup") render();
+    else renderNav();
+  });
   window.addEventListener("hashchange", render);
   render();
 })();

@@ -8,41 +8,37 @@ Domain badges and advisory reference codes use STR (Strategy), GOV (Governance &
 
 ## Hospital Planner
 
-Open the Hospital Planner from the left navigation and create a project. Enter opening beds, eventual capacity, department count, opening services, dates, delivery teams and other assumptions. The plan includes 18 workstreams and a generalized library of 347 activities derived from the supplied MS Project reference.
+The dashboard has one persistent advisory plan shared by Guided Finder, Hospital Planner and Package. Open **Hospital Setup** to configure the hospital's type, name, capacity, services and dates. Valid configuration edits save automatically. Package additions/removals and planner solution checkboxes update the same selected-product list immediately. Finder answers also survive reloads.
 
-**Example Hospital is included under My Projects by default**, including in a fresh browser. It matches the illustrated 180-bed opening, 500-bed eventual capacity, 12 departments and eight service families. Its 18 MS Project-derived workstreams generate 346 applicable activities, with two saved example scenarios. Existing examples and user edits are preserved; reloads do not create duplicates. You can archive or customize the example.
+**My Advisory Plan** replaces My Projects, New Project and the separate Example Hospital navigation. Existing Example Hospital settings, activity progress and selections migrate into the shared plan; all 18 MS Project-derived workstreams and 347 reference activities remain available. The migration retains the old records and a separate migration backup in browser storage. Fresh plans have no preselected demo solutions. Clearing selections does not re-add the seed offerings on reload.
 
-The Workstreams page is a directory of 18 dedicated child pages, one per workstream. Each child has its own activity list, advisory connections, search, scoped CSV export, clickable breadcrumb and previous/next navigation. Existing `?ws=WS-*` links open the corresponding child page.
+The Workstreams page is a directory of 18 dedicated child pages, one per workstream. Each child has Table and Timeline views over the same activity IDs, advisory connections, shared search, scoped CSV export, clickable breadcrumbs and previous/next navigation. View preferences survive reloads. Existing `?ws=WS-*` links open the corresponding child page.
 
 Explore the Gantt, change duration or earliest-start assumptions, inspect dependencies and critical activities, record readiness evidence, select advisory support, save scenarios and export backups or schedules. The requested opening date and dependency forecast remain distinct.
 
-Projects are saved in the current browser. Export JSON backups for portability; there is no shared cloud project storage. Reference durations, workload coefficients, local requirements and resourcing require specialist confirmation. See [the method and limitations](docs/planner-method.md).
+The single plan is saved in the current browser. Export JSON backups for portability; there is no shared cloud project storage. Reference durations, workload coefficients, local requirements and resourcing require specialist confirmation. See [the method and limitations](docs/planner-method.md).
 
 Every dashboard page uses the Guided Finder blue canvas, with a dark navy left navigation and top bar and a white Package button. Solution catalog rows include a Workstreams column linking to the dedicated workstream pages; the old domain-level workstream callout is removed.
 
-My Projects and New Project use the full blue workspace style. Hospital setup starts with prefilled dates, name, capacity and service choices; quantities use sliders with common-value presets. Radio cards show the selected default for stage, planning scale, digital foundation, teams and international hiring. A confirmed building-handover date is optional. Capacity and service-count limits keep the form consistent, and the live preview recalculates as choices change.
+The plan overview and Hospital Setup use the full blue workspace style. Hospital setup starts with prefilled dates, name, capacity and service choices; quantities use sliders with common-value presets. Radio cards show the selected default for stage, planning scale, digital foundation, teams and international hiring. A confirmed building-handover date is optional. Capacity and service-count limits keep the form consistent, and the live preview recalculates as choices change.
 
-Project setup includes a blue left-hand navigation panel with every question, Back, reset-to-opened-values and a live Your answers summary. Both New Project and existing project Setup use it.
+Project setup includes a blue left-hand navigation panel with every question, Back, reset-to-opened-values and a live Your answers summary. Hospital Setup is the configuration page for the shared plan.
 
 A collapsible right pane shows a live, white-wireframe 3D hospital concept alongside the form. Bed capacity, department count, selected services and hospital/large-hospital/campus scale visibly change its massing, department modules and expansion reserve. Every element has a label, hidden initially; the latest edited or added element receives the only focused label. Click a model element or choose it in the inspector to reveal its label. Drag to orbit, Shift/right-drag to pan, scroll or pinch to zoom, or use the zoom, north, top-view and reset controls. Auto-rotation can be paused and starts paused when reduced motion is requested. Collapse the pane to restore form width. This schematic preview is illustrative, not an architectural design or capacity validation; dates and delivery assumptions also update labeled planning overlays, rather than inventing clinical space.
 
 Rectangular domain and solution tags use blue for existing hospitals, green for new hospitals and a diagonal blue/green split for both. Workstreams and their numbered activities use yellow/orange/red status tags. All 347 reference activities have stable parent-based codes (for example `PMO-01`); additional capacity-review gates continue their parent sequence. Internal source IDs remain unchanged for saved records and dependencies. See [codes and status rules](docs/planner-method.md#display-codes-and-status-tags).
 
-The complete mapping is available at `reports/advisory-workstream-map.html`. `data/workstream-solutions.js` separates primary, supporting, conditional and post-opening relationships, and narrows activity links by workstream and subject. Owner-led delivery responsibilities remain unchanged. Example Hospital adopts the primary advisory selections once per mapping version while preserving prior selections, dates, capacity and task records. The global package is only changed by an explicit Add action.
+The complete mapping is available at `reports/advisory-workstream-map.html`. `data/workstream-solutions.js` separates primary, supporting, conditional and post-opening relationships, and narrows activity links by workstream and subject. Owner-led delivery responsibilities remain unchanged. Workstream cards identify which workstreams are connected to the selected solutions. All selections use the same shared record; the template library remains available when a solution is removed.
 
 Run automated planner and migration checks with `npm test`.
 
 The initial implementation passed 21 planner/migration/export tests, six Git sync integration tests, and 19 local browser checks. Browser evidence is in `verification/hospital-planner-browser.json`; screenshots include the overview, interactive timeline, and mobile setup. An exported MS Project XML file was also read back successfully with MPXJ, including its workstream summaries and dependencies.
 
-## Run locally
+## Open the static dashboard
 
-Requires Python 3. From this directory:
+Open `index.html` directly in your browser. All application scripts and data are local files, so no server or build is needed. The browser stores this file's plan locally; JSON export/import provides portability. A browser may keep file-based and previously server-based storage separate.
 
-```sh
-python3 -m http.server 4173 --bind 127.0.0.1
-```
-
-Open <http://127.0.0.1:4173/>. If Node.js is installed, `npm start` or `npm run dev` runs the same server.
+`npm test` runs the local automated checks without starting a server. The existing `npm start` development shortcut remains available for optional development use.
 
 ## Verify the copy
 

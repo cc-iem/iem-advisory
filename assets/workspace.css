@@ -2198,3 +2198,20 @@ main#top {
   .row-workstreams > ul { grid-template-columns: 1fr; }
   .catalog-solutions .row-actions { flex-wrap: wrap; }
 }
+
+.nav-plan-name { color: #d7eafa; padding: 0 12px 12px; font-size: 12px; font-weight: 500; }
+.finder-project-context { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 18px; margin-bottom: 28px; border: 1px solid #ffffff30; background: #0b2b4d70; color: #fff; }
+.finder-project-context strong, .finder-project-context span { display: block; }
+.finder-project-context strong { font-size: 15px; font-weight: 500; }
+.finder-project-context span { font-size: 12px; color: #bdd5e9; margin-top: 4px; }
+.finder-project-context a { color: #b7e6ff; font-size: 12px; white-space: nowrap; }
+.workstream-selection-state { color: #b7e4ce; font-size: 11px; margin-bottom: 12px; }
+.workstream-view-toggle { width: max-content; margin-bottom: 18px; }
+.workstream-view-toggle button[aria-pressed="true"] { background: #fff; color: #103253; }
+.workstream-activity-table { min-width: 850px; }
+.workstream-activity-table td:first-child { min-width: 290px; width: 36%; }
+.workstream-activity-table td:nth-child(2) { min-width: 220px; }
+.workstream-activity-table td:nth-child(3), .workstream-activity-table td:nth-child(4) { white-space: nowrap; }
+@media (max-width: 760px) { .finder-project-context { flex-direction: column; align-items: flex-start; gap: 10px; } }
+
+.finder-context-links { display: flex; flex-wrap: wrap; gap: 8px 16px; }

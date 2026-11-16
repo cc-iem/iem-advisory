@@ -7,6 +7,7 @@
   var FINDER = window.CC_FINDER;
   var CONFIG = window.CC_CONFIG || {};
   var E = window.CCEngine;
+  var S = window.CCProject, savedPlan = S.get();
 
   var BY_ID = {};
   CATALOG.forEach(function (p) { BY_ID[p.id] = p; });
@@ -21,8 +22,8 @@
 
   /* ---------------- State ---------------- */
   var state = {
-    answers: {},        // status, domain and every domain question id -> option id
-    order: [],          // answered keys in the order they were answered
+    answers: savedPlan.finder.answers || {},        // status, domain and every domain question id -> option id
+    order: savedPlan.finder.order || [],          // answered keys in the order they were answered
     recall: null,       // { key, value } shown as selected after going back
     cart: loadCart(),
     fit: "all",
@@ -58,13 +59,9 @@
   function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
   function storageGet(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
   function storageSet(key, val) { try { window.localStorage.setItem(key, val); } catch (e) { /* storage unavailable */ } }
-  function loadCart() {
-    try {
-      var raw = JSON.parse(storageGet("ccc-cart") || "[]");
-      return Array.isArray(raw) ? raw.filter(function (id) { return !!BY_ID[id]; }) : [];
-    } catch (e) { return []; }
-  }
-  function saveCart() { storageSet("ccc-cart", JSON.stringify(state.cart)); }
+  function loadCart() { return window.CCProject.get().selectedProducts.slice(); }
+  function saveCart() { S.setSelections(state.cart, "package"); }
+  function saveFinder() { S.setFinder({answers:state.answers,order:state.order}); }
   function inCart(id) { return state.cart.indexOf(id) !== -1; }
 
   function markersHTML(p) {
@@ -160,6 +157,8 @@
     grid.classList.toggle("is-result", step.type === "result");
     renderSteps(step);
     if (step.type === "result") renderResult(); else renderQuestion(step);
+    var plan = S.get();
+    finderMain.insertAdjacentHTML('afterbegin', '<div class="finder-project-context"><div><strong>' + esc(plan.name) + '</strong><span>' + (plan.hospitalType === 'existing' ? 'Existing hospital' : 'New hospital') + ' · ' + plan.openingBeds + ' opening beds · ' + plan.departmentCount + ' departments · ' + plan.selectedProducts.length + ' selected solutions</span></div><div class="finder-context-links"><a href="#planner/setup">Configure hospital →</a><a href="#planner/advisory">View selected solutions →</a></div></div>');
     renderMap(step);
     renderAnswers();
     $("#finderBack").disabled = state.order.length === 0;
@@ -551,7 +550,6 @@
   }
 
   function answer(key, value, button) {
-    if (key === "status" && value === "new") { location.hash = "planner/new"; return; }
     if (button) {
       $all(".option", finderMain).forEach(function (b) { b.setAttribute("aria-pressed", b === button ? "true" : "false"); });
     }
@@ -561,6 +559,7 @@
     state.answers[key] = value;
     state.order.push(key);
     state.recall = null;
+    saveFinder();
     setTimeout(function () { renderFinder({ focus: true }); }, reduceMotion ? 0 : 200);
   }
 
@@ -574,6 +573,7 @@
     var key = state.order[state.order.length - 1];
     state.recall = { key: key, value: state.answers[key] };
     truncate(state.order.length - 1);
+    saveFinder();
     renderFinder({ focus: true });
   }
 
@@ -582,6 +582,7 @@
     if (at === -1) return;
     state.recall = { key: key, value: state.answers[key] };
     truncate(at);
+    saveFinder();
     renderFinder({ focus: true });
   }
 
@@ -591,12 +592,14 @@
     state.answers.status = keep;
     state.order = ["status"];
     state.recall = null;
+    saveFinder();
     renderFinder({ focus: true });
   }
 
   function restart() {
     truncate(0);
-    state.recall = null;
+    state.recall = {key:"status",value:S.get().hospitalType};
+    saveFinder();
     renderFinder({ focus: true });
   }
 
@@ -893,7 +896,7 @@
     $("#cartButton").setAttribute("aria-label", "Advisory service package, " + plural(state.cart.length, "solution", "solutions"));
     // Re-render everything that shows add buttons, keeping the finder where it is.
     var step = currentStep();
-    if (step.type === "result") renderResult();
+    if (step.type === "result") renderFinder();
     renderCatalog();
     var dp = $("#detailPanel");
     if (!dp.hidden) {
@@ -926,7 +929,7 @@
     if (state.cartView === "form") { renderForm(panel); return; }
     if (state.cartView === "done") { renderDone(panel); return; }
     var items = state.cart.map(function (id) { return BY_ID[id]; });
-    var html = cartHead("Your advisory service package", plural(items.length, "solution", "solutions"));
+    var html = cartHead("Your advisory service package", S.get().name + " · " + plural(items.length, "solution", "solutions"));
     html += '<div class="panel-body">';
     if (!items.length) {
       html += '<div class="cart-empty"><h3>Your advisory service package is empty</h3><p>Use the product navigator or browse all solutions, then add the ones you would like to discuss with our team.</p>' +
@@ -1264,6 +1267,16 @@
   window.addEventListener("scroll", updateSection, { passive: true });
   window.addEventListener("resize", updateSection);
 
+  window.addEventListener("advisory-project-change", function(event) {
+    var plan = S.get(), changed = JSON.stringify(state.cart) !== JSON.stringify(plan.selectedProducts);
+    state.cart = plan.selectedProducts.slice();
+    if (event.detail.source !== 'finder') {
+      state.answers = plan.finder.answers || {};
+      state.order = plan.finder.order || [];
+    }
+    if (changed && event.detail.source !== 'package') refreshCartUI();
+    if (!$('#finder').hidden && event.detail.source !== 'finder') renderFinder();
+  });
   /* ---------------- Start ---------------- */
   if (CONFIG.contactEmail) {
     var cl = $("#contactEmailLink"); if (cl) cl.href = "mailto:" + CONFIG.contactEmail;
@@ -1276,6 +1289,7 @@
   }
   $("#year").textContent = new Date().getFullYear();
   $("#cartCount").textContent = state.cart.length;
+  $("#finderRestart").title = "Restart advisory questions; keep your hospital settings and selected solutions";
   renderFinder();
   renderCatalog();
   updateSection();
