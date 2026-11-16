@@ -27,6 +27,7 @@
     order: initialFinder.order,
     finderCursor: initialFinder.cursor,
     cart: loadCart(),
+    solutionDomains: loadSolutionDomains(),
     fit: "all",
     query: "",
     open: {},           // domain id -> expanded in the catalog
@@ -65,8 +66,8 @@
   function saveFinder() { S.setFinder({answers:state.answers,order:state.order,cursor:state.finderCursor}); }
   function inCart(id) { return state.cart.indexOf(id) !== -1; }
 
-  function markersHTML(p) {
-    return '<span class="markers">' + p.fit.slice().sort(function (a, b) { return a === "new" ? -1 : 1; }).map(function (f) {
+  function markersHTML(p, includeFit) {
+    return '<span class="markers">' + (includeFit===false?[]:p.fit.slice().sort(function (a, b) { return a === "new" ? -1 : 1; })).map(function (f) {
       return '<span class="marker marker-' + f + '">' + FIT_LABEL[f] + "</span>";
     }).join("") + (p.proposed ? '<span class="offering-status">Proposed scope</span>' : '') + (p.lifecycle === 'Post-opening' ? '<span class="offering-status">Post-opening</span>' : '') + "</span>";
   }
@@ -84,19 +85,56 @@
         return '<li><button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id) + '</button>'+window.CCWorkstreamTags.heatmap(w.id)+'</li>';
       }).join('') + '</ul>' : '<p class="scope-note">No mapped workstream</p>') + '</div>';
   }
-  function solutionSelectionTableHTML(items) {
-    var order=DOMAINS.map(function(d){return d.id;});
-    var products=items.slice().sort(function(a,b){return order.indexOf(a.domain)-order.indexOf(b.domain)||a.number-b.number;});
-    return '<div class="solution-list-surface"><div class="solution-selection-table" role="table" aria-label="Advisory solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Package</span></div>'+products.map(function(p){
-      var selected=inCart(p.id);
-      return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p)+'<small class="selection-duration">'+rich(p.durationShort)+'</small></div>'+solutionWorkstreamsHTML(p,'selection-workstreams')+'<div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'Remove':'Add')+'</button></div></div>';
-    }).join('')+'</div></div>';
+  function loadSolutionDomains() {
+    try { var saved=JSON.parse(storageGet('iem-solution-domains-v1'));return saved && typeof saved==='object' && !Array.isArray(saved)?saved:{}; } catch(e) { return {}; }
+  }
+  function solutionDomainSelection(id) {
+    var ids=CATALOG.filter(function(p){return p.domain===id;}).map(function(p){return p.id;}),selected=ids.filter(inCart);
+    return {ids:ids,count:selected.length,total:ids.length,status:!selected.length?'none':selected.length===ids.length?'all':'partial'};
+  }
+  function solutionDomainOpen(id,context) {
+    var saved=(state.solutionDomains||{})[context+':'+id];return typeof saved==='boolean'?saved:context==='package';
+  }
+  function toggleSolutionDomain(button) {
+    var group=button.closest('[data-solution-domain]'),context=group.dataset.solutionContext,id=group.dataset.solutionDomain;
+    var open=button.getAttribute('aria-expanded')!=='true';state.solutionDomains=state.solutionDomains||{};state.solutionDomains[context+':'+id]=open;
+    storageSet('iem-solution-domains-v1',JSON.stringify(state.solutionDomains));
+    group.querySelector('.solution-domain-body').hidden=!open;button.setAttribute('aria-expanded',String(open));
+  }
+  function setSolutionDomain(id,selected) {
+    var domain=solutionDomainSelection(id),ids=new Set(state.cart);
+    domain.ids.forEach(function(product){if(selected)ids.add(product);else ids.delete(product);});
+    state.cart=Array.from(ids);saveCart();refreshCartUI();
+  }
+  function solutionSelectionRowHTML(p, context) {
+    var selected=inCart(p.id);
+    return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-selected="'+selected+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><div class="selection-row-labels"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><span class="selection-state-label">'+(selected?'✓ Selected':'Not selected')+'</span></div><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p,context!=='package')+'<small class="selection-duration">'+rich(p.durationShort)+'</small></div>'+solutionWorkstreamsHTML(p,'selection-workstreams')+'<div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'− Remove':'+ Add')+'</button></div></div>';
+  }
+  function solutionDomainWorkstreamsHTML(products) {
+    var ids=Array.from(new Set(products.reduce(function(all,p){return all.concat((p.workstreamLinks||[]).map(function(w){return w.id;}));},[])));
+    return '<div class="domain-workstream-preview" data-tag-context="workstream" aria-label="Related workstreams">'+ids.map(function(id){return '<button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+id+'">'+window.CCWorkstreamTags.html(id)+'</button>';}).join('')+'</div>';
+  }
+  function solutionSelectionTableHTML(items,context) {
+    context=context||'solutions';
+    return '<div class="solution-list-surface">'+DOMAINS.map(function(d){
+      var products=items.filter(function(p){return p.domain===d.id;}).sort(function(a,b){return a.number-b.number;});if(!products.length)return '';
+      var selection=solutionDomainSelection(d.id),open=solutionDomainOpen(d.id,context),prefix='solution-group-'+context+'-'+d.id;
+      return '<section class="solution-domain" data-solution-domain="'+d.id+'" data-solution-context="'+context+'" data-selection-state="'+selection.status+'" aria-labelledby="'+prefix+'-title"><div class="solution-domain-header"><h2 class="solution-domain-heading"><button type="button" class="solution-domain-toggle" id="'+prefix+'-title" data-action="toggle-solution-domain" aria-expanded="'+open+'" aria-controls="'+prefix+'-body"><span class="domain-collapse-arrow" aria-hidden="true">›</span>'+window.CCDomainTags.domain(d.id)+'</button></h2><div class="solution-domain-controls"><span class="domain-selection-count">'+selection.count+' of '+selection.total+' in package</span><button type="button" class="domain-select-all" role="checkbox" aria-checked="'+(selection.status==='partial'?'mixed':String(selection.status==='all'))+'" data-action="toggle-domain-selection" data-domain="'+d.id+'" aria-label="Select or deselect all '+esc(d.name)+' solutions"><span class="domain-checkbox-icon" aria-hidden="true">'+(selection.status==='all'?'✓':selection.status==='partial'?'−':'')+'</span><span>Select domain</span></button><button type="button" class="domain-clear" data-action="clear-domain-selection" data-domain="'+d.id+'"'+(!selection.count?' disabled':'')+' aria-label="Deselect all '+esc(d.name)+' solutions">Clear</button></div></div>'+solutionDomainWorkstreamsHTML(products)+'<div class="solution-domain-body" id="'+prefix+'-body"'+(open?'':' hidden')+'><div class="solution-selection-table" role="table" aria-label="'+esc(d.name)+' solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Package</span></div>'+products.map(function(p){return solutionSelectionRowHTML(p,context);}).join('')+'</div></div></section>';
+    }).join('')+'</div>';
   }
   function refreshSolutionActions(root) {
     $all('.solution-package-action',root).forEach(function(button){
-      var p=BY_ID[button.dataset.id],selected=inCart(p.id);
-      button.dataset.action=selected?'remove':'add';button.textContent=selected?'Remove':'Add';
+      var p=BY_ID[button.dataset.id],selected=inCart(p.id),row=button.closest('[data-solution-row]');
+      button.dataset.action=selected?'remove':'add';button.textContent=selected?'− Remove':'+ Add';
       button.setAttribute('aria-pressed',String(selected));button.setAttribute('aria-label',(selected?'Remove from package: ':'Add to package: ')+p.title);
+      row.dataset.selected=String(selected);row.querySelector('.selection-state-label').textContent=selected?'✓ Selected':'Not selected';
+    });
+    $all('[data-solution-domain]',root).forEach(function(group){
+      var selection=solutionDomainSelection(group.dataset.solutionDomain);group.dataset.selectionState=selection.status;
+      group.querySelector('.domain-selection-count').textContent=selection.count+' of '+selection.total+' in package';
+      group.querySelector('.domain-select-all').setAttribute('aria-checked',selection.status==='partial'?'mixed':String(selection.status==='all'));
+      group.querySelector('.domain-checkbox-icon').textContent=selection.status==='all'?'✓':selection.status==='partial'?'−':'';
+      group.querySelector('.domain-clear').disabled=!selection.count;
     });
   }
 
@@ -236,7 +274,7 @@
       html += '<button type="button" class="option" data-action="answer" data-key="' + esc(q.id) + '" data-value="' + esc(o.id) +
         '" aria-pressed="' + (recall === o.id ? "true" : "false") + '">' +
         "<span>" +
-        '<span class="option-label">' + (BY_ID[o.id] ? window.CCDomainTags.solutionLabel(BY_ID[o.id]) : step.type === 'domain' ? window.CCDomainTags.domain(o.id) : esc(o.label)) + "</span>" +
+        '<span class="option-label">' + (step.type === 'status' ? '<span class="hospital-type-square hospital-type-'+o.id+'" aria-hidden="true"></span>' : '') + (BY_ID[o.id] ? window.CCDomainTags.solutionLabel(BY_ID[o.id]) : step.type === 'domain' ? window.CCDomainTags.domain(o.id) : esc(o.label)) + "</span>" +
         (o.detail ? '<span class="option-detail">' + esc(o.detail) + "</span>" : "") +
         (step.type === 'domain' ? domainSolutionSquares(o.id,status) : '') +
         (o.meta ? '<span class="option-meta">' + esc(o.meta) + "</span>" : "") +
@@ -273,7 +311,7 @@
       (more > 0 ? '<p style="margin-top:10px;font-size:14.5px;color:var(--slate)">Plus ' + plural(more, "more deliverable", "more deliverables") + " in the full profile.</p>" : "") +
       "</div>" +
       '<dl class="facts">' +
-      "<div><dt>Typical duration</dt><dd>" + rich(p.durationShort) + "</dd></div>" +
+      "<div><dt>Typical duration</dt><dd data-duration-label>" + rich(p.durationShort) + "</dd></div>" +
       "<div><dt>Delivery model</dt><dd>" + esc(p.deliveryShort) + "</dd></div>" +
       "<div><dt>Category</dt><dd>" + esc(p.category) + "</dd></div>" +
       "</dl></div>" +
@@ -288,7 +326,7 @@
       rec.alternatives.forEach(function (a) {
         html += '<div class="also-row" data-tag-context="solution" data-tag-id="' + a.id + '"><span class="ref">' + esc(a.code) + "</span><div>" +
           '<button type="button" class="also-title" data-domain-plain="true" data-tag-context="solution" data-action="detail" data-id="' + a.id + '">' + esc(a.title) + "</button>" +
-          "<p>" + rich(a.durationShort) + "</p></div>" +
+          '<p data-duration-label>' + rich(a.durationShort) + "</p></div>" +
           cartButtonHTML(a.id, "btn-small on-navy-btn") + "</div>";
       });
       html += "</section>";
@@ -539,7 +577,7 @@
     tip.innerHTML = '<p class="tip-domain">' + window.CCDomainTags.solution(p) + ' · <span data-domain-plain>' + esc(DOMAIN_BY_ID[p.domain].name) + "</span></p>" +
       '<p class="tip-title" data-domain-plain>' + esc(p.title) + "</p>" +
       '<p class="tip-sub">' + rich(p.subtitle) + "</p>" +
-      '<p class="tip-meta">Typical duration: ' + rich(p.durationShort) + "</p>";
+      '<p class="tip-meta">Typical duration: <span data-duration-label>' + rich(p.durationShort) + "</span></p>";
     tip.hidden = false;
     var side = tip.offsetParent || tip.parentNode;
     var sr = side.getBoundingClientRect(), tr = t.getBoundingClientRect();
@@ -656,7 +694,7 @@
           '<div role="cell"><button type="button" class="row-title" data-domain-plain="true" data-tag-context="solution" data-action="detail" data-id="' + p.id + '">' + esc(p.title) + "</button>" +
           '<p class="row-sub">' + rich(p.subtitle) + "</p></div>" +
           solutionWorkstreamsHTML(p) +
-          '<div class="row-meta" role="cell">' + markersHTML(p) + "<span>Typical duration: " + rich(p.durationShort) + "</span></div>" +
+          '<div class="row-meta" role="cell">' + markersHTML(p) + "<span>Typical duration: <span data-duration-label>" + rich(p.durationShort) + "</span></span></div>" +
           '<div class="row-actions" role="cell">' + cartButtonHTML(p.id, "btn-small") +
           '<button type="button" class="btn btn-quiet btn-small" data-action="detail" data-id="' + p.id + '" aria-label="View details: ' + esc(p.title) + '">View details</button></div>' +
           "</div>";
@@ -798,7 +836,7 @@
       '<div class="panel-body">' +
       '<dl class="fact-strip">' +
       "<div><dt>Category</dt><dd>" + esc(p.category) + (p.stageNote ? '<span class="dd-note">(' + esc(p.stageNote) + ")</span>" : "") + "</dd></div>" +
-      "<div><dt>Typical duration</dt><dd>" + rich(p.durationShort) + "</dd></div>" +
+      "<div><dt>Typical duration</dt><dd data-duration-label>" + rich(p.durationShort) + "</dd></div>" +
       "<div><dt>Delivery model</dt><dd>" + esc(p.deliveryShort) + "</dd></div>" +
       "</dl>" +
       '<section class="dsec"><h3>The need</h3>' + paragraphsHTML(p.need) + "</section>" +
@@ -806,9 +844,9 @@
       '<section class="dsec"><h3>' + (p.proposed ? 'Proposed advisory approach' : 'What Cleveland Clinic brings') + '</h3>' + paragraphsHTML(p.value) + "</section>" +
       '<section class="dsec"><h3>Key deliverables</h3>' + (p.deliverablesIntro ? "<p class=\"intro\">" + rich(p.deliverablesIntro) + "</p>" : "") + listHTML(p.deliverables, false, p.leadBold || "auto") + "</section>" +
       '<section class="dsec"><h3>How it is delivered</h3>' + (same(p.deliveryModel, p.deliveryShort) && p.deliveryDetail.length ? "" : '<p class="lead-in">' + esc(p.deliveryModel) + "</p>") + paragraphsHTML(p.deliveryDetail) + "</section>" +
-      '<section class="dsec"><h3>Typical duration</h3>' + (same(p.duration, p.durationShort) && (p.phases.length || p.durationDetail.length) ? "" : '<p class="lead-in">' + rich(p.duration) + "</p>") +
+      '<section class="dsec"><h3>Typical duration</h3>' + (same(p.duration, p.durationShort) && (p.phases.length || p.durationDetail.length) ? "" : '<p class="lead-in" data-duration-label>' + rich(p.duration) + "</p>") +
       (p.phases.length ? '<ul class="squares phases">' + p.phases.map(function (ph) {
-        return "<li><strong>" + esc(ph.name) + " (" + esc(ph.weeks) + "):</strong> " + rich(ph.detail) + "</li>";
+        return "<li><strong>" + esc(ph.name) + ' (<span data-duration-label>' + esc(ph.weeks) + '</span>):</strong> ' + rich(ph.detail) + "</li>";
       }).join("") + "</ul>" : "") +
       paragraphsHTML(p.durationDetail) + "</section>" +
       res +
@@ -947,7 +985,7 @@
       html += '<div class="cart-empty"><h3>Your advisory service package is empty</h3><p>Use the product navigator or browse all solutions, then add the ones you would like to discuss with our team.</p>' +
         '<button type="button" class="btn btn-primary" data-action="go-finder">Open the product navigator</button></div>';
     } else {
-      html += solutionSelectionTableHTML(items);
+      html += solutionSelectionTableHTML(items,'package');
       html += '<p class="cart-summary">There is no charge to request a proposal. Our team confirms scope, timing and fees with you before any engagement begins.</p>' +
         '<p><button type="button" class="remove" data-action="clear-cart">Clear package</button></p>';
     }
@@ -1167,6 +1205,9 @@
     var act = el.getAttribute("data-action");
     var id = el.getAttribute("data-id");
     switch (act) {
+      case "toggle-solution-domain": toggleSolutionDomain(el); break;
+      case "toggle-domain-selection": setSolutionDomain(el.getAttribute('data-domain'),solutionDomainSelection(el.getAttribute('data-domain')).status!=='all'); break;
+      case "clear-domain-selection": setSolutionDomain(el.getAttribute('data-domain'),false); break;
       case "answer": answer(el.getAttribute("data-key"), el.getAttribute("data-value"), el); break;
       case "back": back(); break;
       case "change": change(el.getAttribute("data-key")); break;

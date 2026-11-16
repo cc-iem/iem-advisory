@@ -24,6 +24,7 @@ test('all four steps are enabled immediately and Recommendations works with only
 });
 test('every displayed question has exactly one default selected and domain squares match its eligible solutions',()=>{
   const c=setup();for(const target of ['status','domain','needs']){c.goToFinderStep(target);c.renderQuestion(c.currentStep());assert.equal((c.finderMain.innerHTML.match(/aria-pressed="true"/g)||[]).length,1,target);}
+  c.goToFinderStep('status');c.renderQuestion(c.currentStep());assert.match(c.finderMain.innerHTML,/hospital-type-square hospital-type-new/);assert.match(c.finderMain.innerHTML,/hospital-type-square hospital-type-existing/);
   for(const type of ['new','existing'])for(const d of FINDER.domains){
     const ready=E.prepareFinder(FINDER,type,{answers:{status:type,domain:d.id}});
     for(const q of E.questionsFor(FINDER,type,d.id,ready.answers))if(E.optionsFor(q,type).length)assert.ok(E.chosenOption(q,type,ready.answers));

@@ -66,8 +66,8 @@ main#top, .planner-blue main#top, .finder-active main#top {
 #top .toolbar { background: #103253; border-color: #ffffff29; box-shadow: 0 4px 18px #00132920; }
 #top .segmented { background: transparent; border-color: #ffffff50; }
 #top .segmented button { color: #d8edfc; border-color: #ffffff50; }
-#top .segmented button[aria-checked="true"] { background: #fff; color: #103253; }
-#top .segmented button:not([aria-checked="true"]):hover { background: #ffffff15; }
+#top .segmented button:is([aria-checked="true"], [aria-pressed="true"]) { background: #fff; color: #103253; font-weight: 600; }
+#top .segmented button:not([aria-checked="true"]):not([aria-pressed="true"]):hover { background: #ffffff15; }
 #top .btn-secondary { color: #fff; background: transparent; border-color: #ffffff60; }
 #top .btn-secondary:hover { color: #fff; background: #ffffff15; border-color: #b6e6ff; }
 #top .btn-primary, #top .btn-light { background: #fff; color: #123558; border-color: #fff; }

@@ -5,13 +5,13 @@ const C=JSON.parse(JSON.stringify(data.window.CC_CATALOG)),D=JSON.parse(JSON.str
 const source=fs.readFileSync('assets/app.js','utf8');
 function setup(){
   const selected=[C[0].id,C[3].id],panel={innerHTML:'',body:{scrollTop:140}};
-  const c={DOMAINS:D,BY_ID:Object.fromEntries(C.map(p=>[p.id,p])),FIT_LABEL:{new:'New hospital',existing:'Existing hospital'},state:{cart:selected.slice(),cartView:'list'},ICON:{close:'×'},window:{CCDomainTags:require('../assets/domain-tags.js')(D,C),CCWorkstreamTags:require('../assets/workstream-tags.js')(T)},esc:s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),plural:(n,s,p)=>n+' '+(n===1?s:p),S:{get:()=>({name:'Our hospital',selectedProducts:selected.slice()}),setSelections:ids=>{selected.splice(0,selected.length,...ids);}},$:s=>s==='#cartPanel'?panel:panel.body,toast(){}};
+  const c={CATALOG:C,DOMAINS:D,BY_ID:Object.fromEntries(C.map(p=>[p.id,p])),FIT_LABEL:{new:'New hospital',existing:'Existing hospital'},state:{cart:selected.slice(),cartView:'list'},ICON:{close:'×'},window:{CCDomainTags:require('../assets/domain-tags.js')(D,C),CCWorkstreamTags:require('../assets/workstream-tags.js')(T)},esc:s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),plural:(n,s,p)=>n+' '+(n===1?s:p),S:{get:()=>({name:'Our hospital',selectedProducts:selected.slice()}),setSelections:ids=>{selected.splice(0,selected.length,...ids);}},$:s=>s==='#cartPanel'?panel:panel.body,toast(){}};
   c.rich=c.esc;c.saveCart=()=>c.S.setSelections(c.state.cart);c.refreshCartUI=()=>c.renderCart();
   vm.createContext(c);
-  for(const name of ['solutionWorkstreamsHTML','solutionSelectionTableHTML','refreshSolutionActions','markersHTML','cartHead','renderCart','addToCart','removeFromCart']){
+  for(const name of ['solutionWorkstreamsHTML','solutionDomainSelection','solutionDomainOpen','toggleSolutionDomain','setSolutionDomain','solutionSelectionRowHTML','solutionDomainWorkstreamsHTML','solutionSelectionTableHTML','refreshSolutionActions','markersHTML','cartHead','renderCart','addToCart','removeFromCart']){
     const start=source.indexOf('  function '+name+'(');vm.runInContext(source.slice(start,source.indexOf('\n  }',start)+4),c);
   }
-  c.inCart=id=>c.state.cart.includes(id);return {c,panel};
+  c.inCart=id=>c.state.cart.includes(id);c.storageSet=()=>{};return {c,panel};
 }
 function rows(html){
   const result={};for(const match of html.matchAll(/<div class="selection-table-row"[^>]*data-solution-row="([^"]+)"[^>]*>/g)){
@@ -20,11 +20,12 @@ function rows(html){
     }
   }return result;
 }
+const withoutHospitalFit=html=>html.replace(/<span class="marker marker-(?:new|existing)">.*?<\/span>/g,'');
 test('Selected Solutions lists the complete catalog; Package has exactly the selected rows in the same layout',()=>{
   const {c,panel}=setup(),all=c.solutionSelectionTableHTML(C);c.renderCart();
   const full=rows(all),cart=rows(panel.innerHTML);
   assert.equal(Object.keys(full).length,63);assert.deepEqual(Object.keys(cart).sort(),c.state.cart.slice().sort());
-  for(const id of c.state.cart)assert.equal(cart[id],full[id],id+' row layout matches exactly');
+  for(const id of c.state.cart)assert.equal(cart[id],withoutHospitalFit(full[id]),id+' row layout matches except omitted Package fit markers');
   assert.equal(panel.body.scrollTop,140);
   for(const p of C){const links=[...new Set(p.workstreamLinks.map(w=>w.id))].sort();const rendered=[...full[p.id].matchAll(/data-plan-action="open-workstream" data-workstream="([^"]+)"/g)].map(m=>m[1]).sort();assert.deepEqual(rendered,links,p.code);assert.match(full[p.id],/workstream-tag ws-/);}
 });
@@ -43,8 +44,8 @@ test('selection updates preserve the page scroll and focus on the toggled soluti
   c.refreshSolutionList();assert.equal(top.scrollTop,760);assert.equal(focused,true);assert.equal(Object.keys(rows(host.innerHTML)).length,63);
 });
 test('package toggles update existing action buttons without rebuilding the solution rows',()=>{
-  const {c}=setup(),id=C[8].id,button={dataset:{id},setAttribute(k,v){this[k]=v;}};
-  c.$all=()=>[button];c.refreshSolutionActions({});assert.equal(button.dataset.action,'add');
+  const {c}=setup(),id=C[8].id,label={},row={dataset:{},querySelector:()=>label},button={dataset:{id},closest:()=>row,setAttribute(k,v){this[k]=v;}};
+  c.$all=s=>s==='.solution-package-action'?[button]:[];c.refreshSolutionActions({});assert.equal(button.dataset.action,'add');
   c.addToCart(id);c.refreshSolutionActions({});assert.equal(button.dataset.action,'remove');assert.equal(button['aria-pressed'],'true');
   c.removeFromCart(id);c.refreshSolutionActions({});assert.equal(button.dataset.action,'add');assert.equal(button['aria-pressed'],'false');
 });
@@ -58,5 +59,43 @@ test('Selected Solutions and Package reuse the catalog heatmaps with identical a
     assert.equal((full[p.id].match(/class="workstream-heatmap"/g)||[]).length,links.length,p.code);
     for(const id of links){const heatmap=tags.heatmap(id);assert.ok(full[p.id].includes(heatmap));assert.ok(c.solutionWorkstreamsHTML(p).includes(heatmap));if(cart[p.id])assert.ok(cart[p.id].includes(heatmap));}
   }
-  for(const id of c.state.cart)assert.equal(cart[id],full[id]);
+  for(const id of c.state.cart)assert.equal(cart[id],withoutHospitalFit(full[id]));
+});
+test('domains group every solution once, collapse independently and remember expansion',()=>{
+  const {c}=setup(),html=c.solutionSelectionTableHTML(C);
+  assert.equal((html.match(/data-solution-domain=/g)||[]).length,10);assert.equal(Object.keys(rows(html)).length,63);
+  const domain=D[0].id,body={hidden:true},group={dataset:{solutionDomain:domain,solutionContext:'solutions'},querySelector:()=>body};
+  const button={expanded:'false',closest:()=>group,getAttribute(){return this.expanded;},setAttribute(k,v){this.expanded=v;}};
+  c.toggleSolutionDomain(button);assert.equal(body.hidden,false);assert.equal(c.solutionDomainOpen(domain,'solutions'),true);
+  assert.equal(c.solutionDomainOpen(domain,'package'),true,'Package defaults to expanded independently');
+  c.toggleSolutionDomain(button);assert.equal(body.hidden,true);assert.equal(c.solutionDomainOpen(domain,'solutions'),false);
+  const mainIDs=[...c.solutionSelectionTableHTML(C).matchAll(/id="([^"]+)-body"/g)].map(m=>m[1]);
+  const packageIDs=[...c.solutionSelectionTableHTML(C,'package').matchAll(/id="([^"]+)-body"/g)].map(m=>m[1]);
+  assert.equal(mainIDs.filter(id=>packageIDs.includes(id)).length,0,'main and RHS controls have unique IDs');
+});
+test('domain selection and clearing affect all solutions in that domain and preserve other domains',()=>{
+  const {c}=setup(),domain=C[8].domain,ids=C.filter(p=>p.domain===domain).map(p=>p.id),outside=c.state.cart.filter(id=>!ids.includes(id));
+  c.setSolutionDomain(domain,true);assert.equal(c.solutionDomainSelection(domain).status,'all');assert.ok(ids.every(id=>c.S.get().selectedProducts.includes(id)));assert.ok(outside.every(id=>c.S.get().selectedProducts.includes(id)));
+  c.removeFromCart(ids[0]);assert.equal(c.solutionDomainSelection(domain).status,ids.length>1?'partial':'none');
+  c.setSolutionDomain(domain,false);assert.equal(c.solutionDomainSelection(domain).status,'none');assert.deepEqual(c.S.get().selectedProducts.sort(),outside.sort());
+});
+test('rows and action labels clearly distinguish selected and unselected states',()=>{
+  const {c}=setup(),id=C[8].id;let html=rows(c.solutionSelectionTableHTML(C))[id];
+  assert.match(html,/data-selected="false"/);assert.match(html,/>Not selected<\/span>/);assert.match(html,/>\+ Add<\/button>/);
+  c.addToCart(id);html=rows(c.solutionSelectionTableHTML(C))[id];
+  assert.match(html,/data-selected="true"/);assert.match(html,/>✓ Selected<\/span>/);assert.match(html,/>− Remove<\/button>/);
+});
+test('Package omits hospital-fit labels and markers while keeping activity heatmaps and scope labels',()=>{
+  const {c,panel}=setup(),p=C.find(p=>p.proposed);c.state.cart=[p.id];c.renderCart();
+  assert.doesNotMatch(panel.innerHTML,/class="marker marker-(?:new|existing)"/);
+  assert.match(panel.innerHTML,/class="workstream-heatmap"/);assert.match(panel.innerHTML,/Proposed scope/);
+  assert.match(c.solutionSelectionTableHTML([p]),/class="marker marker-/,'full Selected Solutions retains eligibility labels');
+});
+test('domain previews contain every related workstream once using standard colored tags',()=>{
+  const {c}=setup();for(const d of D){
+    const products=C.filter(p=>p.domain===d.id),html=c.solutionDomainWorkstreamsHTML(products);
+    const expected=[...new Set(products.flatMap(p=>p.workstreamLinks.map(w=>w.id)))].sort();
+    assert.deepEqual([...html.matchAll(/data-workstream="([^"]+)"/g)].map(m=>m[1]).sort(),expected);
+    for(const id of expected)assert.ok(html.includes(c.window.CCWorkstreamTags.html(id)));
+  }
 });

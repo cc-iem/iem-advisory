@@ -13,7 +13,7 @@ function declaration(name){
   const constant=source.indexOf('  const '+name+' =');assert.ok(constant>=0,name+' exists');
   return source.slice(constant,source.indexOf(';',constant)+1);
 }
-function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:['overview','setup','workstreams','timeline','readiness'].map(k=>[k,k]),scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCActivityGraph:require('../assets/activity-graph.js'),CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','activityTimelineRowHTML','activityTimelineBarHTML','activityRelationshipsHTML','readinessHTML','workstreamRange','setupTimelineHTML','renderSetupTimeline','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','notice','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
+function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:['overview','setup','workstreams','roles','readiness'].map(k=>[k,k]),scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCAccountableRoles:require('../assets/accountable-roles.js')(T),CCActivityGraph:require('../assets/activity-graph.js'),CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','accountableRolesHTML','isTimelinePage','workstreamsHTML','timelineHTML','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','activityTimelineRowHTML','activityTimelineBarHTML','activityRelationshipsHTML','readinessHTML','workstreamRange','setupTimelineHTML','renderSetupTimeline','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','notice','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
 const ids=html=>[...new Set([...html.matchAll(/data-task="([^"]+)"/g)].map(m=>m[1]))].sort();
 test('Table and Timeline render exactly the same scoped activity IDs for all 18 workstreams',()=>{const c=context();for(const w of T.workstreams){c.route.workstream=w.id;c.ui.workstreamViews[w.id]='table';const table=c.workstreamContentHTML(w);c.ui.workstreamViews[w.id]='timeline';const timeline=c.workstreamContentHTML(w);const expected=result.tasks.filter(t=>t.workstream===w.id).map(t=>t.id).sort();assert.deepEqual(ids(table),expected,w.code+' table');assert.deepEqual(ids(timeline),expected,w.code+' timeline');assert.ok(timeline.includes('gantt-scroll'));}});
 test('search filtering and no-match results remain identical across both views',()=>{const c=context(),w=T.workstreams.find(w=>w.code==='NURS');c.route.workstream=w.id;for(const query of ['NURS-01','competency','nonexistent activity']){c.ui.activityQueries[project.id+w.id]=query;c.ui.workstreamViews[w.id]='table';const table=ids(c.workstreamContentHTML(w));c.ui.workstreamViews[w.id]='timeline';assert.deepEqual(ids(c.workstreamContentHTML(w)),table,query);if(query==='NURS-01')assert.equal(table.length,1);if(query==='nonexistent activity')assert.equal(table.length,0);}});
@@ -171,18 +171,29 @@ test('Selected Solutions replaces the hospital overview with the shared solution
   assert.match(html,/data-shared-table="63"/);
   assert.doesNotMatch(html,/Forecast opening|Requested opening|Activities on the critical path|Opening decisions|Backups & downloads|All 18 workstreams mapped/);
 });
-test('planner navigation pages are peers of Guided Finder with no plan title heading',()=>{
+test('Workstreams is the former Timeline view and old Timeline URLs resolve to it',()=>{
+  const c=context();c.route={section:'planner',page:'workstreams',workstream:null};
+  const html=c.workstreamsHTML();assert.match(html,/id="timelineResults"/);assert.match(html,/Critical path only/);assert.match(html,/gantt-scroll/);assert.doesNotMatch(html,/ws-overview-grid/);
+  c.ui.criticalOnly=true;assert.ok(c.matchingTasks().every(t=>t.critical));
+  for(const hash of ['#planner/timeline','#planner/old/timeline']){c.location.hash=hash;assert.equal(c.parseRoute().page,'workstreams');}
+  assert.equal(c.projectURL('timeline'),'#planner/workstreams');
+});
+test('Accountable role is a peer page with the full reference role directory',()=>{
+  const c=context();assert.equal((c.accountableRolesHTML().match(/class="accountable-profile"/g)||[]).length,c.window.CCAccountableRoles.entries().length);
+  c.location.hash='#planner/roles';assert.equal(c.parseRoute().page,'roles');
+});
+test('planner navigation pages are peers of Advisory Planner with no plan title heading',()=>{
   const c=context(),nav={innerHTML:''};c.$=()=>nav;
   c.link=(href,label)=>'<a class="nav-item" href="'+href+'">'+label+'</a>';
   c.renderNav();
-  assert.doesNotMatch(nav.innerHTML,/My Advisory Plan|My Hospital|Our hospital|Hospital Planner|Scenarios & Exports/);
+  assert.doesNotMatch(nav.innerHTML,/My Advisory Plan|My Hospital|Our hospital|Guided Finder|Hospital Setup|Scenarios & Exports/);
   const stack=[],parents={};
   for(const match of nav.innerHTML.matchAll(/<\/?div\b[^>]*>|<a\b[^>]*href="([^"]+)"[^>]*>/g)){
     if(match[0].startsWith('</div'))stack.pop();
     else if(match[0].startsWith('<div'))stack.push(match[0]);
     else parents[match[1]]=stack.filter(tag=>!tag.includes('nav-link-row'));
   }
-  for(const page of ['overview','setup','workstreams','timeline','readiness'])assert.deepEqual(parents['#planner/'+page],parents['#finder'],page+' is a peer of Guided Finder');
+  for(const page of ['overview','setup','workstreams','roles','readiness'])assert.deepEqual(parents['#planner/'+page],parents['#finder'],page+' is a peer of Advisory Planner');
 });
 test('legacy routes, setup and child pages all resolve to the same global project',()=>{const c=context();for(const hash of ['#planner','#planner/new','#planner/overview','#planner/legacy-id/setup','#planner/another-id/workstreams?ws=WS-01','#planner/workstreams/PMO']){c.location.hash=hash;const route=c.parseRoute();assert.equal(route.id,project.id,hash);if(hash.endsWith('/new'))assert.equal(route.page,'setup');if(hash.includes('workstreams'))assert.equal(route.workstream,'WS-01');}assert.equal(c.projectURL('setup','different-project'),'#planner/setup');assert.equal(c.workstreamURL('WS-01','different-project'),'#planner/workstreams/PMO');});
 test('planner recommendations honor the shared hospital type',()=>{const p={...project,hospitalType:'existing'},recommendations=E.recommendations(T,p,E.schedule(T,p),C);assert.ok(recommendations.length>0);assert.ok(recommendations.every(r=>r.product.fit.includes('existing')));});
