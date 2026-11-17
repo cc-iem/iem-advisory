@@ -152,7 +152,7 @@ test('activity RHS profiles list every direct prerequisite and dependent used by
     const expected=[...task.dependencies.map(d=>d.id+'>'+task.id),...result.tasks.flatMap(t=>t.dependencies.filter(d=>d.id===task.id).map(()=>task.id+'>'+t.id))].sort();
     assert.deepEqual(actual,expected,task.code);
   }
-  assert.match(c.readinessHTML(),/Review gate/);
+  assert.match(c.readinessHTML(),/Review milestone/);
 });
 test('all timeline activity tags select relationships separately from opening the profile',()=>{
   const c=context();for(const w of T.workstreams){

@@ -90,6 +90,15 @@
     element('stage',({planning:'Planning / design',construction:'Under construction',activation:'Preparing to open'})[project.stage]||'Planning / design',[0,0,back-2]);
     const stage=project.stage==='construction'?2:project.stage==='activation'?3:1;
     for(let i=0;i<stage;i++)line([-3+i*3,0,back-2],[-3+i*3,stage*1.4,back-2],.8);
+    const construction=project.constructionStatus||'under',constructionCount=construction==='design'?1:construction==='done'?3:2;
+    element('construction-status','Construction · '+({design:'Design / not started',under:'Under construction',done:'Structure complete'})[construction],[-extent,2,back]);
+    for(let i=0;i<constructionCount;i++)line([-extent,1+i,back],[-extent+4,1+i,back],.8);
+    element('opening-approach',project.openingApproach==='phased'?'Phased opening · release reviews required':'Single opening',[extent,2,forward-6]);
+    for(let i=0;i<(project.openingApproach==='phased'?3:1);i++)line([extent-3+i*1.5,0,forward-6],[extent-3+i*1.5,2+i*.5,forward-6],.8);
+    const support=Number(project.postOpeningSupport??12);
+    element('advisory-support',support?'Post-opening advisory support · '+support+' months':'Hospital-led after opening',[-extent,2,forward-6]);
+    line([-extent,0,forward-6],[-extent,1+support/6,forward-6],.8);
+    line([-extent,1+support/6,forward-6],[-extent+2+support/6,1+support/6,forward-6],.8);
     element('digital',project.systems==='new'?'Digital · new hospital systems':'Digital · existing group systems',[width/2,5,-podiumDepth/2]);
     const digitalLines=project.systems==='new'?2:1;
     for(let i=0;i<digitalLines;i++)line([-width/2,3.5+i*.6,-podiumDepth/2],[width/2,3.5+i*.6,-podiumDepth/2],.8);
@@ -123,7 +132,7 @@
     if(field==='departments' && added)return {id:added==='inpatient'?'inpatient-0':added,detail:'Service added'};
     if(field==='departments' && removed)return {id:'podium',detail:removed+' service removed'};
     if(field==='departmentCount')return {id:project.departmentCount>previous.departmentCount?'department-'+project.departmentCount:'podium',detail:project.departmentCount+' departments planned'};
-    const ids={openingBeds:'opening-0',totalBeds:'inpatient-0',capacityScale:'site',name:'hospital-sign',location:'location',stage:'stage',systems:'digital',teams:'team-'+(Math.max(1,project.teams)-1),internationalHires:project.internationalHires?'international':'team-0',startDate:'start',targetDate:'target',targetDays:'target',handoverMode:'handover',handoverDate:'handover',holidays:'target'};
+    const ids={openingBeds:'opening-0',totalBeds:'inpatient-0',capacityScale:'site',name:'hospital-sign',location:'location',stage:'stage',constructionStatus:'construction-status',openingApproach:'opening-approach',postOpeningSupport:'advisory-support',systems:'digital',teams:'team-'+(Math.max(1,project.teams)-1),internationalHires:project.internationalHires?'international':'team-0',startDate:'start',targetDate:'target',targetDays:'target',handoverMode:'handover',handoverDate:'handover',holidays:'target'};
     const details={openingBeds:project.openingBeds+' opening beds',totalBeds:project.totalBeds+' eventual beds',capacityScale:scaleName(project.capacityScale),teams:project.teams+' parallel delivery teams',internationalHires:project.internationalHires?'International hires included':'International hires excluded',targetDays:'Target opening updated',holidays:'Working calendar updated'};
     return {id:ids[field]||'site',detail:details[field]||'Plan updated'};
   }

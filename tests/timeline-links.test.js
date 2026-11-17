@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const graph=require('../assets/activity-graph.js');
 const key=name=>name.replace(/^data-/,'').replace(/-([a-z])/g,(_,c)=>c.toUpperCase());
-function setup(){
+function setup(withGates=false){
   const tasks=[{id:'a',code:'PMO-01',workstream:'w1',dependencies:[]},{id:'b',code:'NURS-01',workstream:'w2',dependencies:[{id:'a',type:'FS',lag:0}]},{id:'c',code:'NURS-02',workstream:'w2',dependencies:[{id:'b',type:'SS',lag:3}]},{id:'d',code:'FIN-01',workstream:'w3',dependencies:[]}];
   let main,summary;
   class Element{
@@ -27,6 +27,7 @@ function setup(){
   const group=new Element('gantt-row group');group.dataset.workstreamRow='w2';const expand=new Element('timeline-expand');expand.dataset.timelineExpand='w2';group.append(expand);summary.append(group);
   const frames=[],events={},handlers={},observers=[];
   const window={CCActivityGraph:graph,CCPlannerViews:{timelineRows:ids=>'ROWS:'+ids.join(',')},HospitalEngine:{schedule:()=>({tasks})},CC_GREENFIELD:{},CCProject:{get:()=>({id:'plan'})},CCWorkstreamTags:{activity:id=>id},addEventListener:(name,fn)=>events[name]=fn};
+  if(withGates){const G=require('../assets/gates-engine.js')([],require('../assets/planner-engine.js'));window.CCGates={list:()=>[{id:'GATE-01',code:'GATE-01',name:'Program authorized',sourceIds:['b']}],links:G.links};window.CCGatesUI={tag:g=>g.code};}
   const document={body:new Element(),createElement:()=>new Element(),createElementNS:()=>new Element(),querySelectorAll:s=>[main,summary].filter(chart=>chart.matches(s)),addEventListener:(name,fn)=>handlers[name]=fn};
   class ResizeObserver{observe(){}unobserve(){}}
   class MutationObserver{constructor(fn){observers.push(fn);}observe(){}}
@@ -60,4 +61,12 @@ test('summary timeline expansion exposes activity tags without opening a profile
 test('schedule changes remove selection for excluded activities; Escape clears selection',()=>{
   const s=setup();s.api.select('b');s.flush();s.tasks.splice(s.tasks.findIndex(t=>t.id==='b'),1);s.events['advisory-project-change']();s.flush();assert.equal(s.api.focus(),null);assert.equal(s.main.querySelector('.gantt-links'),null);
   s.api.select('a');s.flush();const ev={key:'Escape',preventDefault(){},stopPropagation(){}};s.handlers.keydown(ev);s.flush();assert.equal(s.api.focus(),null);
+});
+
+test('gate selection and RHS profiles show only the mapped milestones original links',()=>{
+  const s=setup(true);assert.equal(s.main.querySelector('.gantt-links'),null);
+  s.api.selectGate('GATE-01');s.flush();assert.equal(s.api.focus(),'GATE-01');assert.equal(s.main.dataset.gateFocus,'GATE-01');
+  const svg=s.main.querySelector('.gantt-links');assert.match(svg.innerHTML,/data-link-from="a" data-link-to="b" data-link-type="FS"/);assert.match(svg.innerHTML,/data-link-from="b" data-link-to="c" data-link-type="SS"/);assert.match(svg.innerHTML,/#a61b72/);assert.doesNotMatch(svg.innerHTML,/data-link-(?:from|to)="GATE-/,'no fabricated dependencies on composite gate objects');
+  s.events['advisory-gate-open']({detail:{id:'GATE-01'}});s.flush();s.events['advisory-gate-close']();s.flush();assert.equal(s.api.focus(),'GATE-01');
+  s.api.selectGate('GATE-01');s.flush();assert.equal(s.main.querySelector('.gantt-links'),null);
 });

@@ -1,0 +1,55 @@
+/* Gate identity remains magenta; readiness and decisions are stated separately. */
+:root { --gate-magenta: #a61b72; --gate-light: #f5a3d0; }
+.gate-tag { display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid var(--gate-light); border-radius: 0; background: var(--gate-magenta); color: #fff !important; font: 500 11px/1.4 var(--sans); letter-spacing: .03em; white-space: nowrap; vertical-align: middle; }
+.gate-link { padding: 0; }
+.gate-tag-list { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+.gate-status { font-weight: 500; }
+.gate-title { display: block; margin: 8px 0; color: inherit; text-align: left; }
+.gate-register td { vertical-align: top; }
+.gate-register td > span, .gate-register td > small { display: block; margin: 4px 0; }
+.gate-register td:first-child { min-width: 210px; }
+.gate-register td:nth-child(2) { min-width: 185px; }
+.gate-basis { margin: 14px 0 20px; font-size: 13px; opacity: .85; }
+.gate-phase-row .gantt-track { min-height: 42px; }
+.gate-phase { position: absolute; top: 7px; min-height: 25px; padding: 5px 4px; overflow: hidden; white-space: nowrap; background: #a61b7222; border-left: 1px solid var(--gate-light); color: inherit; font-size: 10px; }
+.gate-phase-row .gantt-label { font-size: 13px; }
+.gate-timeline-row .gantt-track { min-height: 90px; }
+.gate-timeline-row .gantt-label { min-height: 90px; }
+.gate-timeline-title { display: flex; align-items: center; gap: 8px; }
+.gate-timeline-title .text-button { color: inherit; text-align: left; }
+.gate-timeline-row small { display: block; margin-top: 5px; }
+.gate-marker { position: absolute; z-index: 3; top: 33px; width: 15px; height: 15px; padding: 0; border: 2px solid var(--gate-light); border-radius: 0; background: var(--gate-magenta); transform: translateX(-50%) rotate(45deg); cursor: pointer; }
+.gate-marker.target { background: transparent; top: 12px; }
+.gate-marker:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
+.gate-guide { position: absolute; top: 0; bottom: 0; width: 1px; background: #a61b7266; pointer-events: none; }
+.gate-variance { position: absolute; top: 32px; height: 2px; background: var(--gate-light); pointer-events: none; }
+.gate-decision-note { position: absolute; bottom: 7px; left: 8px; font-size: 10px; color: inherit; }
+.gate-profile-body .fact-strip { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.gate-profile-body .form-field { display: grid; margin: 14px 0; }
+.gate-profile-body .form-field input, .gate-profile-body .form-field textarea, .gate-profile-body .form-field select { min-width: 0; width: 100%; }
+.gate-profile-body .form-field textarea { min-height: 85px; }
+.gate-criterion { display: flex; align-items: start; gap: 9px; margin: 14px 0; }
+.gate-criterion input { margin-top: 4px; accent-color: var(--gate-magenta); }
+.gate-evidence-list { list-style: none; padding: 0; margin: 12px 0; }
+.gate-evidence-list li { display: grid; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.gate-evidence-list .text-button { text-align: left; color: inherit; }
+.gate-evidence-list small, .gate-history p { font-size: 12px; }
+.gate-history { padding-left: 20px; }
+.gate-history li { margin: 14px 0; }
+.gate-history p { margin: 6px 0; overflow-wrap: anywhere; }
+.gate-flag { border-left: 3px solid var(--gate-magenta); padding-left: 10px; }
+.gate-package-summary { margin-bottom: 20px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+.solution-involvement { display: grid; gap: 6px; margin-top: 14px; font-size: 11px; }
+.solution-involvement select { max-width: 100%; padding: 7px; border-radius: 0; font: inherit; }
+#top .solution-involvement select { background: #103253; color: #fff; border: 1px solid #ffffff66; }
+.gantt[data-gate-focus] .gantt-link { stroke: var(--gate-magenta); }
+.gantt[data-gate-focus] .timeline-focus { border-color: var(--gate-light); }
+.model-workstream-timeline .gate-timeline-row .gantt-label { min-height: auto; }
+.model-workstream-timeline .gate-timeline-row .gantt-track { min-height: 65px; }
+.gate-source-note { font-size: 12px; margin: 8px 0; }
+@media (max-width: 540px) { .gate-profile-body .fact-strip { grid-template-columns: minmax(0,1fr); } }
+
+.gantt-gate-guides { position: absolute; left: 300px; right: 0; top: 45px; bottom: 0; pointer-events: none; z-index: 1; opacity: .3; }
+.panel .gantt-gate-guides { left: 250px; }
+.model-workstream-timeline .gantt-gate-guides { left: 0; }
+.gate-marker.forecast { background: var(--gate-magenta); }

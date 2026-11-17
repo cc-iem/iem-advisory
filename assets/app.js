@@ -108,7 +108,7 @@
   }
   function solutionSelectionRowHTML(p, context) {
     var selected=inCart(p.id);
-    return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-selected="'+selected+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><div class="selection-row-labels"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><span class="selection-state-label">'+(selected?'✓ Selected':'Not selected')+'</span></div><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p,context!=='package')+'<small class="selection-duration">'+rich(p.durationShort)+'</small></div>'+solutionWorkstreamsHTML(p,'selection-workstreams')+'<div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'− Remove':'+ Add')+'</button></div></div>';
+    return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-selected="'+selected+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><div class="selection-row-labels"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><span class="selection-state-label">'+(selected?'✓ Selected':'Not selected')+'</span></div><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p,context!=='package')+'<small class="selection-duration">'+rich(p.durationShort)+'</small>'+(window.CCGatesUI ? window.CCGatesUI.involvement(p) : '')+'</div>'+solutionWorkstreamsHTML(p,'selection-workstreams')+'<div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'− Remove':'+ Add')+'</button></div></div>';
   }
   function solutionDomainWorkstreamsHTML(products) {
     var ids=Array.from(new Set(products.reduce(function(all,p){return all.concat((p.workstreamLinks||[]).map(function(w){return w.id;}));},[])));
@@ -128,6 +128,7 @@
       button.dataset.action=selected?'remove':'add';button.textContent=selected?'− Remove':'+ Add';
       button.setAttribute('aria-pressed',String(selected));button.setAttribute('aria-label',(selected?'Remove from package: ':'Add to package: ')+p.title);
       row.dataset.selected=String(selected);row.querySelector('.selection-state-label').textContent=selected?'✓ Selected':'Not selected';
+      var involvement=row.querySelector('[data-solution-involvement]');if(involvement){involvement.disabled=!selected;involvement.value=S.get().solutionInvolvement?.[p.id]||"assure";}
     });
     $all('[data-solution-domain]',root).forEach(function(group){
       var selection=solutionDomainSelection(group.dataset.solutionDomain);group.dataset.selectionState=selection.status;
@@ -811,7 +812,7 @@
     var panel = $("#detailPanel");
     panel.dataset.domainProduct = p.id;
     panel.dataset.tagContext = 'solution'; panel.dataset.tagId = p.id;
-    delete panel.dataset.workstreamProfile;
+    delete panel.dataset.workstreamProfile;delete panel.dataset.gateProfile;
     var res = "";
     var clientLabel = p.proposed ? "Client team and inputs" : p.assumptions.length ? "Your team" : "Your team and inputs";
     if (p.resourcesCC.length || p.resourcesClient.length) {
@@ -853,7 +854,7 @@
       paragraphsHTML(p.durationDetail) + "</section>" +
       res +
       '<section class="dsec"><h3>Expected outcomes</h3>' + listHTML(p.outcomes, true) + "</section>" +
-      solutionConnectionsHTML(p) +
+      solutionConnectionsHTML(p) + (window.CCGatesUI ? window.CCGatesUI.product(p) : "") +
       "</div>" +
       '<div class="panel-foot">' + cartButtonHTML(p.id) +
       brochureHTML(p) +
@@ -987,7 +988,7 @@
       html += '<div class="cart-empty"><h3>Your advisory service package is empty</h3><p>Use the product navigator or browse all solutions, then add the ones you would like to discuss with our team.</p>' +
         '<button type="button" class="btn btn-primary" data-action="go-finder">Open the product navigator</button></div>';
     } else {
-      html += solutionSelectionTableHTML(items,'package');
+      html += (window.CCGatesUI ? window.CCGatesUI.coverage() : '') + solutionSelectionTableHTML(items,'package');
       html += '<p class="cart-summary">There is no charge to request a proposal. Our team confirms scope, timing and fees with you before any engagement begins.</p>' +
         '<p><button type="button" class="remove" data-action="clear-cart">Clear package</button></p>';
     }
@@ -1355,7 +1356,7 @@
   window.addEventListener("hashchange", openFromHash);
   openFromHash();
   window.CCApp = {
-    profile: function(html,opener) { var panel=$('#detailPanel');delete panel.dataset.domainProduct;delete panel.dataset.tagId;panel.dataset.tagContext='workstream';panel.innerHTML=html;showPanel(panel,opener);try{history.replaceState(null,'',location.hash.split('?')[0]);}catch(e){} },
+    profile: function(html,opener) { var panel=$('#detailPanel');delete panel.dataset.workstreamProfile;delete panel.dataset.gateProfile;delete panel.dataset.domainProduct;delete panel.dataset.tagId;panel.dataset.tagContext='workstream';panel.innerHTML=html;showPanel(panel,opener);try{history.replaceState(null,'',location.hash.split('?')[0]);}catch(e){} },
     detail: openDetail, add: addToCart, cart: function () { state.cartView='list'; openCart(document.activeElement); },
     selected: function () { return state.cart.slice(); },
     solutionTable: solutionSelectionTableHTML,

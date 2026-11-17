@@ -60,6 +60,7 @@
     ["overview", "Selected Solutions"],
     ["setup", "Hospital Planner"],
     ["workstreams", "Workstreams"],
+    ["gates", "Gates"],
     ["roles", "Accountable role"],
     ["readiness", "Readiness"],
   ];
@@ -167,7 +168,7 @@
     let nav = '<div class="nav-section">' + link("#finder", "Advisory Planner", "finder", route.section === "finder") + link(projectURL("overview"), "Selected Solutions", "planner", route.section === "planner" && route.page === "overview");
     let planNav = "";
     for (const [key, label] of pages.filter(([key]) => key !== "overview")) {
-      const item = link(projectURL(key), label, key === "timeline" ? "timeline" : key === "readiness" ? "check" : "page", route.section === "planner" && route.page === key && !route.workstream);
+      const item = key === "gates" ? '<a class="nav-item" href="#planner/gates"'+(route.section === "planner" && route.page === "gates"?' aria-current="page"':'')+'>'+window.CCGatesUI.tag({code:"GATE",name:"Hospital decision gates"})+'<span>Gates</span></a>' : link(projectURL(key), label, key === "timeline" ? "timeline" : key === "readiness" ? "check" : "page", route.section === "planner" && route.page === key && !route.workstream);
       if (key !== "workstreams") { planNav += item; continue; }
       const expanded = ui.expanded?.["ws-" + p.id] !== false;
       planNav += '<div class="nav-link-row">' + item + '<button class="nav-expand" data-nav-toggle="ws-' + p.id + '" type="button" aria-label="Expand hospital workstreams" aria-expanded="' + expanded + '">›</button></div>';
@@ -548,6 +549,9 @@
         ],
         "Stage provides context; completion still needs activity-level evidence.",
       ) +
+      choiceCards("Construction status","constructionStatus",p.constructionStatus||"under",[["design","Design / not started"],["under","Under construction"],["done","Structure complete"]]) +
+      choiceCards("Opening approach","openingApproach",p.openingApproach||"single",[["single","Single opening"],["phased","Phased opening","Agree readiness decisions for each service release; current schedule covers first opening"]]) +
+      choiceCards("Post-opening advisory support","postOpeningSupport",p.postOpeningSupport??12,[[12,"Through the first year"],[3,"Hypercare · three months"],[0,"Hospital-led after opening"]],"Changes advisory coverage, not hospital readiness requirements.") +
       "</section>" +
       '<section class="planner-card setup-section"><p class="page-kicker">02 · Capacity</p><h2>How large is your hospital?</h2><p class="card-intro">Use a preset or move the sliders. Eventual capacity stays at least as large as opening capacity.</p>' +
       choiceCards("Planning scale", "capacityScale", scale, [
@@ -720,6 +724,9 @@
     ["hospitalType", "Hospital type"],
     ["location", "Country / location"],
     ["stage", "Current stage"],
+    ["constructionStatus", "Construction status"],
+    ["openingApproach", "Opening approach"],
+    ["postOpeningSupport", "Post-opening support"],
     ["capacityScale", "Planning scale"],
     ["openingBeds", "Beds at opening"],
     ["totalBeds", "Eventual capacity"],
@@ -745,6 +752,9 @@
   }
   function setupAnswer(key, f) {
     const value = f.get(key);
+    if(key === "constructionStatus")return ({design:"Design / not started",under:"Under construction",done:"Structure complete"})[value]||value;
+    if(key === "openingApproach")return value==="phased"?"Phased opening":"Single opening";
+    if(key === "postOpeningSupport")return value==="0"?"Hospital-led after opening":value==="3"?"Three months hypercare":"Through the first year";
     if (key === "hospitalType") return value === "existing" ? "Existing hospital" : "New hospital";
     if (key === "departments")
       return f
@@ -890,10 +900,10 @@
     p.id = form.dataset.projectId;
     p.name = String(f.get("name")).trim();
     p.location = String(f.get("location")).trim();
-    ["openingBeds", "totalBeds", "departmentCount", "teams", "capacityScale"].forEach(
+    ["openingBeds", "totalBeds", "departmentCount", "teams", "capacityScale", "postOpeningSupport"].forEach(
       (k) => (p[k] = +f.get(k)),
     );
-    ["startDate", "targetDate", "handoverDate", "systems", "stage", "hospitalType"].forEach(
+    ["startDate", "targetDate", "handoverDate", "systems", "stage", "hospitalType", "constructionStatus", "openingApproach"].forEach(
       (k) => (p[k] = String(f.get(k) || "")),
     );
     if (f.get("handoverMode") === "none") p.handoverDate = "";
@@ -938,6 +948,8 @@
         return setupHTML(current, true);
       case "workstreams":
         return workstreamsHTML();
+      case "gates":
+        return window.CCGatesUI.page(current,result,ui.gatesView||"table");
       case "readiness":
         return readinessHTML();
       case "roles":
@@ -1077,12 +1089,14 @@
     return '<div class="gantt-row" data-timeline-activity="'+t.id+'"><div class="gantt-label"><div class="gantt-activity-title"><button type="button" class="timeline-select" data-timeline-select="'+t.id+'" aria-pressed="false" aria-label="Select relationships for '+esc(t.code)+'">'+window.CCWorkstreamTags.activityCode(t.id,current.id)+'</button><button class="text-button" data-task="'+t.id+'" data-domain-plain>'+esc(t.name)+'</button></div>'+(related?'<small class="gantt-context-home">'+window.CCWorkstreamTags.html(t.workstream,current.id)+'</small>':'')+'</div><div class="gantt-track">'+linesHTML+barHTML+'</div></div>';
   }
   function ganttHTML(options = {}) {
-    const visible = matchingTasks().filter(t => (!route.workstream || t.workstream === route.workstream) && (!options.workstreamIds || options.workstreamIds.includes(t.workstream))),
+    const gateItems = window.CCGates ? window.CCGates.related(window.CCGates.list(current,result,C),route.workstream?[route.workstream]:options.workstreamIds).filter(g=>!options.gateIds||options.gateIds.includes(g.id)) : [];
+    const visible = matchingTasks().filter(t => (!options.activityIds||options.activityIds.includes(t.id)) && (!route.workstream || t.workstream === route.workstream) && (!options.workstreamIds || options.workstreamIds.includes(t.workstream))),
       origin = Date.parse(current.startDate),
       end =
         Math.max(
           Date.parse(result.finishDate),
           Date.parse(current.targetDate),
+          ...gateItems.flatMap(g=>[g.forecastDate,g.targetDate].filter(Boolean).map(d=>Date.parse(d))),
         ) +
         14 * 86400000,
       span = Math.max(1, end - origin),
@@ -1127,7 +1141,8 @@
       );
     };
     let rows = "";
-    T.workstreams.forEach((w) => {
+    if(options.sourceOnly)rows=visible.map(t=>activityTimelineRowHTML(t,bar(t),lines(),true)).join("");
+    if(!options.gatesOnly&&!options.sourceOnly)T.workstreams.forEach((w) => {
       const ts = visible.filter((t) => t.workstream === w.id);
       if (!ts.length) {
         if (options.groupsOnly && options.workstreamIds?.includes(w.id)) rows += '<div class="gantt-row group" data-workstream-row="' + w.id + '"><div class="gantt-label"><button class="text-button" data-plan-action="open-workstream" data-workstream="' + w.id + '">' + window.CCWorkstreamTags.html(w.id,current.id) + '</button></div><div class="gantt-track"><span class="gantt-no-scope">Not in the current service scope</span></div></div>';
@@ -1165,11 +1180,13 @@
     const ticks = Array.from({ length: 6 }, (_, i) =>
       date(E.iso(origin + (span * i) / 5)).replace(/\d{1,2} /, ""),
     );
-    return rows
-      ? '<div class="gantt-scroll" aria-label="Interactive hospital workstream Gantt"><div class="gantt" data-timeline-origin="'+current.startDate+'" data-timeline-end="'+E.iso(end)+'"><div class="gantt-header"><div class="gantt-label">Workstream / activity</div><div class="gantt-axis">' +
+    const gateRows=window.CCGatesUI ? window.CCGatesUI.timeline(current,result,{origin:current.startDate,end:E.iso(end)},route.workstream?[route.workstream]:options.workstreamIds,options.gatesOnly,options.gateIds) : "";
+    if(options.gatesOnly)rows="";
+    return rows || gateRows
+      ? '<div class="gantt-scroll" aria-label="Interactive hospital workstream Gantt"><div class="gantt" data-timeline-origin="'+current.startDate+'" data-timeline-end="'+E.iso(end)+'"><div class="gantt-header"><div class="gantt-label">'+(options.gatesOnly?"Decision gate":options.sourceOnly?"Gate / source milestone":"Workstream / activity")+'</div><div class="gantt-axis">' +
           ticks.map((t) => "<span>" + t + "</span>").join("") +
           "</div></div>" +
-          rows +
+          gateRows + rows + (window.CCGatesUI?.guides ? window.CCGatesUI.guides(current,result,{origin:current.startDate,end:E.iso(end)},gateItems.map(g=>g.id)) : "") +
           "</div></div>"
       : '<div class="empty-state"><h3>No activities match</h3><p>Adjust the domain, search or critical-path filter.</p></div>';
   }
@@ -1188,6 +1205,7 @@
       ' activities have an owner, completion evidence and an actual finish date. Dates and purchased services do not mark activities complete.</div><div class="planner-grid">' +
       gates
         .map((t) => {
+          const mappedGate=window.CCGates?.list(current,result,C).find(g=>g.sourceIds.includes(t.id));
           const deps = window.CCActivityGraph.relations(result.tasks,t.id).prerequisites.map(edge=>edge.predecessor),
             done = deps.filter((t) => t.verified).length;
           return (
@@ -1227,12 +1245,12 @@
               )
               .join("") +
             '</div><div style="margin-top:16px">' +
-            button("Review gate", "task", 'data-task-id="' + t.id + '"') +
+            (mappedGate?'<button type="button" class="btn btn-secondary" data-gate-open="'+mappedGate.id+'">Review '+window.CCGatesUI.tag(mappedGate)+'</button>':button("Review milestone", "task", 'data-task-id="' + t.id + '"')) +
             "</div></section>"
           );
         })
         .join("") +
-      "</div>"
+      "</div>" + (window.CCGatesUI ? '<h2>Program gate readiness</h2>'+window.CCGatesUI.table(window.CCGates.list(current,result,C),current) : "")
     );
   }
   function productButton(p, withCode = true) {
@@ -1292,6 +1310,9 @@
     }).join('')+'</tbody></table></div>';
   }
   window.CCPlannerViews = {
+    gateTimeline:()=>withPlanScope(null,()=>ganttHTML({gatesOnly:true})),
+    setGateView(view){ui.gatesView=view==="timeline"?"timeline":"table";saveUI();render();},
+    gateActivities:id=>withPlanScope(null,()=>{const gate=window.CCGates.list(current,result,C).find(g=>g.id===id);return ganttHTML({sourceOnly:true,activityIds:gate.sourceIds,gateIds:[id]});}),
     body:(id,view)=>withPlanScope(id,()=>workstreamPageHTML(ws(id),true),false,view),
     content:(id,view)=>withPlanScope(id,()=>workstreamContentHTML(ws(id)),false,view),
     connections:(product,view)=>withPlanScope(null,()=>connectionWorkstreamsHTML(product,view)),
@@ -1299,7 +1320,7 @@
     setView(id,view){ui.workstreamViews=ui.workstreamViews||{};ui.workstreamViews[id]=view;saveUI();},
     setQuery(id,value){ui.activityQueries=ui.activityQueries||{};ui.activityQueries[S.get().id+id]=value;saveUI();},
     toggle(id){ui.workstreamTimelineExpanded=ui.workstreamTimelineExpanded||{};ui.workstreamTimelineExpanded[id]=ui.workstreamTimelineExpanded[id]===false;saveUI();},
-    activity(id,workstreamId){activityScope=workstreamId;return withPlanScope(workstreamId,()=>openActivity(id));},
+    activity(id,workstreamId){activityScope=workstreamId||E.schedule(T,S.get()).tasks.find(t=>t.id===id)?.workstream;return withPlanScope(activityScope,()=>openActivity(id));},
     export:id=>withPlanScope(id,()=>exportCSV())
   };
   // Dialogs use native modal focus handling; the existing product and package panels are retained.
@@ -1606,6 +1627,7 @@
     const task = ev.target.closest("[data-task]");
     if (task) {
       if(activityScope && dialog.contains(task))withPlanScope(activityScope,()=>openActivity(task.dataset.task));
+      else if(!result?.tasks.some(t=>t.id===task.dataset.task))window.CCPlannerViews.activity(task.dataset.task);
       else {activityScope=null;openActivity(task.dataset.task);}
       return;
     }
@@ -2024,7 +2046,7 @@
     if (route.section === "planner") current = projects[0];
     renderSetupTimeline();
     if(route.section === "planner" && route.page === "overview"){
-      result=E.schedule(T,current);refreshSolutionList(event.detail.source === "package");renderNav();return;
+      result=E.schedule(T,current);refreshSolutionList(["package","involvement"].includes(event.detail.source));renderNav();return;
     }
     if (["workspace", "config"].includes(event.detail.source)) {
       if (current) { try { result = E.schedule(T, current); } catch (e) {} }

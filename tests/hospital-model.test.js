@@ -70,10 +70,10 @@ test('labels start hidden, focus the newest addition and replace earlier focus',
   assert.equal(changeFocus(base,{...base,departmentCount:12},'departmentCount').id,'department-12');
 });
 test('non-capacity controls update named planning overlays rather than inventing clinical departments',()=>{
-  const variants=[{stage:'construction'},{systems:'new'},{teams:3},{internationalHires:true},{startDate:'2026-12-15'},{targetDate:'2028-05-06'},{handoverDate:'2028-03-01'}];
+  const variants=[{constructionStatus:'design'},{openingApproach:'phased'},{postOpeningSupport:3},{stage:'construction'},{systems:'new'},{teams:3},{internationalHires:true},{startDate:'2026-12-15'},{targetDate:'2028-05-06'},{handoverDate:'2028-03-01'}];
   const a=buildGeometry({...base,stage:'planning',systems:'enterprise',teams:1,startDate:'2026-11-13',targetDate:'2028-05-07'});
   for(const variant of variants)assert.notDeepEqual(buildGeometry({...base,...variant}).segments,a.segments);
-  for(const field of ['name','location','stage','systems','teams','internationalHires','startDate','targetDate','targetDays','handoverMode','handoverDate','holidays','capacityScale']) {
+  for(const field of ['name','location','stage','constructionStatus','openingApproach','postOpeningSupport','systems','teams','internationalHires','startDate','targetDate','targetDays','handoverMode','handoverDate','holidays','capacityScale']) {
     assert.ok(changeFocus(base,{...base,name:'Renamed hospital'},field)?.id);
   }
 });
