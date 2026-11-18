@@ -13,7 +13,7 @@ function declaration(name){
   const constant=source.indexOf('  const '+name+' =');assert.ok(constant>=0,name+' exists');
   return source.slice(constant,source.indexOf(';',constant)+1);
 }
-function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:['overview','setup','workstreams','roles','readiness'].map(k=>[k,k]),scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCAccountableRoles:require('../assets/accountable-roles.js')(T),CCActivityGraph:require('../assets/activity-graph.js'),CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','accountableRolesHTML','isTimelinePage','workstreamsHTML','timelineHTML','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','activityTimelineRowHTML','activityTimelineBarHTML','activityRelationshipsHTML','readinessHTML','workstreamRange','setupTimelineHTML','renderSetupTimeline','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','notice','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
+function context(){const context={T,C,E,result,current:project,route:{section:'planner',page:'workstreams',workstream:'WS-01'},ui:{workstreamViews:{},activityQueries:{}},pages:[['overview','Selected Solutions'],['setup','Project Planner'],['workstreams','Workstreams'],['gates','Gates'],['roles','Accountable Role'],['readiness','Readiness']],scopeDepth:0,D:JSON.parse(JSON.stringify(data.window.CC_DOMAINS)),S:{get:()=>project,selectedWorkstreams:()=>[]},location:{hash:'#planner/workstreams/PMO'},URLSearchParams,window:{CCAccountableRoles:require('../assets/accountable-roles.js')(T),CCActivityGraph:require('../assets/activity-graph.js'),CCWorkstreamTags:tags,CCDomainTags:require('../assets/domain-tags.js')(data.window.CC_DOMAINS,C)},ws:id=>T.workstreams.find(w=>w.id===id),today:()=> '2026-11-16',date:s=>s||'',esc:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))};vm.createContext(context);for(const name of ['projectURL','workstreamURL','parseRoute','accountableRolesHTML','isTimelinePage','workstreamsHTML','timelineHTML','matchingTasks','workstreamViewToggle','workstreamContentHTML','workstreamActivitiesHTML','ganttHTML','activityTimelineRowHTML','activityTimelineBarHTML','activityRelationshipsHTML','readinessHTML','workstreamRange','setupTimelineHTML','renderSetupTimeline','connectionWorkstreamsHTML','workstreamPageHTML','workstreamSolutionsHTML','productButton','filtersHTML','head','button','overviewHTML','notice','renderNav','navSection','withPlanScope'])vm.runInContext(declaration(name),context);return context;}
 const ids=html=>[...new Set([...html.matchAll(/data-task="([^"]+)"/g)].map(m=>m[1]))].sort();
 test('Table and Timeline render exactly the same scoped activity IDs for all 18 workstreams',()=>{const c=context();for(const w of T.workstreams){c.route.workstream=w.id;c.ui.workstreamViews[w.id]='table';const table=c.workstreamContentHTML(w);c.ui.workstreamViews[w.id]='timeline';const timeline=c.workstreamContentHTML(w);const expected=result.tasks.filter(t=>t.workstream===w.id).map(t=>t.id).sort();assert.deepEqual(ids(table),expected,w.code+' table');assert.deepEqual(ids(timeline),expected,w.code+' timeline');assert.ok(timeline.includes('gantt-scroll'));}});
 test('search filtering and no-match results remain identical across both views',()=>{const c=context(),w=T.workstreams.find(w=>w.code==='NURS');c.route.workstream=w.id;for(const query of ['NURS-01','competency','nonexistent activity']){c.ui.activityQueries[project.id+w.id]=query;c.ui.workstreamViews[w.id]='table';const table=ids(c.workstreamContentHTML(w));c.ui.workstreamViews[w.id]='timeline';assert.deepEqual(ids(c.workstreamContentHTML(w)),table,query);if(query==='NURS-01')assert.equal(table.length,1);if(query==='nonexistent activity')assert.equal(table.length,0);}});
@@ -178,11 +178,12 @@ test('Workstreams is the former Timeline view and old Timeline URLs resolve to i
   for(const hash of ['#planner/timeline','#planner/old/timeline']){c.location.hash=hash;assert.equal(c.parseRoute().page,'workstreams');}
   assert.equal(c.projectURL('timeline'),'#planner/workstreams');
 });
-test('Accountable role is a peer page with the full reference role directory',()=>{
+test('Accountable Role lists the reference directory and a Gates column',()=>{
   const c=context();assert.equal((c.accountableRolesHTML().match(/class="accountable-profile"/g)||[]).length,c.window.CCAccountableRoles.entries().length);
+  assert.match(c.accountableRolesHTML(),/<h1[^>]*>Accountable Role<\/h1>/);assert.match(c.accountableRolesHTML(),/<th>Gates<\/th>/);
   c.location.hash='#planner/roles';assert.equal(c.parseRoute().page,'roles');
 });
-test('planner navigation pages are peers of Advisory Planner with no plan title heading',()=>{
+test('navigation groups advisory choices under Advisory Planner and delivery pages under Project Planner',()=>{
   const c=context(),nav={innerHTML:''};c.$=()=>nav;
   c.link=(href,label)=>'<a class="nav-item" href="'+href+'">'+label+'</a>';
   c.renderNav();
@@ -193,7 +194,18 @@ test('planner navigation pages are peers of Advisory Planner with no plan title 
     else if(match[0].startsWith('<div'))stack.push(match[0]);
     else parents[match[1]]=stack.filter(tag=>!tag.includes('nav-link-row'));
   }
-  for(const page of ['overview','setup','workstreams','roles','readiness'])assert.deepEqual(parents['#planner/'+page],parents['#finder'],page+' is a peer of Advisory Planner');
+  assert.deepEqual(parents['#planner/setup'],parents['#finder'],'Project Planner is a peer of Advisory Planner');
+  for(const page of ['workstreams','gates','roles','readiness']){assert.equal(parents['#planner/'+page].length,parents['#planner/setup'].length+1);assert.ok(parents['#planner/'+page].at(-1).includes('id="projectPlannerNav"'));}
+  assert.equal(parents['#planner/workstreams/PMO'].length,parents['#planner/workstreams'].length+1);
+  assert.match(nav.innerHTML,/>Project Planner<\/a>/);assert.match(nav.innerHTML,/>Accountable Role<\/a>/);
+  assert.deepEqual(parents['#planner/overview'],parents['#catalog']);
+  assert.equal(parents['#catalog'].length,parents['#finder'].length+1);
+  assert.ok(parents['#catalog'].at(-1).includes('id="advisoryPlannerNav"'));
+  assert.equal(parents['#catalog/'+c.D[0].id].length,parents['#catalog'].length+1);
+  assert.doesNotMatch(nav.innerHTML,/Advisory catalog|Advisory Domains|All advisory domains|gate-tag/);
+  assert.match(nav.innerHTML,/>Domains<\/a>/);assert.match(nav.innerHTML,/aria-controls="advisoryDomainNav" aria-expanded="true"/);
+  c.ui.expanded={catalog:false};c.renderNav();assert.match(nav.innerHTML,/id="advisoryDomainNav" class="nav-children" hidden/);
+  c.ui.expanded['advisory-planner']=false;c.ui.expanded['project-planner']=false;c.renderNav();assert.match(nav.innerHTML,/id="advisoryPlannerNav" class="nav-children" hidden/);assert.match(nav.innerHTML,/id="projectPlannerNav" class="nav-children" hidden/);
 });
 test('legacy routes, setup and child pages all resolve to the same global project',()=>{const c=context();for(const hash of ['#planner','#planner/new','#planner/overview','#planner/legacy-id/setup','#planner/another-id/workstreams?ws=WS-01','#planner/workstreams/PMO']){c.location.hash=hash;const route=c.parseRoute();assert.equal(route.id,project.id,hash);if(hash.endsWith('/new'))assert.equal(route.page,'setup');if(hash.includes('workstreams'))assert.equal(route.workstream,'WS-01');}assert.equal(c.projectURL('setup','different-project'),'#planner/setup');assert.equal(c.workstreamURL('WS-01','different-project'),'#planner/workstreams/PMO');});
 test('planner recommendations honor the shared hospital type',()=>{const p={...project,hospitalType:'existing'},recommendations=E.recommendations(T,p,E.schedule(T,p),C);assert.ok(recommendations.length>0);assert.ok(recommendations.every(r=>r.product.fit.includes('existing')));});
@@ -206,4 +218,26 @@ test('configuration drafts retain the current Package selections',()=>{
   const draft=c.projectFromForm({dataset:{projectId:store.get().id},fields:{...project,openingBeds:250,name:'Configured hospital',location:'To be confirmed',capacityScale:'1000',handoverMode:'none',internationalHires:'no',hospitalType:'new'}});
   store.save(draft,'config');
   assert.equal(store.get().openingBeds,250);assert.deepEqual(store.get().selectedProducts,[selected]);assert.equal(store.get().id,project.id);
+});
+
+test('all navigation nodes use matching outline icons, with semantic domain and workstream symbols',()=>{
+  const c=context(),nav={innerHTML:''};c.$=()=>nav;
+  for(const name of ['paths','icon','domainIcons','workstreamIcons'])vm.runInContext(declaration(name),c);
+  const start=source.indexOf('  const link =');vm.runInContext(source.slice(start,source.indexOf('  function saveUI()',start)),c);
+  vm.runInContext('this.actualLink=link;this.iconPaths=paths;',c);c.renderNav();
+  const links=[...nav.innerHTML.matchAll(/<a class="nav-item"[\s\S]*?<\/a>/g)].map(m=>m[0]);assert.equal(links.length,36);
+  for(const html of links){assert.match(html,/<svg[^>]*fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/);assert.doesNotMatch(html,/advisory-tag|workstream-tag|gate-tag/);}
+  assert.ok(c.actualLink('#catalog/finance','Finance','',false,'FIN').includes(c.iconPaths.finance));
+  assert.ok(c.actualLink('#planner/workstreams/NURS','Nursing','',false,'','WS-10').includes(c.iconPaths.nursing));
+  assert.match(c.actualLink('#planner/workstreams/NURS','Nursing','',false,'','WS-10'),/title="NURS · Nursing"/);
+});
+test('Accountable Role includes saved gate reviewers and shows clickable gate associations',()=>{
+  const c=context(),p=JSON.parse(JSON.stringify(project));p.gates={'GATE-01':{reviews:[{decision:'pending',date:'2026-11-16',approver:'Independent Gate Reviewer',conditionOwner:'Gate Remediation Lead'}],criteria:{'GATE-01-C1':{owner:'Gate Evidence Lead'}}}};
+  c.current=p;c.result=E.schedule(T,p);c.window.CCGates=require('../assets/gates-engine.js')(require('../data/gates.js'),E);
+  const gateSource=fs.readFileSync('assets/gates-ui.js','utf8'),start=gateSource.indexOf('  const tag='),end=gateSource.indexOf('  function readExpanded()',start);
+  vm.runInContext('window.CCGatesUI=(function(){'+gateSource.slice(start,end)+'return {button};})();',c);
+  const gates=c.window.CCGates.list(p,c.result,C),html=c.accountableRolesHTML();
+  assert.match(html,/<th>Accountable Role<\/th>/);assert.match(html,/<th>Gates<\/th>/);
+  assert.equal((html.match(/class="accountable-profile"/g)||[]).length,c.window.CCAccountableRoles.entries(gates).length);
+  for(const name of ['Independent Gate Reviewer','Gate Remediation Lead','Gate Evidence Lead']){const row=html.split('</tr>').find(row=>row.includes('<strong>'+name+'</strong>'));assert.ok(row,name);assert.match(row,/data-gate-open="GATE-01"/);assert.match(row,/class="gate-tag"/);}
 });

@@ -77,7 +77,7 @@
       }
       let legend=chart.querySelector('.timeline-focus');
       if(!legend){legend=document.createElement('div');legend.className='timeline-focus';chart.prepend(legend);}
-      const html='<span>'+(gate?window.CCGatesUI.tag(gate):window.CCWorkstreamTags.activity(id,window.CCProject.get().id))+'</span><span class="timeline-link-key"><i class="incoming"></i>Pre-requisite → <i class="outgoing"></i>→ Dependency</span><span class="timeline-link-count">'+links.prerequisites.length+' in · '+links.dependents.length+' out'+(opened||openedGate?' · Open in profile':'')+(gate?' · Source milestone links; no added schedule constraints':'')+'</span>'+(!opened&&!openedGate?'<button type="button" data-timeline-clear>Clear selection</button>':'');
+      const html='<span>'+(gate?window.CCGatesUI.button(gate):window.CCWorkstreamTags.activity(id,window.CCProject.get().id))+'</span><span class="timeline-link-key"><i class="incoming"></i>Pre-requisite → <i class="outgoing"></i>→ Dependency</span><span class="timeline-link-count">'+links.prerequisites.length+' in · '+links.dependents.length+' out'+(opened||openedGate?' · Open in profile':'')+(gate?' · Source milestone links; no added schedule constraints':'')+'</span>'+(!opened&&!openedGate?'<button type="button" data-timeline-clear>Clear selection</button>':'');
       if(legend.innerHTML!==html)legend.innerHTML=html;
       const roles=new Map([...links.prerequisites.map(edge=>[edge.from,'incoming']),...links.dependents.map(edge=>[edge.to,'outgoing']),[id,'focus']]);
       chart.querySelectorAll('[data-timeline-activity]').forEach(row=>{

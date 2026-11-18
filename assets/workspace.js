@@ -58,10 +58,10 @@
   if (!Array.isArray(projects)) projects = [];
   const pages = [
     ["overview", "Selected Solutions"],
-    ["setup", "Hospital Planner"],
+    ["setup", "Project Planner"],
     ["workstreams", "Workstreams"],
     ["gates", "Gates"],
-    ["roles", "Accountable role"],
+    ["roles", "Accountable Role"],
     ["readiness", "Readiness"],
   ];
   const services = [
@@ -84,25 +84,40 @@
     timeline: "M4 4v16h17M7 7h7M10 12h10M7 17h9",
     check: "M5 12l4 4L19 6",
     arrow: "M5 12h14M14 7l5 5-5 5",
+    selected: "M9 5h11M9 12h11M9 19h11M3 5l1 1 2-2M3 12l1 1 2-2M3 19l1 1 2-2",
+    gate: "M3 21V8h5v13M16 21V8h5v13M8 10h8M8 16h8M12 3l3 3-3 3-3-3z",
+    roles: "M12 3a3 3 0 1 0 0 6a3 3 0 0 0 0-6M5 21v-3a7 7 0 0 1 14 0v3M9 17h6",
+    readiness: "M9 4h11v17H4V4h3M9 2h6v4H9zM8 11l2 2 5-5M8 17h8",
+    strategy: "M12 2l8 4v12l-8 4-8-4V6zM9 9l6-2-2 6-6 2z",
+    governance: "M12 3l8 3v6c0 4-3 7-8 9-5-2-8-5-8-9V6zM8 11h8M12 7v9",
+    finance: "M3 8l9-5 9 5H3zM5 10v9M10 10v9M14 10v9M19 10v9M3 21h18",
+    regulatory: "M7 3h10v4H7zM7 5H4v16h16V5h-3M8 13l3 3 5-6",
+    facilities: "M4 21V3h12v18M16 9h4v12M8 7h4M8 11h4M8 15h4M8 21v-3h4v3M2 21h20",
+    equipment: "M5 3v5a4 4 0 0 0 8 0V3M3 3h4M11 3h4M9 12v3a5 5 0 0 0 10 0v-2M19 9a2 2 0 1 0 0 4a2 2 0 0 0 0-4",
+    digital: "M3 4h18v13H3zM8 21h8M12 17v4M7 10l3-3M7 10l3 3M17 10l-3-3M17 10l-3 3",
+    clinical: "M9 3h6v6h6v6h-6v6H9v-6H3V9h6z",
+    physician: "M10 3a3 3 0 1 0 0 6a3 3 0 0 0 0-6M3 21v-3a7 7 0 0 1 12-5M18 12v8M14 16h8",
+    nursing: "M8 6V3h8v3M3 6h18v15H3zM12 10v7M8.5 13.5h7",
+    laboratory: "M9 3h6M10 3v7l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8",
+    workforce: "M9 4a3 3 0 1 0 0 6a3 3 0 0 0 0-6M2 21v-3a7 7 0 0 1 14 0v3M17 4a3 3 0 0 1 0 6M19 14a5 5 0 0 1 3 4v3",
+    quality: "M12 3l8 3v6c0 4-3 7-8 9-5-2-8-5-8-9V6zM8 12l3 3 5-6",
+    education: "M2 8l10-5 10 5-10 5zM6 10v7c4 3 8 3 12 0v-7M22 8v9",
+    supply: "M3 7l9-4 9 4v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 5l9 5",
+    support: "M14 4a6 6 0 0 0-7 7L2 16a3 3 0 0 0 4 4l5-5a6 6 0 0 0 7-7l-4 4-4-4z",
+    marketing: "M3 10h4l12-6v16L7 14H3zM7 14l2 7h4l-2-9M22 9v6",
+    activation: "M5 22V3h14l-3 5 3 5H5M5 3h14",
+
   };
   const icon = (name) =>
     '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="' +
     (paths[name] || paths.page) +
     '"/></svg></span>';
-  const link = (href, label, name, active = false, code = "", workstreamId = "", projectId = "") =>
-    '<a class="nav-item" href="' +
-    href +
-    '"' +
-    (active ? ' aria-current="page"' : "") +
-    ">" +
-    (workstreamId
-      ? window.CCWorkstreamTags.code(workstreamId, projectId)
-      : code
-      ? window.CCDomainTags.code(code)
-      : icon(name)) +
-    (code || workstreamId ? '<span data-domain-plain>' : "<span>") +
-    esc(label) +
-    "</span></a>";
+  const domainIcons = {STR:'strategy',GOV:'governance',FIN:'finance',REG:'regulatory',FAC:'facilities',DIG:'digital',CLIN:'clinical',HR:'workforce',SQPE:'quality',SUP:'support'};
+  const workstreamIcons = {PMO:'governance',BSP:'strategy',FIN:'finance',REG:'regulatory',BLD:'facilities',EQP:'equipment',DIG:'digital',COPS:'clinical',MED:'physician',NURS:'nursing',CSUP:'laboratory',SQPE:'quality',HRES:'workforce',EDU:'education',SCM:'supply',SUPP:'support',MKT:'marketing',ACT:'activation'};
+  const link = (href, label, name, active = false, code = "", workstreamId = "", projectId = "") => {
+    const w=workstreamId?ws(workstreamId):null,iconName=w?workstreamIcons[w.code]:code?domainIcons[code]:name;
+    return '<a class="nav-item" href="'+href+'" title="'+esc((w?.code||code)?(w?.code||code)+' · '+label:label)+'"'+(active?' aria-current="page"':'')+'>'+icon(iconName)+'<span data-domain-plain>'+esc(label)+'</span></a>';
+  };
   function saveUI() {
     try {
       localStorage.setItem("iem-workspace-ui-v1", JSON.stringify(ui));
@@ -165,31 +180,23 @@
   function renderNav() {
     const p = S.get(), selected = new Set(S.selectedWorkstreams());
     window.CCWorkstreamTags.setContext(p, current?.id === p.id && result ? result : E.schedule(T, p), today());
-    let nav = '<div class="nav-section">' + link("#finder", "Advisory Planner", "finder", route.section === "finder") + link(projectURL("overview"), "Selected Solutions", "planner", route.section === "planner" && route.page === "overview");
+    const domainsOpen = ui.expanded?.catalog !== false, finderOpen = ui.expanded?.['advisory-planner'] !== false;
+    const domainsNav = '<div class="nav-link-row">' + link('#catalog','Domains','catalog',route.section === 'catalog' && !route.domain) +
+      '<button type="button" class="nav-expand" data-nav-toggle="catalog" aria-label="Expand Domains" aria-controls="advisoryDomainNav" aria-expanded="'+domainsOpen+'">›</button></div>' +
+      '<div id="advisoryDomainNav" class="nav-children"'+(domainsOpen?'':' hidden')+'>' + D.map(d=>link('#catalog/'+d.id,d.name,'',route.domain===d.id,d.code)).join('') + '</div>';
+    let nav = '<div class="nav-section"><div class="nav-link-row">' + link('#finder','Advisory Planner','finder',route.section === 'finder') +
+      '<button type="button" class="nav-expand" data-nav-toggle="advisory-planner" aria-label="Expand Advisory Planner" aria-controls="advisoryPlannerNav" aria-expanded="'+finderOpen+'">›</button></div>' +
+      '<div id="advisoryPlannerNav" class="nav-children"'+(finderOpen?'':' hidden')+'>'+domainsNav+link(projectURL('overview'),'Selected Solutions','selected',route.section === 'planner' && route.page === 'overview')+'</div>';
     let planNav = "";
-    for (const [key, label] of pages.filter(([key]) => key !== "overview")) {
-      const item = key === "gates" ? '<a class="nav-item" href="#planner/gates"'+(route.section === "planner" && route.page === "gates"?' aria-current="page"':'')+'>'+window.CCGatesUI.tag({code:"GATE",name:"Hospital decision gates"})+'<span>Gates</span></a>' : link(projectURL(key), label, key === "timeline" ? "timeline" : key === "readiness" ? "check" : "page", route.section === "planner" && route.page === key && !route.workstream);
+    for (const [key, label] of pages.filter(([key]) => !["overview","setup"].includes(key))) {
+      const item = link(projectURL(key), label, ({workstreams:"timeline",gates:"gate",roles:"roles",readiness:"readiness"})[key] || "page", route.section === "planner" && route.page === key && !route.workstream);
       if (key !== "workstreams") { planNav += item; continue; }
       const expanded = ui.expanded?.["ws-" + p.id] !== false;
       planNav += '<div class="nav-link-row">' + item + '<button class="nav-expand" data-nav-toggle="ws-' + p.id + '" type="button" aria-label="Expand hospital workstreams" aria-expanded="' + expanded + '">›</button></div>';
       if (expanded) planNav += '<div class="nav-children">' + T.workstreams.map(w => link(workstreamURL(w.id), w.name + (selected.has(w.id) ? " · Selected" : ""), "", route.workstream === w.id, "", w.id, p.id)).join('') + '</div>';
     }
-    nav += planNav + '</div>';
-    nav += navSection(
-      "catalog",
-      "Advisory catalog",
-      link(
-        "#catalog",
-        "All advisory domains",
-        "catalog",
-        route.section === "catalog" && !route.domain,
-      ) +
-        '<div class="nav-children">' +
-        D.map((d) =>
-          link("#catalog/" + d.id, d.name, "", route.domain === d.id, d.code),
-        ).join("") +
-        "</div>",
-    );
+    const projectOpen=ui.expanded?.['project-planner']!==false;
+    nav += '<div class="nav-link-row">'+link(projectURL('setup'),'Project Planner','planner',route.section==='planner'&&route.page==='setup')+'<button type="button" class="nav-expand" data-nav-toggle="project-planner" aria-label="Expand Project Planner" aria-controls="projectPlannerNav" aria-expanded="'+projectOpen+'">›</button></div><div id="projectPlannerNav" class="nav-children"'+(projectOpen?'':' hidden')+'>'+planNav+'</div></div>';
     nav +=
       '<div class="nav-foot">One saved plan for Advisory Planner, Selected Solutions and Package.<br><button class="text-button" data-plan-action="method" style="margin-top:8px">Template ' +
       esc(T.version) +
@@ -1028,7 +1035,8 @@
     return route.workstream ? workstreamPageHTML(ws(route.workstream)) : timelineHTML();
   }
   function accountableRolesHTML() {
-    return head('Accountable role','Reference responsibilities across all workstreams. Department names describe the organizational home of each role.')+'<div class="planner-table-scroll"><table class="planner-table role-directory"><thead><tr><th>Accountable role</th><th>Workstreams</th><th>Reference activities</th></tr></thead><tbody>'+window.CCAccountableRoles.entries().map(role=>'<tr><td>'+window.CCAccountableRoles.profile(role.role,role.workstreams)+'</td><td><div class="role-workstreams">'+role.workstreams.map(id=>'<button class="text-button" data-plan-action="open-workstream" data-workstream="'+id+'">'+window.CCWorkstreamTags.html(id,current.id)+'</button>').join('')+'</div></td><td>'+role.activities.length+'</td></tr>').join('')+'</tbody></table></div>';
+    const gates=window.CCGates?window.CCGates.list(current,result,C):[];
+    return head('Accountable Role','Reference leads, current activity owners and recorded gate responsibilities. Department names describe the organizational home of each role.')+'<div class="planner-table-scroll"><table class="planner-table role-directory"><thead><tr><th>Accountable Role</th><th>Workstreams</th><th>Gates</th><th>Linked activities</th></tr></thead><tbody>'+window.CCAccountableRoles.entries(gates).map(role=>'<tr><td>'+window.CCAccountableRoles.profile(role.role,role.workstreams)+'</td><td><div class="role-workstreams">'+role.workstreams.map(id=>'<button class="text-button" data-plan-action="open-workstream" data-workstream="'+id+'">'+window.CCWorkstreamTags.html(id,current.id)+'</button>').join('')+'</div></td><td><div class="gate-tag-list">'+(role.gates.length?role.gates.map(id=>window.CCGatesUI.button(gates.find(g=>g.id===id))).join(''):'—')+'</div></td><td>'+role.activities.length+'</td></tr>').join('')+'</tbody></table></div>';
   }
   function workstreamPageHTML(w, bodyOnly = false) {
     const tasks = result.tasks.filter(t => t.workstream === w.id), verified = tasks.filter(t => t.verified).length;
@@ -1182,12 +1190,10 @@
     );
     const gateRows=window.CCGatesUI ? window.CCGatesUI.timeline(current,result,{origin:current.startDate,end:E.iso(end)},route.workstream?[route.workstream]:options.workstreamIds,options.gatesOnly,options.gateIds) : "";
     if(options.gatesOnly)rows="";
+    const header = '<div class="gantt-header"><div class="gantt-label">'+(options.gatesOnly?"Decision gate":options.sourceOnly?"Gate / source milestone":"Workstream / activity")+'</div><div class="gantt-axis">' + ticks.map(t=>'<span>'+t+'</span>').join('') + '</div></div>';
+    const top = !options.gatesOnly && gateRows ? '<div class="gantt-pinned">'+header+gateRows+'</div>' : header+gateRows;
     return rows || gateRows
-      ? '<div class="gantt-scroll" aria-label="Interactive hospital workstream Gantt"><div class="gantt" data-timeline-origin="'+current.startDate+'" data-timeline-end="'+E.iso(end)+'"><div class="gantt-header"><div class="gantt-label">'+(options.gatesOnly?"Decision gate":options.sourceOnly?"Gate / source milestone":"Workstream / activity")+'</div><div class="gantt-axis">' +
-          ticks.map((t) => "<span>" + t + "</span>").join("") +
-          "</div></div>" +
-          gateRows + rows + (window.CCGatesUI?.guides ? window.CCGatesUI.guides(current,result,{origin:current.startDate,end:E.iso(end)},gateItems.map(g=>g.id)) : "") +
-          "</div></div>"
+      ? '<div class="gantt-scroll" aria-label="Interactive hospital workstream Gantt"><div class="gantt" data-timeline-origin="'+current.startDate+'" data-timeline-end="'+E.iso(end)+'">'+top+rows+(window.CCGatesUI?.guides?window.CCGatesUI.guides(current,result,{origin:current.startDate,end:E.iso(end)},gateItems.map(g=>g.id)):'')+'</div></div>'
       : '<div class="empty-state"><h3>No activities match</h3><p>Adjust the domain, search or critical-path filter.</p></div>';
   }
   function readinessHTML() {

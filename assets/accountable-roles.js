@@ -15,14 +15,22 @@
     const companies=[...new Set((Array.isArray(ids)?ids:[ids]).map(department))];
     return '<div class="accountable-profile" data-domain-plain="true"><span class="role-avatar" aria-hidden="true">'+esc(initials(role))+'</span><div><strong>'+esc(display(role))+'</strong><span class="role-company">'+esc(companies.join(' · '))+'</span></div></div>';
   }
-  function entries(){
+  function entries(gates=[]){
     const roles=new Map();
-    function add(role,workstream,task){
-      const key=role.trim().toLowerCase();if(!roles.has(key))roles.set(key,{role:role.trim(),workstreams:new Set(),activities:new Set()});
-      const entry=roles.get(key);entry.workstreams.add(workstream);if(task)entry.activities.add(task);
+    function add(role,workstream,task,gate){
+      if(typeof role!=='string'||!role.trim())return;
+      const key=role.trim().toLowerCase();if(!roles.has(key))roles.set(key,{role:role.trim(),workstreams:new Set(),activities:new Set(),gates:new Set()});
+      const entry=roles.get(key);if(workstream)entry.workstreams.add(workstream);if(task)entry.activities.add(task);if(gate)entry.gates.add(gate);
     }
     T.workstreams.forEach(w=>add(w.owner,w.id));T.tasks.forEach(t=>add(t.owner,t.workstream,t.id));
-    return [...roles.values()].map(r=>({role:r.role,workstreams:[...r.workstreams],activities:[...r.activities]})).sort((a,b)=>display(a.role).localeCompare(display(b.role)));
+    gates.forEach(g=>{
+      const home=g.sources?.[0]?.workstream||'WS-18';
+      [g.owner,g.accountableRole,g.decisionAuthority,g.advisoryReviewer].forEach(role=>add(role,home,null,g.id));
+      (g.relatedTasks||g.sources||[]).forEach(t=>{add(t.owner,t.workstream,t.id,g.id);add(t.state?.owner,t.workstream,t.id,g.id);});
+      (g.record?.reviews||[]).forEach(r=>{add(r.approver,home,null,g.id);add(r.conditionOwner,home,null,g.id);});
+      (g.criteria||[]).forEach(c=>add(c.owner,home,null,g.id));
+    });
+    return [...roles.values()].map(r=>({role:r.role,workstreams:[...r.workstreams],activities:[...r.activities],gates:[...r.gates]})).sort((a,b)=>display(a.role).localeCompare(display(b.role)));
   }
   return {department,display,initials,profile,entries};
 });

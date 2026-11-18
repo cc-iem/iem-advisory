@@ -95,6 +95,8 @@ test('register, profile and compact timeline share every gate ID/date and access
   const {p,r,U}=uiContext(),gates=G.list(p,r,C),page=U.page(p,r),timeline=U.timeline(p,r,{origin:p.startDate,end:'2032-01-01'});
   for(const g of gates){assert.ok(page.includes('data-gate-row="'+g.id+'"'));assert.ok(timeline.includes('data-timeline-gate="'+g.id+'"'));const profile=U.profile(g,p);assert.match(profile,/data-gate-review=/);assert.match(profile,/Decision history/);assert.match(profile,/Pre-requisite/);assert.match(profile,/Dependency/);assert.match(profile,/source-gantt/);assert.ok(profile.includes(g.code));assert.ok(timeline.includes('forecast '+new Date(g.forecastDate+'T12:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})));}
   assert.match(page,/data-gates-view="table" aria-pressed="true"/);assert.match(U.page(p,r,'timeline'),/all-gates-gantt/);
+  assert.doesNotMatch(timeline,/data-gate-select=/,'gate tags open the RHS instead of only selecting relationships');
+  for(const g of gates)assert.ok(timeline.includes(U.button(g)),'timeline gate tag keeps the shared profile action');
   assert.doesNotMatch(timeline,/gantt-bar/,'gates are zero-duration diamonds');assert.match(timeline,/gate-marker forecast/);assert.match(timeline,/gate-marker target/);
 });
 test('scoped gate timelines only show related gates; product and Package coverage keep hospital requirements',()=>{
@@ -116,6 +118,7 @@ test('gate RHS actions open the profile, toggle source views, save evidence and 
   const target=attr=>({closest:selector=>selector===attr.selector?attr:null}),event=target=>({target,preventDefault(){},stopPropagation(){}});
   handlers.click(event(target({selector:'[data-gate-open]',dataset:{gateOpen:'GATE-01'}})));
   assert.equal(opened,'GATE-01');assert.equal(panel.dataset.gateProfile,'GATE-01');assert.match(panel.innerHTML,/source-gantt/);
+  assert.match(panel.innerHTML,/<button[^>]*data-gate-open="GATE-01"/);
   handlers.click(event(target({selector:'[data-gate-source-view]',dataset:{gateSourceView:'table'}})));
   assert.match(panel.innerHTML,/<table class="planner-table">/);assert.doesNotMatch(panel.innerHTML,/source-gantt/);
   const error={hidden:true,scrollIntoView(){}},form={dataset:{gateReview:'GATE-01'},values:input({criteria:definitions[0].criteria.map(c=>c.id)}),querySelector:()=>error};
@@ -138,4 +141,34 @@ test('gate reviews and advisory involvement survive shared-project storage and r
   const {p,result}=ready(),saved=G.review(p,result,'GATE-01',input({decision:'approved'}),C,'2026-11-17'),records=new Map(),storage={getItem:key=>records.get(key)??null,setItem:(key,value)=>records.set(key,value)},factory=require('../assets/single-project.js');
   const options={storage,catalog:C,template:T,createDefault:()=>p};const first=factory(options);first.save({...saved,solutionInvolvement:{[C[0].id]:'co-lead'}});
   const second=factory(options),restored=second.get();assert.equal(restored.gates['GATE-01'].reviews[0].decision,'approved');assert.equal(restored.solutionInvolvement[C[0].id],'co-lead');assert.equal(G.list(restored,E.schedule(T,restored),C)[0].status,'Approved');
+});
+test('workstream charts use one gate row with nonoverlapping labels at narrow and wide widths',()=>{
+  const {p,r,U}=uiContext(),gates=G.list(p,r,C),html=U.timeline(p,r,{origin:p.startDate,end:'2032-01-01'});
+  assert.equal((html.match(/class="gantt-row gate-rail"/g)||[]).length,1);assert.doesNotMatch(html,/class="gantt-row gate-timeline-row"/);
+  for(const g of gates)assert.ok(html.includes(U.button(g)));
+  for(const width of [240,470,640,1100]){
+    const layout=U.railLayout([.5,.5,5,12,12,35,55,99.2].map(x=>({x})),width);
+    for(const a of layout.items)for(const b of layout.items)if(a.index<b.index&&a.lane===b.lane)assert.ok(Math.abs(a.center-b.center)>=78,'labels retain space at '+width+'px');
+    assert.ok(layout.height>=76);assert.ok(layout.items.every(item=>item.center>=36&&item.center<=width-36));
+  }
+});
+test('expanding a gate shows its complete workstream/activity hierarchy in both views and clearing removes hidden timeline endpoints',()=>{
+  const {p,r,U,window}=uiContext(),gates=G.list(p,r,C),stored=new Map();window.localStorage={getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)};
+  const source=fs.readFileSync('assets/workspace.js','utf8'),c={window,current:p,E,esc:s=>String(s??''),date:s=>s};vm.createContext(c);
+  for(const name of ['activityTimelineBarHTML','activityTimelineRowHTML']){const start=source.indexOf('  function '+name+'(');vm.runInContext(source.slice(start,source.indexOf('\n  }',start)+4),c);}
+  window.CCPlannerViews.timelineRows=(ids,axis)=>ids.map(id=>{const t=r.tasks.find(t=>t.id===id);return c.activityTimelineRowHTML(t,c.activityTimelineBarHTML(t,axis));}).join('');
+  const axis={origin:p.startDate,end:'2032-01-01'};
+  for(const g of gates){
+    const table=U.children(g,'table'),timeline=U.children(g,'timeline',axis),expected=g.relatedTasks.map(t=>t.id).sort();
+    assert.deepEqual([...table.matchAll(/data-gate-activity="([^"]+)"/g)].map(m=>m[1]).sort(),expected);
+    assert.deepEqual([...timeline.matchAll(/data-timeline-activity="([^"]+)"/g)].map(m=>m[1]).sort(),expected);
+    for(const id of g.workstreams){assert.ok(table.includes('data-gate-workstream="'+id+'"'));assert.ok(timeline.includes('data-gate-workstream="'+id+'"'));}
+    for(const t of g.relatedTasks){assert.ok(table.includes(t.startDate));assert.ok(timeline.includes(t.finishDate));}
+  }
+  const g=gates[0],content={innerHTML:''},container={dataset:{axisOrigin:axis.origin,axisEnd:axis.end},hidden:true,querySelector:()=>content},host={querySelector:()=>container},control={dataset:{gateExpand:g.id,gateView:'table'},closest:()=>host,setAttribute(k,v){this[k]=v;}};
+  U.expand(control);assert.equal(container.hidden,false);assert.equal(control['aria-expanded'],'true');assert.match(content.innerHTML,/data-gate-activity=/);
+  assert.match(U.timeline(p,r,axis,null,true),/data-timeline-activity=/,'Table expansion carries over to Gates Gantt');
+  U.expand(control);assert.equal(container.hidden,true);assert.equal(content.innerHTML,'');assert.equal(control['aria-expanded'],'false');
+  control.dataset.gateView='timeline';U.expand(control);assert.match(container.innerHTML,/data-timeline-activity=/);U.expand(control);assert.equal(container.innerHTML,'','hidden activity rows cannot capture dependency-arrow endpoints');
+  assert.equal(stored.get('iem-gate-expansion-v1'),'[]');
 });

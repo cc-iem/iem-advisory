@@ -53,3 +53,28 @@
 .panel .gantt-gate-guides { left: 250px; }
 .model-workstream-timeline .gantt-gate-guides { left: 0; }
 .gate-marker.forecast { background: var(--gate-magenta); }
+.gantt-pinned { position: sticky; top: 0; z-index: 6; background: #fff; border-bottom: 1px solid var(--rule); }
+.gantt-pinned .gantt-header { position: relative; top: auto; }
+.gate-rail .gantt-track { background-color: #fff; }
+#top .gantt-pinned, #top .gate-rail .gantt-track { background-color: #123758; }
+.gate-rail .gantt-label { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.gate-rail-item { display: contents; }
+.gate-rail-label { position: absolute; left: clamp(36px, var(--gate-x), calc(100% - 36px)); top: var(--gate-label-top); transform: translateX(-50%); z-index: 4; white-space: nowrap; }
+.gate-rail-stem { position: absolute; left: var(--gate-x); top: calc(var(--gate-label-top) + 24px); bottom: 14px; width: 1px; background: var(--gate-light); opacity: .65; pointer-events: none; }
+.gate-rail .gate-marker.forecast { top: auto; bottom: 8px; }
+.gate-rail .gate-marker.target { top: auto; bottom: 27px; }
+.gate-row-heading { display: flex; align-items: center; gap: 8px; }
+.gate-expand { flex: none; width: 26px; height: 26px; padding: 0; border: 1px solid var(--rule); border-radius: 0; color: inherit; background: transparent; font: inherit; cursor: pointer; }
+.gate-expand:hover { background: #a61b7220; }
+.gate-expand:focus-visible { outline: 2px solid var(--gate-light); outline-offset: 2px; }
+.gate-child-row > td { background: #f4f7fb; padding: 16px; }
+#top .gate-child-row > td { background: #102f50; }
+.gate-child-row[hidden], .gate-gantt-children[hidden] { display: none; }
+.gate-workstream-details { margin: 0 0 24px; }
+.gate-workstream-details:last-child { margin-bottom: 0; }
+.gate-workstream-details h4 { margin: 0 0 12px; }
+.gate-workstream-details .text-button { color: inherit; text-align: left; }
+.gate-workstream-range { display: block; padding: 12px; font-size: 11px; opacity: .8; }
+.gate-gantt-children .gantt-label { padding-left: 26px; }
+.gate-gantt-children .gate-workstream-group .gantt-label { padding-left: 14px; }
+@media print { .gantt-pinned { position: static; } }

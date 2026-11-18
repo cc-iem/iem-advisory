@@ -27,7 +27,7 @@ function setup(withGates=false){
   const group=new Element('gantt-row group');group.dataset.workstreamRow='w2';const expand=new Element('timeline-expand');expand.dataset.timelineExpand='w2';group.append(expand);summary.append(group);
   const frames=[],events={},handlers={},observers=[];
   const window={CCActivityGraph:graph,CCPlannerViews:{timelineRows:ids=>'ROWS:'+ids.join(',')},HospitalEngine:{schedule:()=>({tasks})},CC_GREENFIELD:{},CCProject:{get:()=>({id:'plan'})},CCWorkstreamTags:{activity:id=>id},addEventListener:(name,fn)=>events[name]=fn};
-  if(withGates){const G=require('../assets/gates-engine.js')([],require('../assets/planner-engine.js'));window.CCGates={list:()=>[{id:'GATE-01',code:'GATE-01',name:'Program authorized',sourceIds:['b']}],links:G.links};window.CCGatesUI={tag:g=>g.code};}
+  if(withGates){const G=require('../assets/gates-engine.js')([],require('../assets/planner-engine.js'));window.CCGates={list:()=>[{id:'GATE-01',code:'GATE-01',name:'Program authorized',sourceIds:['b']}],links:G.links};window.CCGatesUI={tag:g=>g.code,button:g=>'<button data-gate-open="'+g.id+'">'+g.code+'</button>'};}
   const document={body:new Element(),createElement:()=>new Element(),createElementNS:()=>new Element(),querySelectorAll:s=>[main,summary].filter(chart=>chart.matches(s)),addEventListener:(name,fn)=>handlers[name]=fn};
   class ResizeObserver{observe(){}unobserve(){}}
   class MutationObserver{constructor(fn){observers.push(fn);}observe(){}}

@@ -9,6 +9,32 @@
   const decisionLabel=value=>({pending:'Pending review',approved:'Approved',conditional:'Conditional approval',hold:'Hold',rejected:'Rejected'})[value]||value;
   const tag=g=>'<span class="gate-tag" data-domain-tagged="true" title="'+esc(g.name||'Hospital decision gate')+'">'+esc(g.code||g.id||'GATE')+'</span>';
   const button=g=>'<button type="button" class="text-button gate-link" data-gate-open="'+g.id+'" aria-label="Open '+esc(g.code+' · '+g.name)+'">'+tag(g)+'</button>';
+  function readExpanded(){try{const saved=JSON.parse(window.localStorage?.getItem('iem-gate-expansion-v1')||'[]');return Array.isArray(saved)?saved:[];}catch(e){return [];}}
+  const expandedGates=new Set(readExpanded());
+  function disclosure(g,view){return '<button type="button" class="gate-expand" data-gate-expand="'+g.id+'" data-gate-view="'+view+'" aria-expanded="'+expandedGates.has(g.id)+'" aria-controls="gate-children-'+view+'-'+g.id+'" aria-label="'+(expandedGates.has(g.id)?'Collapse ':'Expand ')+esc(g.code)+' workstreams and activities">'+(expandedGates.has(g.id)?'⌄':'›')+'</button>';}
+  function children(g,view,axis){
+    return T.workstreams.map(w=>{
+      const tasks=g.relatedTasks.filter(t=>t.workstream===w.id);if(!tasks.length)return '';
+      const home='<button type="button" class="text-button" data-plan-action="open-workstream" data-workstream="'+w.id+'">'+window.CCWorkstreamTags.html(w.id)+'</button>';
+      if(view==='timeline')return '<div class="gantt-row group gate-workstream-group" data-gate-workstream="'+w.id+'"><div class="gantt-label">'+home+'<small>'+tasks.length+' activities</small></div><div class="gantt-track"><span class="gate-workstream-range">'+date(tasks.map(t=>t.startDate).sort()[0])+' – '+date(tasks.map(t=>t.finishDate).sort().at(-1))+'</span></div></div>'+window.CCPlannerViews.timelineRows(tasks.map(t=>t.id),axis,false);
+      return '<section class="gate-workstream-details" data-gate-workstream="'+w.id+'"><h4>'+home+'</h4><table class="planner-table gate-activity-table"><thead><tr><th>Activity</th><th>Deliverable</th><th>Start</th><th>Finish</th><th>Evidence</th></tr></thead><tbody>'+tasks.map(t=>'<tr data-gate-activity="'+t.id+'"><td><button type="button" class="text-button" data-plan-action="activity-profile" data-task-id="'+t.id+'" data-workstream="'+w.id+'">'+window.CCWorkstreamTags.activity(t.id)+'</button></td><td>'+esc(t.deliverable)+'</td><td><time datetime="'+t.startDate+'">'+date(t.startDate)+'</time></td><td><time datetime="'+t.finishDate+'">'+date(t.finishDate)+'</time></td><td>'+esc(t.verified?'Verified':'Evidence needed')+'</td></tr>').join('')+'</tbody></table></section>';
+    }).join('');
+  }
+  function expand(control){
+    const id=control.dataset.gateExpand,view=control.dataset.gateView,host=control.closest(view==='table'?'.gate-register':'.gantt'),container=host.querySelector('[data-gate-children="'+id+'"]'),open=!expandedGates.has(id);
+    if(open)expandedGates.add(id);else expandedGates.delete(id);
+    try{window.localStorage?.setItem('iem-gate-expansion-v1',JSON.stringify([...expandedGates]));}catch(e){}
+    control.setAttribute('aria-expanded',String(open));control.setAttribute('aria-label',(open?'Collapse ':'Expand ')+id+' workstreams and activities');control.textContent=open?'⌄':'›';container.hidden=!open;
+    const content=view==='table'?container.querySelector('.gate-child-content'):container;
+    if(open){const s=state(),g=s.gates.find(g=>g.id===id);content.innerHTML=children(g,view,{origin:container.dataset.axisOrigin,end:container.dataset.axisEnd});}
+    else content.innerHTML='';
+  }
+  function railLayout(items,width){
+    const lanes=[];
+    const placed=items.map((item,index)=>({...item,index,center:Math.max(36,Math.min(width-36,item.x/100*width))})).sort((a,b)=>a.center-b.center);
+    placed.forEach(item=>{let lane=lanes.findIndex(right=>item.center-36>=right+6);if(lane<0)lane=lanes.length;lanes[lane]=item.center+36;item.lane=lane;});
+    return {items:placed.sort((a,b)=>a.index-b.index),height:Math.max(76,lanes.length*28+42)};
+  }
   function flags(g,project){
     const messages=[];
     const months=(Date.parse(project.targetDate)-Date.parse(project.startDate))/86400000/30.44;
@@ -27,22 +53,36 @@
       '<p class="gate-basis">Six program reviews plus any capacity gates. Groupings and month offsets are draft planning assumptions; original MS Project milestones and dependencies are retained.</p>'+ (view==='timeline'?window.CCPlannerViews.gateTimeline():table(gates,project));
   }
   function toggle(view){return '<div class="segmented gate-view-toggle" role="group" aria-label="Gates view">'+['table','timeline'].map(v=>'<button type="button" data-gates-view="'+v+'" aria-pressed="'+(v===view)+'">'+(v==='table'?'Table':'Gantt')+'</button>').join('')+'</div>';}
-  function table(gates,project){return '<div class="planner-table-scroll"><table class="planner-table gate-register"><thead><tr><th>Gate / decision</th><th>Target / forecast</th><th>Readiness</th><th>Evidence verified</th><th>Accountable role</th><th>Recorded decision</th></tr></thead><tbody>'+gates.map(g=>'<tr data-gate-row="'+g.id+'"><td>'+button(g)+'<button class="gate-title text-button" data-gate-open="'+g.id+'" data-domain-plain>'+esc(g.name)+'</button><small>'+esc(g.phase)+'</small></td><td><span>Target '+date(g.targetDate)+'</span><span>Forecast '+date(g.forecastDate)+'</span>'+(g.varianceDays>0?'<small>'+g.varianceDays+' days after target</small>':'')+(g.inherited?'<small>Before engagement · evidence review needed</small>':'')+'</td><td><span class="gate-status">'+esc(g.status)+'</span></td><td>'+g.verified+' / '+g.requirements.length+' activities<br>'+g.criteriaVerified+' / '+g.criteria.length+' review criteria</td><td>'+window.CCAccountableRoles.profile(g.owner,'WS-18')+'</td><td>'+esc(g.review?decisionLabel(g.review.decision)+' · '+g.review.approver:'Not recorded')+(g.review?'<br>'+date(g.review.date):'')+'</td></tr>').join('')+'</tbody></table></div>';}
+  function table(gates,project){
+    return '<div class="planner-table-scroll"><table class="planner-table gate-register"><thead><tr><th>Gate / decision</th><th>Target / forecast</th><th>Readiness</th><th>Evidence verified</th><th>Accountable Role</th><th>Recorded decision</th></tr></thead><tbody>'+gates.map(g=>{
+      const open=expandedGates.has(g.id);
+      return '<tr data-gate-row="'+g.id+'"><td><div class="gate-row-heading">'+disclosure(g,'table')+button(g)+'</div><button class="gate-title text-button" data-gate-open="'+g.id+'" data-domain-plain>'+esc(g.name)+'</button><small>'+esc(g.phase)+'</small></td><td><span>Target '+date(g.targetDate)+'</span><span>Forecast '+date(g.forecastDate)+'</span>'+(g.varianceDays>0?'<small>'+g.varianceDays+' days after target</small>':'')+(g.inherited?'<small>Before engagement · evidence review needed</small>':'')+'</td><td><span class="gate-status">'+esc(g.status)+'</span></td><td>'+g.verified+' / '+g.requirements.length+' activities<br>'+g.criteriaVerified+' / '+g.criteria.length+' review criteria</td><td>'+window.CCAccountableRoles.profile(g.owner,'WS-18')+'</td><td>'+esc(g.review?decisionLabel(g.review.decision)+' · '+g.review.approver:'Not recorded')+(g.review?'<br>'+date(g.review.date):'')+'</td></tr>'+
+        '<tr class="gate-child-row" id="gate-children-table-'+g.id+'" data-gate-children="'+g.id+'"'+(open?'':' hidden')+'><td colspan="6"><div class="gate-child-content">'+(open?children(g,'table'):'')+'</div></td></tr>';
+    }).join('')+'</tbody></table></div>';
+  }
   function timeline(project,result,axis,workstreamIds,only=false,gateIds){
-    const gates=G.related(G.list(project,result,C),workstreamIds).filter(g=>!gateIds||gateIds.includes(g.id)),origin=Date.parse(axis.origin),end=Date.parse(axis.end),span=Math.max(1,end-origin),pos=s=>Math.max(.5,Math.min(99.2,(Date.parse(s)-origin)/span*100));
+    const gates=G.related(G.list(project,result,C),workstreamIds).filter(g=>!gateIds||gateIds.includes(g.id)),origin=Date.parse(axis.origin),end=Date.parse(axis.end),span=Math.max(1,end-origin),pos=s=>Math.max(0,Math.min(100,(Date.parse(s)-origin)/span*100));
     const opening=project.targetDate;
     const phases=[['Mobilize',-24,-22],['Design',-22,-15],['Build',-15,-11],['Test',-11,-6],['Activate',-6,0],['After opening',0,12]];
     const phaseRows=phases.map(([label,a,b])=>{const start=G.month(opening,a),finish=G.month(opening,b);if(Date.parse(finish)<origin||Date.parse(start)>end)return '';const x=pos(start),width=pos(finish)-x;return width>0?'<span class="gate-phase" style="left:'+x+'%;width:'+width+'%" title="'+esc(label+' · '+date(start)+' to '+date(finish))+'">'+label+'</span>':'';}).join('');
     const rail='<div class="gantt-row gate-phase-row"><div class="gantt-label">Opening phases <small>Reference offsets · ◇ Target · ◆ Forecast</small></div><div class="gantt-track">'+phaseRows+'</div></div>';
+    if(!only){
+      const layout=railLayout(gates.map(g=>({g,x:pos(g.forecastDate||g.targetDate)})),640);
+      return '<div class="gantt-row gate-rail" data-gate-rail><div class="gantt-label">Gates<small>◇ Target · ◆ Forecast</small></div><div class="gantt-track" style="min-height:'+layout.height+'px">'+layout.items.map(({g,x,lane})=>{
+        const marker=(value,type)=>'<button type="button" class="gate-marker '+type+'" data-gate-open="'+g.id+'" style="left:'+pos(value)+'%" title="'+esc(g.code+' · '+g.name+' · '+type+' '+date(value)+(value<axis.origin?' · Before engagement':''))+'" aria-label="'+esc(g.code+' '+type+' '+date(value))+'"></button>';
+        return '<div class="gate-rail-item" data-timeline-gate="'+g.id+'" data-gate-position="'+x+'" style="--gate-x:'+x+'%;--gate-label-top:'+(8+lane*28)+'px"><div class="gate-rail-label">'+button(g)+'</div><span class="gate-rail-stem"></span>'+(g.targetDate&&g.targetDate!==g.forecastDate?marker(g.targetDate,'target'):'')+(g.forecastDate?marker(g.forecastDate,'forecast'):'')+'</div>';
+      }).join('')+'</div></div>';
+    }
     return rail+gates.map(g=>{
       const variance=g.targetDate&&g.targetDate!==g.forecastDate;
       const marker=(value,type)=>'<button type="button" class="gate-marker '+type+'" data-gate-open="'+g.id+'" style="left:'+pos(value)+'%" title="'+esc(g.code+' · '+g.name+' · '+type+' '+date(value)+(value<axis.origin?' · Before engagement':''))+'" aria-label="'+esc(g.code+' '+type+' '+date(value))+'"></button>';
-      return '<div class="gantt-row gate-timeline-row" data-timeline-gate="'+g.id+'"><div class="gantt-label"><div class="gate-timeline-title"><button type="button" class="timeline-select" data-gate-select="'+g.id+'" aria-pressed="false" aria-label="Select source relationships for '+g.code+'">'+tag(g)+'</button><button type="button" class="text-button" data-gate-open="'+g.id+'" data-domain-plain>'+esc(g.name)+'</button></div><small>'+esc(g.status)+(g.inherited?' · Target before engagement':'')+'</small><small>Target '+date(g.targetDate)+' · Forecast '+date(g.forecastDate)+'</small></div><div class="gantt-track">'+(variance?'<span class="gate-variance" style="left:'+Math.min(pos(g.targetDate),pos(g.forecastDate))+'%;width:'+Math.abs(pos(g.forecastDate)-pos(g.targetDate))+'%"></span>'+marker(g.targetDate,'target'):'')+(g.forecastDate?'<span class="gate-guide" style="left:'+pos(g.forecastDate)+'%"></span>'+marker(g.forecastDate,'forecast'):'')+(g.review?'<span class="gate-decision-note">'+esc(g.status)+' · '+date(g.review.date)+'</span>':'')+'</div></div>';
+      return '<div class="gantt-row gate-timeline-row" data-timeline-gate="'+g.id+'"><div class="gantt-label"><div class="gate-timeline-title">'+disclosure(g,'timeline')+button(g)+'<button type="button" class="text-button" data-gate-open="'+g.id+'" data-domain-plain>'+esc(g.name)+'</button></div><small>'+esc(g.status)+(g.inherited?' · Target before engagement':'')+'</small><small>Target '+date(g.targetDate)+' · Forecast '+date(g.forecastDate)+'</small></div><div class="gantt-track">'+(variance?'<span class="gate-variance" style="left:'+Math.min(pos(g.targetDate),pos(g.forecastDate))+'%;width:'+Math.abs(pos(g.forecastDate)-pos(g.targetDate))+'%"></span>'+marker(g.targetDate,'target'):'')+(g.forecastDate?'<span class="gate-guide" style="left:'+pos(g.forecastDate)+'%"></span>'+marker(g.forecastDate,'forecast'):'')+(g.review?'<span class="gate-decision-note">'+esc(g.status)+' · '+date(g.review.date)+'</span>':'')+'</div></div>'+
+        '<div class="gate-gantt-children" id="gate-children-timeline-'+g.id+'" data-gate-children="'+g.id+'" data-axis-origin="'+axis.origin+'" data-axis-end="'+axis.end+'"'+(expandedGates.has(g.id)?'':' hidden')+'>'+(expandedGates.has(g.id)?children(g,'timeline',axis):'')+'</div>';
     }).join('');
   }
   function guides(project,result,axis,gateIds){
     const span=Math.max(1,Date.parse(axis.end)-Date.parse(axis.origin));
-    return '<div class="gantt-gate-guides" aria-hidden="true">'+G.list(project,result,C).filter(g=>(!gateIds||gateIds.includes(g.id))&&g.forecastDate>=axis.origin&&g.forecastDate<=axis.end).map(g=>'<span class="gate-guide" style="left:'+Math.max(0,Math.min(99.2,(Date.parse(g.forecastDate)-Date.parse(axis.origin))/span*100))+'%"></span>').join('')+'</div>';
+    return '<div class="gantt-gate-guides" aria-hidden="true">'+G.list(project,result,C).filter(g=>(!gateIds||gateIds.includes(g.id))&&g.forecastDate>=axis.origin&&g.forecastDate<=axis.end).map(g=>'<span class="gate-guide" style="left:'+Math.max(0,Math.min(100,(Date.parse(g.forecastDate)-Date.parse(axis.origin))/span*100))+'%"></span>').join('')+'</div>';
   }
   function relatedHTML(gates,heading='Related gates'){
     return gates.length?'<section class="dsec gate-connections"><h3>'+heading+'</h3><div class="gate-tag-list">'+gates.map(button).join('')+'</div><p class="scope-note">Advisory support helps prepare evidence. The hospital retains execution and decision authority.</p></section>':'';
@@ -63,7 +103,7 @@
     const graph=window.CCActivityGraph,links=G.links(g,E.schedule(T,project).tasks,graph);
     const edges=(title,items,incoming)=>'<section class="dsec"><h3>'+title+'</h3><ul class="gate-evidence-list">'+items.map(edge=>{const t=incoming?edge.predecessor:edge.successor;return '<li><button class="text-button" data-plan-action="activity-profile" data-task-id="'+t.id+'" data-workstream="'+t.workstream+'">'+window.CCWorkstreamTags.activity(t.id)+'</button><small>'+esc(edge.predecessor.code+' → '+edge.successor.code+' · '+graph.describe(edge)+' · '+graph.provenance(edge))+'</small></li>';}).join('')+'</ul>'+(items.length?'':'<p>No direct links.</p>')+'</section>';
     const review=g.review||{};
-    return '<div class="panel-head on-navy"><div class="panel-top"><span class="ref">Hospital decision gate</span><button type="button" class="close-btn" data-action="close-panel" aria-label="Close">×</button></div><h2 class="panel-title" id="detailTitle">'+tag(g)+' <span data-domain-plain>'+esc(g.name)+'</span></h2><p class="panel-sub">'+esc(g.phase)+' · '+esc(g.status)+'</p></div><div class="panel-body gate-profile-body"><dl class="fact-strip"><div><dt>Target</dt><dd>'+date(g.targetDate)+'</dd></div><div><dt>Forecast</dt><dd>'+date(g.forecastDate)+'</dd></div><div><dt>Evidence verified</dt><dd>'+g.verified+' / '+g.requirements.length+'</dd></div></dl>'+window.CCAccountableRoles.profile(g.owner,'WS-18')+
+    return '<div class="panel-head on-navy"><div class="panel-top"><span class="ref">Hospital decision gate</span><button type="button" class="close-btn" data-action="close-panel" aria-label="Close">×</button></div><h2 class="panel-title" id="detailTitle">'+button(g)+' <span data-domain-plain>'+esc(g.name)+'</span></h2><p class="panel-sub">'+esc(g.phase)+' · '+esc(g.status)+'</p></div><div class="panel-body gate-profile-body"><dl class="fact-strip"><div><dt>Target</dt><dd>'+date(g.targetDate)+'</dd></div><div><dt>Forecast</dt><dd>'+date(g.forecastDate)+'</dd></div><div><dt>Evidence verified</dt><dd>'+g.verified+' / '+g.requirements.length+'</dd></div></dl>'+window.CCAccountableRoles.profile(g.owner,'WS-18')+
       '<section class="dsec"><h3>Planning flags</h3>'+flags(g,project).map(f=>'<p class="gate-flag">'+esc(f)+'</p>').join('')+'<p>'+esc(g.provenance||'Proposed program grouping over the existing MS Project-derived milestones. Review criteria and reference offsets need workstream-lead confirmation.')+'</p>'+(g.id==='GATE-05'?'<p>Review must precede first patient. This decision uses the existing go / no-go milestone.</p>':'')+(g.id==='GATE-06'?'<p>The first-year review is additional to the existing stabilization milestone; its forecast is no earlier than 12 months after forecast first patient.</p>':'')+'</section>'+
       '<section class="dsec"><h3>Source milestones</h3><div class="segmented" role="group" aria-label="Source milestones view">'+['table','timeline'].map(v=>'<button type="button" data-gate-source-view="'+v+'" aria-pressed="'+(sourceView===v)+'">'+(v==='table'?'Table':'Gantt')+'</button>').join('')+'</div>'+(sourceView==='timeline'?window.CCPlannerViews.gateActivities(g.id):sourceTable(g))+'<p class="scope-note">Original IDs, dates and dependencies are preserved. Composite gate markers roll up these milestones and do not add schedule constraints.</p></section>'+
       '<section class="dsec"><h3>Required evidence</h3><p>'+g.verified+' of '+g.requirements.length+' prerequisite activities verified.</p><details><summary>Inspect prerequisite activities</summary><ul class="gate-evidence-list">'+activityLinks(g.requirements)+'</ul></details></section>'+
@@ -75,10 +115,13 @@
   let active=null;
   function open(id,opener){
     const s=state(),g=s.gates.find(g=>g.id===id);if(!g)return;
+    const existing=document.getElementById('detailPanel');
+    if(opener&&!existing.hidden&&existing.dataset.gateProfile===id)return;
     sourceView='timeline';window.CCApp.profile(profile(g,s.project),opener);const panel=document.getElementById('detailPanel');panel.dataset.gateProfile=id;panel.dataset.tagContext='gate';active=id;
     window.dispatchEvent(new CustomEvent('advisory-gate-open',{detail:{id}}));
   }
   document.addEventListener('click',event=>{
+    const disclosure=event.target.closest('[data-gate-expand]');if(disclosure){event.preventDefault();event.stopPropagation();expand(disclosure);return;}
     const sourceToggle=event.target.closest('[data-gate-source-view]');if(sourceToggle){sourceView=sourceToggle.dataset.gateSourceView;const panel=document.getElementById('detailPanel'),s=state(),g=s.gates.find(g=>g.id===panel.dataset.gateProfile),scroll=panel.querySelector('.panel-body').scrollTop;panel.innerHTML=profile(g,s.project);panel.querySelector('.panel-body').scrollTop=scroll;return;}
     const opener=event.target.closest('[data-gate-open]');if(opener){event.preventDefault();event.stopPropagation();open(opener.dataset.gateOpen,opener);return;}
     const register=event.target.closest('[data-gate-register]');if(register){window.CCApp.close();return;}
@@ -99,5 +142,15 @@
   });
   const panel=document.getElementById('detailPanel');
   new MutationObserver(()=>{if(active&&(panel.hidden||!panel.dataset.gateProfile)){active=null;window.dispatchEvent(new CustomEvent('advisory-gate-close'));}}).observe(panel,{attributes:true,attributeFilter:['hidden','data-gate-profile']});
-  window.CCGatesUI={profile,page,table,timeline,guides,tag,button,open,product,coverage,involvement,relatedHTML,flags};
+  if(typeof ResizeObserver==='function'){
+    const watched=new Set(),observer=new ResizeObserver(entries=>entries.forEach(({target})=>{
+      if(!target.clientWidth)return;
+      const nodes=Array.from(target.querySelectorAll('[data-gate-position]')),layout=railLayout(nodes.map(node=>({node,x:Number(node.dataset.gatePosition)})),target.clientWidth);
+      layout.items.forEach(({node,lane})=>node.style.setProperty('--gate-label-top',(8+lane*28)+'px'));
+      const height=layout.height+'px';if(target.style.minHeight!==height)target.style.minHeight=height;
+    }));
+    const watch=()=>{watched.forEach(node=>{if(!node.isConnected){observer.unobserve(node);watched.delete(node);}});document.querySelectorAll('.gate-rail .gantt-track').forEach(node=>{if(!watched.has(node)){watched.add(node);observer.observe(node);}});};
+    new MutationObserver(watch).observe(document.body,{childList:true,subtree:true});watch();
+  }
+  window.CCGatesUI={profile,page,table,timeline,guides,tag,button,open,children,expand,railLayout,product,coverage,involvement,relatedHTML,flags};
 })();
