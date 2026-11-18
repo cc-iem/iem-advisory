@@ -1310,9 +1310,12 @@
     const links = [...new Map((product.workstreamLinks||[]).map(w=>[w.id,w])).values()];
     if(!links.length)return '<p class="scope-note">No workstream connections are mapped.</p>';
     if(view === "timeline")return ganttHTML({workstreamIds:links.map(w=>w.id),groupsOnly:true});
-    return '<div class="planner-table-scroll"><table class="planner-table connection-workstream-table"><thead><tr><th>Workstream</th><th>Connection</th><th>Activities</th><th>Start</th><th>Finish</th></tr></thead><tbody>'+links.map(link=>{
+    const gates = (window.CCGates?.list(current,result,C) || []).filter(gate => gate.products.includes(product.id));
+    return '<div class="planner-table-scroll"><table class="planner-table connection-workstream-table"><thead><tr><th>Workstream</th><th>Gates</th><th>Connection</th><th>Activities</th><th>Start</th><th>Finish</th></tr></thead><tbody>'+links.map(link=>{
       const range=workstreamRange(link.id);
-      return '<tr data-connection-workstream="'+link.id+'"><td><button class="text-button" data-plan-action="open-workstream" data-workstream="'+link.id+'">'+window.CCWorkstreamTags.html(link.id,current.id)+'</button></td><td>'+esc(link.role)+'</td><td>'+range.tasks.length+'</td><td>'+date(range.startDate)+'</td><td>'+date(range.finishDate)+'</td></tr>';
+      const workstreamGates = gates.filter(gate => gate.relatedTasks.some(task => task.workstream === link.id && task.products?.includes(product.id)));
+      const gateTags = workstreamGates.length ? workstreamGates.map(window.CCGatesUI.button).join('') : '<span aria-label="No mapped gates">—</span>';
+      return '<tr data-connection-workstream="'+link.id+'"><td><button class="text-button" data-plan-action="open-workstream" data-workstream="'+link.id+'">'+window.CCWorkstreamTags.html(link.id,current.id)+'</button></td><td><div class="selection-gates">'+gateTags+'</div></td><td>'+esc(link.role)+'</td><td>'+range.tasks.length+'</td><td>'+date(range.startDate)+'</td><td>'+date(range.finishDate)+'</td></tr>';
     }).join('')+'</tbody></table></div>';
   }
   window.CCPlannerViews = {

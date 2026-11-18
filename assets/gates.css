@@ -40,7 +40,10 @@
 .gate-flag { border-left: 3px solid var(--gate-magenta); padding-left: 10px; }
 .gate-package-summary { margin-bottom: 20px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
 .solution-involvement { display: grid; gap: 6px; margin-top: 14px; font-size: 11px; }
-.solution-involvement select { max-width: 100%; padding: 7px; border-radius: 0; font: inherit; }
+.solution-involvement select { min-width: 0; max-width: 100%; padding: 7px; border-radius: 0; font: inherit; cursor: pointer; }
+.solution-involvement select:disabled { cursor: default; opacity: .65; }
+.solution-involvement-hint { font-size: inherit; }
+.solution-involvement select:enabled + .solution-involvement-hint { display: none; }
 #top .solution-involvement select { background: #103253; color: #fff; border: 1px solid #ffffff66; }
 .gantt[data-gate-focus] .gantt-link { stroke: var(--gate-magenta); }
 .gantt[data-gate-focus] .timeline-focus { border-color: var(--gate-light); }

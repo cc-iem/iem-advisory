@@ -106,9 +106,15 @@
     domain.ids.forEach(function(product){if(selected)ids.add(product);else ids.delete(product);});
     state.cart=Array.from(ids);saveCart();refreshCartUI();
   }
-  function solutionSelectionRowHTML(p, context) {
+  function solutionGateTagsHTML(gates, label, cell = false) {
+    return '<div class="selection-gates" aria-label="'+label+'"'+(cell?' role="cell"':'')+'>'+
+      (gates.length ? gates.map(window.CCGatesUI.button).join('') : '<span aria-label="No mapped gates">—</span>')+'</div>';
+  }
+  function solutionSelectionRowHTML(p, context, gates = []) {
     var selected=inCart(p.id);
-    return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-selected="'+selected+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><div class="selection-row-labels"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><span class="selection-state-label">'+(selected?'✓ Selected':'Not selected')+'</span></div><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p,context!=='package')+'<small class="selection-duration">'+rich(p.durationShort)+'</small>'+(window.CCGatesUI ? window.CCGatesUI.involvement(p) : '')+'</div>'+solutionWorkstreamsHTML(p,'selection-workstreams')+'<div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'− Remove':'+ Add')+'</button></div></div>';
+    return '<div class="selection-table-row" role="row" data-solution-row="'+p.id+'" data-selected="'+selected+'" data-tag-context="solution" data-tag-id="'+p.id+'"><div class="selection-solution" role="cell"><div class="selection-row-labels"><span class="ref">'+window.CCDomainTags.solution(p)+'</span><span class="selection-state-label">'+(selected?'✓ Selected':'Not selected')+'</span></div><button type="button" class="selection-solution-title" data-domain-plain data-action="detail" data-id="'+p.id+'">'+esc(p.title)+'</button>'+markersHTML(p,context!=='package')+'<small class="selection-duration">'+rich(p.durationShort)+'</small>'+(window.CCGatesUI ? window.CCGatesUI.involvement(p) : '')+'</div>'+
+      solutionWorkstreamsHTML(p,'selection-workstreams')+solutionGateTagsHTML(gates,'Gates',true)+
+      '<div class="selection-actions" role="cell"><button type="button" class="btn btn-secondary btn-small solution-package-action" data-action="'+(selected?'remove':'add')+'" data-id="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+(selected?'Remove from package: ':'Add to package: ')+esc(p.title)+'">'+(selected?'− Remove':'+ Add')+'</button></div></div>';
   }
   function solutionDomainWorkstreamsHTML(products) {
     var ids=Array.from(new Set(products.reduce(function(all,p){return all.concat((p.workstreamLinks||[]).map(function(w){return w.id;}));},[])));
@@ -116,10 +122,19 @@
   }
   function solutionSelectionTableHTML(items,context) {
     context=context||'solutions';
+    var gates=items.length ? (window.CCGatesUI?.list() || []) : [];
     return '<div class="solution-list-surface">'+DOMAINS.map(function(d){
       var products=items.filter(function(p){return p.domain===d.id;}).sort(function(a,b){return a.number-b.number;});if(!products.length)return '';
       var selection=solutionDomainSelection(d.id),open=solutionDomainOpen(d.id,context),prefix='solution-group-'+context+'-'+d.id;
-      return '<section class="solution-domain" data-solution-domain="'+d.id+'" data-solution-context="'+context+'" data-selection-state="'+selection.status+'" aria-labelledby="'+prefix+'-title"><div class="solution-domain-header"><h2 class="solution-domain-heading"><button type="button" class="solution-domain-toggle" id="'+prefix+'-title" data-action="toggle-solution-domain" aria-expanded="'+open+'" aria-controls="'+prefix+'-body"><span class="domain-collapse-arrow" aria-hidden="true">›</span>'+window.CCDomainTags.domain(d.id)+'</button></h2><div class="solution-domain-controls"><span class="domain-selection-count">'+selection.count+' of '+selection.total+' in package</span><button type="button" class="btn btn-secondary btn-small domain-select-all" aria-pressed="'+(selection.status==='partial'?'mixed':String(selection.status==='all'))+'" data-action="toggle-domain-selection" data-domain="'+d.id+'" aria-label="'+(selection.status==='all'?'Remove all ':'Add all ')+esc(d.name)+' solutions '+(selection.status==='all'?'from':'to')+' package">'+(selection.status==='all'?'− Remove domain':'+ Add domain')+'</button><button type="button" class="btn btn-secondary btn-small domain-clear" data-action="clear-domain-selection" data-domain="'+d.id+'"'+(!selection.count?' disabled':'')+' aria-label="Deselect all '+esc(d.name)+' solutions">Clear</button></div></div>'+solutionDomainWorkstreamsHTML(products)+'<div class="solution-domain-body" id="'+prefix+'-body"'+(open?'':' hidden')+'><div class="solution-selection-table" role="table" aria-label="'+esc(d.name)+' solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Package</span></div>'+products.map(function(p){return solutionSelectionRowHTML(p,context);}).join('')+'</div></div></section>';
+      var productIds=new Set(products.map(function(p){return p.id;}));
+      var domainGates=gates.filter(function(gate){return gate.products.some(function(id){return productIds.has(id);});});
+      return '<section class="solution-domain" data-solution-domain="'+d.id+'" data-solution-context="'+context+'" data-selection-state="'+selection.status+'" aria-labelledby="'+prefix+'-title"><div class="solution-domain-header"><h2 class="solution-domain-heading"><button type="button" class="solution-domain-toggle" id="'+prefix+'-title" data-action="toggle-solution-domain" aria-expanded="'+open+'" aria-controls="'+prefix+'-body"><span class="domain-collapse-arrow" aria-hidden="true">›</span>'+window.CCDomainTags.domain(d.id)+'</button></h2>'+
+        solutionDomainWorkstreamsHTML(products)+solutionGateTagsHTML(domainGates,'Related gates')+
+        '<div class="solution-domain-controls"><span class="domain-selection-count">'+selection.count+' of '+selection.total+' in package</span><button type="button" class="btn btn-secondary btn-small domain-select-all" aria-pressed="'+(selection.status==='partial'?'mixed':String(selection.status==='all'))+'" data-action="toggle-domain-selection" data-domain="'+d.id+'" aria-label="'+(selection.status==='all'?'Remove all ':'Add all ')+esc(d.name)+' solutions '+(selection.status==='all'?'from':'to')+' package">'+(selection.status==='all'?'− Remove domain':'+ Add domain')+'</button><button type="button" class="btn btn-secondary btn-small domain-clear" data-action="clear-domain-selection" data-domain="'+d.id+'"'+(!selection.count?' disabled':'')+' aria-label="Deselect all '+esc(d.name)+' solutions">Clear</button></div></div><div class="solution-domain-body" id="'+prefix+'-body"'+(open?'':' hidden')+'><div class="solution-selection-table" role="table" aria-label="'+esc(d.name)+' solutions"><div class="selection-table-header" role="row"><span role="columnheader">Solution</span><span role="columnheader">Workstreams</span><span role="columnheader">Gates</span><span role="columnheader">Package</span></div>'+
+        products.map(function(p){
+          var solutionGates=domainGates.filter(function(gate){return gate.products.includes(p.id);});
+          return solutionSelectionRowHTML(p,context,solutionGates);
+        }).join('')+'</div></div></section>';
     }).join('')+'</div>';
   }
   function refreshSolutionActions(root) {
@@ -1330,6 +1345,9 @@
     }
     if (changed && event.detail.source !== 'package') refreshCartUI();
     else renderCatalog();
+    if (event.detail.source === 'involvement' && state.cartView === 'list' && !$('#cartPanel').hidden) {
+      refreshSolutionActions($('#cartPanel'));
+    }
     if (!$('#finder').hidden && event.detail.source !== 'finder') renderFinder();
   });
   /* ---------------- Start ---------------- */

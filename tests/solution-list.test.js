@@ -8,7 +8,7 @@ function setup(){
   const c={CATALOG:C,DOMAINS:D,BY_ID:Object.fromEntries(C.map(p=>[p.id,p])),FIT_LABEL:{new:'New hospital',existing:'Existing hospital'},state:{cart:selected.slice(),cartView:'list'},ICON:{close:'×'},window:{CCDomainTags:require('../assets/domain-tags.js')(D,C),CCWorkstreamTags:require('../assets/workstream-tags.js')(T)},esc:s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),plural:(n,s,p)=>n+' '+(n===1?s:p),S:{get:()=>({name:'Our hospital',selectedProducts:selected.slice()}),setSelections:ids=>{selected.splice(0,selected.length,...ids);}},$:s=>s==='#cartPanel'?panel:panel.body,toast(){}};
   c.rich=c.esc;c.saveCart=()=>c.S.setSelections(c.state.cart);c.refreshCartUI=()=>c.renderCart();
   vm.createContext(c);
-  for(const name of ['solutionWorkstreamsHTML','solutionDomainSelection','solutionDomainOpen','toggleSolutionDomain','setSolutionDomain','solutionSelectionRowHTML','solutionDomainWorkstreamsHTML','solutionSelectionTableHTML','refreshSolutionActions','markersHTML','cartHead','renderCart','addToCart','removeFromCart']){
+  for(const name of ['solutionWorkstreamsHTML','solutionDomainSelection','solutionDomainOpen','toggleSolutionDomain','setSolutionDomain','solutionSelectionRowHTML','solutionGateTagsHTML','solutionDomainWorkstreamsHTML','solutionSelectionTableHTML','refreshSolutionActions','markersHTML','cartHead','renderCart','addToCart','removeFromCart']){
     const start=source.indexOf('  function '+name+'(');vm.runInContext(source.slice(start,source.indexOf('\n  }',start)+4),c);
   }
   c.inCart=id=>c.state.cart.includes(id);c.storageSet=()=>{};return {c,panel};
@@ -111,4 +111,26 @@ test('domain previews contain every related workstream once using standard color
       assert.doesNotMatch(html,/workstream-mention/,'previews show codes without visible workstream names');
     }
   }
+});
+test('domain summaries and expanded solution rows show their own mapped gate columns',()=>{
+  const {c,panel}=setup(),E=require('../assets/planner-engine.js');
+  const G=require('../assets/gates-engine.js')(require('../data/gates.js'),E);
+  const project={name:'Hospital',openingBeds:100,totalBeds:300,departmentCount:8,departments:['inpatient','outpatient','emergency','icu','surgery','imaging','laboratory','pharmacy'],startDate:'2026-11-16',targetDate:'2028-11-16',teams:1,systems:'enterprise',holidays:[],taskStates:{}};
+  const gates=G.list(project,E.schedule(T,project),C);
+  c.window.CCGatesUI={list:()=>gates,button:gate=>'<button data-gate-open="'+gate.id+'">'+gate.code+'</button>',coverage:()=>'',involvement:()=>''};
+  const html=c.solutionSelectionTableHTML(C),rendered=rows(html);
+  const gateIds=markup=>[...markup.matchAll(/data-gate-open="([^"]+)"/g)].map(match=>match[1]);
+  assert.match(html,/<span role="columnheader">Workstreams<\/span><span role="columnheader">Gates<\/span>/);
+  for(const domain of D){
+    const group=html.split('<section class="solution-domain" data-solution-domain="'+domain.id+'"')[1];
+    const header=group.split('<div class="solution-domain-body"')[0];
+    assert.match(header,/domain-workstream-preview[\s\S]*selection-gates[\s\S]*solution-domain-controls/);
+    assert.deepEqual(gateIds(header),gates.filter(g=>g.products.some(id=>c.BY_ID[id].domain===domain.id)).map(g=>g.id));
+  }
+  for(const p of C){
+    assert.match(rendered[p.id],/selection-workstreams[\s\S]*selection-gates[\s\S]*selection-actions/);
+    assert.deepEqual(gateIds(rendered[p.id]),gates.filter(g=>g.products.includes(p.id)).map(g=>g.id));
+  }
+  c.renderCart();
+  for(const [id,row] of Object.entries(rows(panel.innerHTML)))assert.deepEqual(gateIds(row),gateIds(rendered[id]));
 });

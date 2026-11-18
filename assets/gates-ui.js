@@ -94,7 +94,7 @@
   }
   function involvement(product){
     const p=window.CCProject.get(),selected=p.selectedProducts.includes(product.id),value=p.solutionInvolvement?.[product.id]||'assure';
-    return '<label class="solution-involvement">Advisory involvement<select data-solution-involvement="'+product.id+'"'+(!selected?' disabled':'')+' aria-label="Advisory involvement for '+esc(product.title)+'" title="Advise: guidance. Advise &amp; Assure: guidance and evidence review. Co-lead: coordinate agreed scope; hospital and vendors retain execution.">'+[['advise','Advise'],['assure','Advise & Assure'],['co-lead','Co-lead']].map(([v,l])=>'<option value="'+v+'"'+(value===v?' selected':'')+'>'+l+'</option>').join('')+'</select></label>';
+    return '<label class="solution-involvement">Advisory involvement<select data-solution-involvement="'+product.id+'"'+(!selected?' disabled':'')+' aria-label="Advisory involvement for '+esc(product.title)+'" title="Advise: guidance. Advise &amp; Assure: guidance and evidence review. Co-lead: coordinate agreed scope; hospital and vendors retain execution.">'+[['advise','Advise'],['assure','Advise &amp; Assure'],['co-lead','Co-lead']].map(([v,l])=>'<option value="'+v+'"'+(value===v?' selected':'')+'>'+l+'</option>').join('')+'</select><small class="solution-involvement-hint">Add to Package to change.</small></label>';
   }
   function activityLinks(tasks){return tasks.map(t=>'<li><button type="button" class="text-button" data-plan-action="activity-profile" data-task-id="'+t.id+'" data-workstream="'+t.workstream+'">'+window.CCWorkstreamTags.activity(t.id)+'</button><span>'+esc(t.verified?'Verified':'Evidence needed')+' · '+date(t.finishDate)+'</span></li>').join('');}
   function sourceTable(g){return '<div class="planner-table-scroll"><table class="planner-table"><thead><tr><th>Source milestone</th><th>Finish</th><th>Evidence</th></tr></thead><tbody>'+g.sources.map(t=>'<tr><td><button type="button" class="text-button" data-plan-action="activity-profile" data-task-id="'+t.id+'" data-workstream="'+t.workstream+'">'+window.CCWorkstreamTags.activity(t.id)+'</button></td><td>'+date(t.finishDate)+'</td><td>'+esc(t.verified?'Verified':'Evidence needed')+'</td></tr>').join('')+'</tbody></table></div>';}
@@ -152,5 +152,5 @@
     const watch=()=>{watched.forEach(node=>{if(!node.isConnected){observer.unobserve(node);watched.delete(node);}});document.querySelectorAll('.gate-rail .gantt-track').forEach(node=>{if(!watched.has(node)){watched.add(node);observer.observe(node);}});};
     new MutationObserver(watch).observe(document.body,{childList:true,subtree:true});watch();
   }
-  window.CCGatesUI={profile,page,table,timeline,guides,tag,button,open,children,expand,railLayout,product,coverage,involvement,relatedHTML,flags};
+  window.CCGatesUI={profile,page,table,timeline,guides,tag,button,open,children,expand,railLayout,product,coverage,involvement,relatedHTML,flags,list:()=>state().gates};
 })();
